@@ -23,3 +23,7 @@ public/build/
 # Logs
 logs/
 *.log
+
+# Database
+*.db
+*.sqlite3
