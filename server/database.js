@@ -1,5 +1,4 @@
-// Adicionar no início do arquivo
-require('dotenv').config(); // Para desenvolvimento local
+const { Pool } = require('pg');
 
 class WARDatabase {
     constructor() {
@@ -21,87 +20,23 @@ class WARDatabase {
         
         console.log('✅ DATABASE_URL configurada');
         
-        // Configuração otimizada para Render
-        const config = {
-            connectionString: databaseUrl,
-            ssl: {
-                rejectUnauthorized: false // Requerido pelo Render
-            },
-            max: 10, // Aumentar conexões para Render
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 5000 // Reduzir timeout
-        };
-        
-        this.pool = new Pool(config);
-        console.log('📊 Pool de conexões PostgreSQL configurado');
-        
-        // Testar conexão
-        this.testConnection();
-    }
-
-    async testConnection() {
         try {
-            const client = await this.pool.connect();
-            const result = await client.query('SELECT NOW() as time, version() as version');
-            console.log('✅ PostgreSQL conectado:', result.rows[0].time);
-            console.log('📋 Versão:', result.rows[0].version.split(',')[0]);
-            client.release();
-            
-            // Criar tabelas se não existirem
-            await this.initDatabase();
-        } catch (error) {
-            console.error('❌ Erro ao conectar no PostgreSQL:', error.message);
-            console.log('🔧 Usando modo desenvolvimento...');
-            this.setupDevMode();
-        }
-    }
-    
-    // ... resto do código mantido ...
-}
-
-const { Pool } = require('pg');
-
-class WARDatabase {
-    constructor() {
-        console.log('🚀 WAR Database - Inicializando...');
-        
-        // Verificar variáveis de ambiente
-        console.log('🔍 Verificando configuração...');
-        
-        // O Render usa DATABASE_URL automaticamente quando linka o database
-        const databaseUrl = process.env.DATABASE_URL;
-        
-        if (!databaseUrl) {
-            console.log('⚠️  DATABASE_URL não encontrada. Usando modo desenvolvimento.');
-            console.log('💡 Para produção no Render:');
-            console.log('   1. Crie PostgreSQL no Render');
-            console.log('   2. Vá em Web Service → Environment');
-            console.log('   3. Add DATABASE_URL → Link Database');
-            
-            this.setupDevMode();
-            return;
-        }
-        
-        console.log('✅ DATABASE_URL configurada');
-        
-        try {
-            // Configurar pool de conexões para Render
+            // Configuração otimizada para Render
             const config = {
                 connectionString: databaseUrl,
-                // Render PostgreSQL requer SSL
-                ssl: databaseUrl.includes('render.com') ? {
-                    rejectUnauthorized: false
-                } : false,
-                max: 5,
+                ssl: {
+                    rejectUnauthorized: false // Requerido pelo Render
+                },
+                max: 10,
                 idleTimeoutMillis: 30000,
-                connectionTimeoutMillis: 10000
+                connectionTimeoutMillis: 5000
             };
             
             this.pool = new Pool(config);
-            console.log('📊 Pool de conexões configurado');
+            console.log('📊 Pool de conexões PostgreSQL configurado');
             
-            // Testar conexão assíncrona
-            this.testConnectionAsync();
+            // Testar conexão
+            this.testConnection();
             
         } catch (error) {
             console.error('❌ Erro ao configurar pool:', error.message);
@@ -109,46 +44,30 @@ class WARDatabase {
         }
     }
 
-    async testConnectionAsync() {
-        let retries = 3;
-        
-        while (retries > 0) {
-            try {
-                console.log(`🔄 Testando conexão (${4-retries}/3)...`);
-                const client = await this.pool.connect();
-                
-                // Teste simples
-                await client.query('SELECT 1 as test');
-                console.log('🎉 Conexão com PostgreSQL estabelecida!');
-                
-                client.release();
-                
-                // Inicializar banco
-                await this.initDatabase();
-                return;
-                
-            } catch (error) {
-                retries--;
-                console.error(`❌ Falha na conexão: ${error.message}`);
-                
-                if (retries === 0) {
-                    console.error('💥 Não foi possível conectar ao PostgreSQL');
-                    console.error('📋 Verifique:');
-                    console.error('   1. Database foi criado no Render?');
-                    console.error('   2. Aguardou 3 minutos após criar?');
-                    console.error('   3. DATABASE_URL está linkada corretamente?');
-                    
-                    this.setupDevMode();
-                } else {
-                    // Aguardar antes de tentar novamente
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-            }
+    async testConnection() {
+        try {
+            const client = await this.pool.connect();
+            
+            // Teste simples
+            const result = await client.query('SELECT NOW() as time, version() as version');
+            console.log('🎉 PostgreSQL conectado!');
+            console.log('⏰ Hora do servidor:', result.rows[0].time);
+            console.log('📋 PostgreSQL:', result.rows[0].version.split(',')[0]);
+            
+            client.release();
+            
+            // Inicializar banco
+            await this.initDatabase();
+            
+        } catch (error) {
+            console.error('❌ Erro na conexão PostgreSQL:', error.message);
+            console.log('🔧 Usando modo desenvolvimento...');
+            this.setupDevMode();
         }
     }
 
     setupDevMode() {
-        console.log('🔧 Usando modo desenvolvimento (dados em memória)');
+        console.log('🔧 Modo desenvolvimento (dados em memória)');
         this.devMode = true;
         this.devData = {
             jogadores: [
@@ -414,7 +333,7 @@ class WARDatabase {
                 SELECT 
                     (SELECT COUNT(*) FROM jogadores WHERE status = 'Ativo') as total_jogadores,
                     (SELECT COUNT(*) FROM partidas) as total_partidas,
-                    COALESCE((
+                                        COALESCE((
                         SELECT MAX(vitorias) FROM (
                             SELECT COUNT(*) as vitorias 
                             FROM partidas 
@@ -446,4 +365,3 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
-
