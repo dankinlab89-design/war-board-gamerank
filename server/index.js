@@ -103,14 +103,39 @@ app.get('/api/partidas', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 app.post('/api/partidas', async (req, res) => {
     try {
         const { vencedor_id, participantes, observacoes, tipo } = req.body;
         
-        // Validação
+        // VALIDAÇÃO 1: Dados obrigatórios
         if (!vencedor_id || !participantes) {
-            return res.status(400).json({ error: 'Vencedor e participantes são obrigatórios' });
+            return res.status(400).json({ 
+                error: 'Vencedor e participantes são obrigatórios' 
+            });
+        }
+        
+        // Converter participantes para array
+        const participantesArray = participantes.split(',').map(id => parseInt(id.trim()));
+        
+        // VALIDAÇÃO 2: Mínimo de 3 participantes
+        if (participantesArray.length < 3) {
+            return res.status(400).json({ 
+                error: 'É necessário pelo menos 3 participantes' 
+            });
+        }
+        
+        // VALIDAÇÃO 3: Vencedor deve estar entre participantes
+        if (!participantesArray.includes(parseInt(vencedor_id))) {
+            return res.status(400).json({ 
+                error: 'O vencedor deve estar entre os participantes selecionados' 
+            });
+        }
+        
+        // VALIDAÇÃO 4: IDs devem ser válidos
+        if (participantesArray.some(id => isNaN(id) || id <= 0)) {
+            return res.status(400).json({ 
+                error: 'IDs de participantes inválidos' 
+            });
         }
         
         const result = await db.addPartida({
@@ -129,6 +154,32 @@ app.post('/api/partidas', async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+
+//app.post('/api/partidas', async (req, res) => {
+//    try {
+//        const { vencedor_id, participantes, observacoes, tipo } = req.body;
+//        
+        // Validação
+//        if (!vencedor_id || !participantes) {
+//            return res.status(400).json({ error: 'Vencedor e participantes são obrigatórios' });
+//        }
+//        
+//        const result = await db.addPartida({
+//            vencedor_id: parseInt(vencedor_id),
+//            participantes: participantes,
+//            observacoes: observacoes || '',
+//            tipo: tipo || 'global'
+ //       });
+ //       
+ //       res.json({
+ //           ...result,
+ //           mensagem: 'Partida registrada com sucesso!'
+ //       });
+ //   } catch (error) {
+ //       console.error('Erro POST /partidas:', error);
+ //       res.status(400).json({ error: error.message });
+ //   }
+//});
 
 // RANKINGS
 app.get('/api/ranking/global', async (req, res) => {
