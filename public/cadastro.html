@@ -53,7 +53,6 @@
                         <small style="color: rgba(255, 255, 255, 0.7); display: block; margin-top: 10px;">
                             Todos os novos comandantes começam como Cabo. A patente evolui com suas vitórias!
                         </small>
-                        <input type="hidden" name="patente" value="Cabo 🪖">
                     </div>
                 </div>
                 
@@ -86,55 +85,15 @@
 
     <script src="js/main.js"></script>
     <script>
-        document.querySelector('.nav-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
-        });
-        
-        document.getElementById('form-cadastro').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Menu mobile apenas
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
             
-            const jogador = {
-                nome: document.getElementById('nome').value,
-                apelido: document.getElementById('apelido').value,
-                email: document.getElementById('email').value,
-                patente: document.getElementById('patente').value,
-                observacoes: document.getElementById('observacoes').value
-            };
-            
-            try {
-                const response = await fetch('/api/jogadores', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(jogador)
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
                 });
-                
-                const result = await response.json();
-                
-                const mensagem = document.getElementById('mensagem');
-                if (result.sucesso) {
-                    mensagem.innerHTML = `
-                        <div class="message-success">
-                            <i class="fas fa-check-circle"></i> ${result.mensagem}
-                        </div>
-                    `;
-                    document.getElementById('form-cadastro').reset();
-                } else {
-                    mensagem.innerHTML = `
-                        <div class="message-error">
-                            <i class="fas fa-exclamation-circle"></i> Erro: ${result.error || 'Falha no cadastro'}
-                        </div>
-                    `;
-                }
-                mensagem.style.display = 'block';
-                
-            } catch (error) {
-                document.getElementById('mensagem').innerHTML = `
-                    <div class="message-error">
-                        <i class="fas fa-exclamation-circle"></i> Erro de conexão
-                    </div>
-                `;
             }
         });
     </script>
