@@ -48,16 +48,13 @@
                 
                 <div class="form-group">
                     <label class="form-label">Patente Inicial:</label>
-                    <select class="form-control" id="patente">
-                        <option value="Cabo 🪖">Cabo 🪖 (Iniciante)</option>
-                        <option value="Soldado 🛡️">Soldado 🛡️</option>
-                        <option value="Tenente ⚔️">Tenente ⚔️</option>
-                        <option value="Capitão 👮">Capitão 👮</option>
-                        <option value="Major 💪">Major 💪</option>
-                        <option value="Coronel 🎖️">Coronel 🎖️</option>
-                        <option value="General ⭐">General ⭐</option>
-                        <option value="Marechal 🏆">Marechal 🏆</option>
-                    </select>
+                    <div class="patente-fixa">
+                        <span class="patente-badge patente-cabo">Cabo 🪖</span>
+                        <small style="color: rgba(255, 255, 255, 0.7); display: block; margin-top: 10px;">
+                            Todos os novos comandantes começam como Cabo. A patente evolui com suas vitórias!
+                        </small>
+                        <input type="hidden" name="patente" value="Cabo 🪖">
+                    </div>
                 </div>
                 
                 <div class="form-group">
