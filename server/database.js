@@ -1,3 +1,64 @@
+// Adicionar no início do arquivo
+require('dotenv').config(); // Para desenvolvimento local
+
+class WARDatabase {
+    constructor() {
+        console.log('🚀 WAR Database - Inicializando para Render...');
+        
+        // Configuração para Render
+        const databaseUrl = process.env.DATABASE_URL;
+        
+        if (!databaseUrl) {
+            console.log('⚠️  DATABASE_URL não encontrada.');
+            console.log('📋 Para Render:');
+            console.log('   1. Vá em Dashboard → Environment');
+            console.log('   2. Add Environment Variable');
+            console.log('   3. Nome: DATABASE_URL');
+            console.log('   4. Valor: (copie do seu PostgreSQL no Render)');
+            this.setupDevMode();
+            return;
+        }
+        
+        console.log('✅ DATABASE_URL configurada');
+        
+        // Configuração otimizada para Render
+        const config = {
+            connectionString: databaseUrl,
+            ssl: {
+                rejectUnauthorized: false // Requerido pelo Render
+            },
+            max: 10, // Aumentar conexões para Render
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000 // Reduzir timeout
+        };
+        
+        this.pool = new Pool(config);
+        console.log('📊 Pool de conexões PostgreSQL configurado');
+        
+        // Testar conexão
+        this.testConnection();
+    }
+
+    async testConnection() {
+        try {
+            const client = await this.pool.connect();
+            const result = await client.query('SELECT NOW() as time, version() as version');
+            console.log('✅ PostgreSQL conectado:', result.rows[0].time);
+            console.log('📋 Versão:', result.rows[0].version.split(',')[0]);
+            client.release();
+            
+            // Criar tabelas se não existirem
+            await this.initDatabase();
+        } catch (error) {
+            console.error('❌ Erro ao conectar no PostgreSQL:', error.message);
+            console.log('🔧 Usando modo desenvolvimento...');
+            this.setupDevMode();
+        }
+    }
+    
+    // ... resto do código mantido ...
+}
+
 const { Pool } = require('pg');
 
 class WARDatabase {
@@ -385,3 +446,4 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
+
