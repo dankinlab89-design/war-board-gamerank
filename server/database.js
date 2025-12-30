@@ -2,19 +2,21 @@ const { Pool } = require('pg');
 
 class WARDatabase {
     constructor() {
-        console.log('🔧 Inicializando conexão com PostgreSQL Neon...');
+        console.log('🔧 Inicializando conexão com PostgreSQL...');
         
-        // URL DIRETA DO SEU BANCO (que você testou com psql)
-        const databaseUrl = 'postgresql://neondb_owner:npg_nx8c1PJMGEOh@ep-late-lake-ae95e4tj-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require';
+        // URL do Render (ou variável de ambiente)
+        const databaseUrl = process.env.DATABASE_URL || 
+            process.env.POSTGRES_URL ||
+            'postgresql://localhost/wardb';
         
-        console.log('📊 Conectando ao PostgreSQL...');
+        console.log('📊 Configurando banco de dados...');
         
         this.pool = new Pool({
             connectionString: databaseUrl,
-            ssl: {
+            ssl: databaseUrl.includes('render.com') ? {
                 rejectUnauthorized: false
-            },
-            max: 5,
+            } : false,
+            max: 10,
             idleTimeoutMillis: 30000,
         });
         
@@ -24,44 +26,55 @@ class WARDatabase {
 
     async initDatabase() {
         try {
-            console.log('🔄 Verificando/Criando tabelas...');
+            console.log('🔄 Configurando tabelas...');
             
-            // Tabela jogadores
+            // Tabela de Jogadores
             await this.pool.query(`
                 CREATE TABLE IF NOT EXISTS jogadores (
                     id SERIAL PRIMARY KEY,
-                    nome TEXT NOT NULL,
-                    apelido TEXT UNIQUE NOT NULL,
-                    email TEXT,
-                    patente TEXT DEFAULT 'Cabo 🪖',
-                    status TEXT DEFAULT 'Ativo',
-                    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-            
-            // Tabela partidas
-            await this.pool.query(`
-                CREATE TABLE IF NOT EXISTS partidas (
-                    id SERIAL PRIMARY KEY,
-                    data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    tipo TEXT DEFAULT 'global',
-                    vencedor_id INTEGER,
-                    participantes TEXT,
+                    nome VARCHAR(100) NOT NULL,
+                    apelido VARCHAR(50) UNIQUE NOT NULL,
+                    email VARCHAR(100),
+                    patente VARCHAR(20) DEFAULT 'Cabo 🪖',
+                    status VARCHAR(10) DEFAULT 'Ativo',
+                    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     observacoes TEXT
                 )
             `);
             
-            console.log('✅ Tabelas prontas');
+            // Tabela de Partidas
+            await this.pool.query(`
+                CREATE TABLE IF NOT EXISTS partidas (
+                    id SERIAL PRIMARY KEY,
+                    data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    tipo VARCHAR(20) DEFAULT 'global',
+                    vencedor_id INTEGER REFERENCES jogadores(id),
+                    participantes TEXT NOT NULL,
+                    observacoes TEXT,
+                    CHECK (array_length(string_to_array(participantes, ','), 1) >= 3)
+                )
+            `);
             
-            // Verificar se tem dados
-            await this.verificarDados();
+            // Índices
+            await this.pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_partidas_data ON partidas(data DESC)
+            `);
+            
+            await this.pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_partidas_vencedor ON partidas(vencedor_id)
+            `);
+            
+            console.log('✅ Banco configurado com sucesso');
+            
+            // Verificar dados iniciais
+            await this.verificarDadosIniciais();
             
         } catch (error) {
-            console.error('❌ Erro ao inicializar:', error.message);
+            console.error('❌ Erro ao configurar banco:', error.message);
         }
     }
 
-    async verificarDados() {
+    async verificarDadosIniciais() {
         try {
             const result = await this.pool.query('SELECT COUNT(*) FROM jogadores');
             if (parseInt(result.rows[0].count) === 0) {
@@ -75,6 +88,7 @@ class WARDatabase {
 
     async inserirDadosIniciais() {
         try {
+            // Jogadores iniciais
             await this.pool.query(`
                 INSERT INTO jogadores (nome, apelido, email, patente) VALUES
                 ('Comandante Silva', 'Silva', 'silva@email.com', 'General ⭐'),
@@ -84,6 +98,7 @@ class WARDatabase {
                 ('Recruta Souza', 'Souza', 'souza@email.com', 'Cabo 🪖')
                 ON CONFLICT (apelido) DO NOTHING
             `);
+            
             console.log('✅ Dados iniciais inseridos');
         } catch (error) {
             console.error('❌ Erro ao inserir dados:', error.message);
@@ -104,46 +119,41 @@ class WARDatabase {
         }
     }
 
-async addJogador(jogador) {
-    try {
-        const result = await this.pool.query(
-            `INSERT INTO jogadores (nome, apelido, email, patente, observacoes) 
-             VALUES ($1, $2, $3, $4, $5) 
-             RETURNING id, patente, apelido`,
-            [
-                jogador.nome,
-                jogador.apelido,
-                jogador.email || null,
-                'Cabo 🪖',  // ← PATENTE FIXA SEMPRE
-                jogador.observacoes || ''
-            ]
-        );
-        
-        console.log(`✅ Jogador cadastrado: ${result.rows[0].apelido} (Patente: Cabo 🪖)`);
-        
-        return {
-            sucesso: true,
-            id: result.rows[0].id,
-            patente: 'Cabo 🪖',  // ← SEMPRE RETORNA CABO
-            apelido: result.rows[0].apelido
-        };
-    } catch (error) {
-        console.error('Erro ao cadastrar jogador:', error.message);
-        
-        if (error.message.includes('unique constraint') || error.code === '23505') {
-            throw new Error(`Apelido "${jogador.apelido}" já está em uso!`);
+    async addJogador(jogador) {
+        try {
+            const result = await this.pool.query(
+                `INSERT INTO jogadores (nome, apelido, email, observacoes) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING id, patente`,
+                [
+                    jogador.nome,
+                    jogador.apelido,
+                    jogador.email || null,
+                    jogador.observacoes || ''
+                ]
+            );
+            
+            return {
+                sucesso: true,
+                id: result.rows[0].id,
+                patente: 'Cabo 🪖'  // Sempre Cabo
+            };
+        } catch (error) {
+            console.error('Erro addJogador:', error.message);
+            throw error;
         }
-        throw error;
     }
-}
 
     async getPartidas() {
         try {
             const result = await this.pool.query(`
-                SELECT p.*, j.apelido as vencedor_nome 
-                FROM partidas p 
-                LEFT JOIN jogadores j ON p.vencedor_id = j.id 
-                ORDER BY p.data DESC 
+                SELECT 
+                    p.*,
+                    j.apelido as vencedor_nome,
+                    j.patente as vencedor_patente
+                FROM partidas p
+                LEFT JOIN jogadores j ON p.vencedor_id = j.id
+                ORDER BY p.data DESC
                 LIMIT 50
             `);
             return result.rows;
@@ -153,75 +163,37 @@ async addJogador(jogador) {
         }
     }
 
-async addPartida(partida) {
-    try {
-        // VALIDAÇÃO: Mínimo de 3 participantes
-        const participantes = partida.participantes.split(',').map(id => parseInt(id.trim()));
-        
-        if (participantes.length < 3) {
-            throw new Error('É necessário pelo menos 3 participantes');
+    async addPartida(partida) {
+        try {
+            // Validar mínimo de 3 participantes
+            const participantes = partida.participantes.split(',').map(id => parseInt(id.trim()));
+            
+            if (participantes.length < 3) {
+                throw new Error('É necessário pelo menos 3 participantes');
+            }
+            
+            if (!participantes.includes(partida.vencedor_id)) {
+                throw new Error('O vencedor deve estar entre os participantes');
+            }
+            
+            const result = await this.pool.query(
+                `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING id`,
+                [
+                    partida.vencedor_id,
+                    partida.participantes,
+                    partida.observacoes || '',
+                    partida.tipo || 'global'
+                ]
+            );
+            
+            return { sucesso: true, id: result.rows[0].id };
+        } catch (error) {
+            console.error('Erro addPartida:', error.message);
+            throw error;
         }
-        
-        if (!participantes.includes(partida.vencedor_id)) {
-            throw new Error('O vencedor deve estar entre os participantes');
-        }
-        
-        // Verificar se todos os participantes existem no banco
-        const placeholders = participantes.map((_, i) => `$${i + 1}`).join(',');
-        const jogadoresResult = await this.pool.query(
-            `SELECT COUNT(*) as count FROM jogadores WHERE id IN (${placeholders})`,
-            participantes
-        );
-        
-        if (parseInt(jogadoresResult.rows[0].count) !== participantes.length) {
-            throw new Error('Um ou mais participantes não existem no sistema');
-        }
-        
-        const result = await this.pool.query(
-            `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
-             VALUES ($1, $2, $3, $4) 
-             RETURNING id`,
-            [
-                partida.vencedor_id,
-                partida.participantes,
-                partida.observacoes || '',
-                partida.tipo || 'global'
-            ]
-        );
-        
-        console.log(`✅ Partida registrada: ID=${result.rows[0].id} (${participantes.length} participantes)`);
-        
-        return { 
-            sucesso: true, 
-            id: result.rows[0].id 
-        };
-    } catch (error) {
-        console.error('Erro ao registrar partida:', error.message);
-        throw error;
     }
-}
-
-    
-    //async addPartida(partida) {
-   //     try {
-  //          const result = await this.pool.query(
-  //              `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
-  //               VALUES ($1, $2, $3, $4) 
-  //               RETURNING id`,
-  //              [
-  //                  partida.vencedor_id,
-  //                  partida.participantes,
-  //                  partida.observacoes || '',
-  //                  partida.tipo || 'global'
-  //              ]
-  //          );
-  //          
- //           return { sucesso: true, id: result.rows[0].id };
-  //      } catch (error) {
-  //          console.error('Erro addPartida:', error.message);
-  //          throw error;
-  //      }
- //   }
 
     async getRankingGlobal() {
         try {
@@ -278,5 +250,3 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
-
-
