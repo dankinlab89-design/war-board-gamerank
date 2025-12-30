@@ -1,5 +1,12 @@
-// index.js - Arquivo principal na raiz
+// index.js - Versão simplificada
 console.log('🚀 Iniciando WAR Board GameRank...');
 
-// Redirecionar para o servidor real
+// Tentar carregar .env para desenvolvimento
+try {
+  require('dotenv').config();
+} catch (error) {
+  console.log('⚠️  dotenv não instalado, usando variáveis de ambiente do Render');
+}
+
+// Iniciar servidor
 require('./server/index.js');
