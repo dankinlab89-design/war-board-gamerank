@@ -104,25 +104,38 @@ class WARDatabase {
         }
     }
 
-    async addJogador(jogador) {
-        try {
-            const result = await this.pool.query(
-                `INSERT INTO jogadores (nome, apelido, email) 
-                 VALUES ($1, $2, $3) 
-                 RETURNING id, patente`,
-                [jogador.nome, jogador.apelido, jogador.email || null]
-            );
-            
-            return {
-                sucesso: true,
-                id: result.rows[0].id,
-                patente: result.rows[0].patente
-            };
-        } catch (error) {
-            console.error('Erro addJogador:', error.message);
-            throw error;
+async addJogador(jogador) {
+    try {
+        const result = await this.pool.query(
+            `INSERT INTO jogadores (nome, apelido, email, patente, observacoes) 
+             VALUES ($1, $2, $3, $4, $5) 
+             RETURNING id, patente, apelido`,
+            [
+                jogador.nome,
+                jogador.apelido,
+                jogador.email || null,
+                'Cabo 🪖',  // ← PATENTE FIXA SEMPRE
+                jogador.observacoes || ''
+            ]
+        );
+        
+        console.log(`✅ Jogador cadastrado: ${result.rows[0].apelido} (Patente: Cabo 🪖)`);
+        
+        return {
+            sucesso: true,
+            id: result.rows[0].id,
+            patente: 'Cabo 🪖',  // ← SEMPRE RETORNA CABO
+            apelido: result.rows[0].apelido
+        };
+    } catch (error) {
+        console.error('Erro ao cadastrar jogador:', error.message);
+        
+        if (error.message.includes('unique constraint') || error.code === '23505') {
+            throw new Error(`Apelido "${jogador.apelido}" já está em uso!`);
         }
+        throw error;
     }
+}
 
     async getPartidas() {
         try {
@@ -216,3 +229,4 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
+
