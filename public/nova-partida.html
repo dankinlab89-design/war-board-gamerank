@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Nova Partida - WAR Board GameRank</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">⚔️</div>
+                <h1>NOVA BATALHA <span class="nav-subtitle">WAR Board</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
+                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
+                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
+                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="nova-partida.html" class="nav-link active"><i class="fas fa-plus"></i> Nova Batalha</a>
+            </div>
+            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="section-title">REGISTRAR NOVA BATALHA</h2>
+            
+            <form id="form-partida">
+                <div class="form-group">
+                    <label class="form-label">Data da Batalha:</label>
+                    <input type="date" class="form-control" id="data" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Tipo de Batalha:</label>
+                    <select class="form-control" id="tipo">
+                        <option value="global">Batalha Global</option>
+                        <option value="campeonato">Campeonato</option>
+                        <option value="amistosa">Amistosa</option>
+                        <option value="eliminatoria">Eliminatória</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Vencedor:</label>
+                    <select class="form-control" id="vencedor" required>
+                        <!-- Carregado via JS -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Participantes:</label>
+                    <div id="participantes-container">
+                        <!-- Carregado via JS -->
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observações:</label>
+                    <textarea class="form-control" id="observacoes" rows="3" placeholder="Detalhes da batalha..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> REGISTRAR BATALHA
+                    </button>
+                    <a href="partidas.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> VOLTAR
+                    </a>
+                </div>
+                
+                <div id="mensagem" class="message" style="display: none;"></div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 WAR Board GameRank - Registro de Batalhas</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
+        
+        // Carregar jogadores para os selects
+        async function carregarJogadores() {
+            try {
+                const response = await fetch('/api/jogadores');
+                const jogadores = await response.json();
+                
+                // Preencher vencedor
+                const selectVencedor = document.getElementById('vencedor');
+                selectVencedor.innerHTML = '<option value="">Selecione o vencedor</option>';
+                jogadores.forEach(jogador => {
+                    const option = document.createElement('option');
+                    option.value = jogador.id;
+                    option.textContent = `${jogador.apelido} (${jogador.patente})`;
+                    selectVencedor.appendChild(option);
+                });
+                
+                // Preencher participantes
+                const container = document.getElementById('participantes-container');
+                container.innerHTML = '<div class="participantes-grid"></div>';
+                const grid = container.querySelector('.participantes-grid');
+                
+                jogadores.forEach(jogador => {
+                    const div = document.createElement('div');
+                    div.className = 'participante-checkbox';
+                    div.innerHTML = `
+                        <input type="checkbox" id="jogador-${jogador.id}" value="${jogador.id}">
+                        <label for="jogador-${jogador.id}">
+                            ${jogador.apelido} (${jogador.patente})
+                        </label>
+                    `;
+                    grid.appendChild(div);
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar jogadores:', error);
+            }
+        }
+        
+        // Formulário de partida
+        document.getElementById('form-partida').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Coletar participantes selecionados
+            const participantes = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                participantes.push(cb.value);
+            });
+            
+            if (participantes.length === 0) {
+                alert('Selecione pelo menos um participante!');
+                return;
+            }
+            
+            const partida = {
+                data: document.getElementById('data').value,
+                tipo: document.getElementById('tipo').value,
+                vencedor_id: parseInt(document.getElementById('vencedor').value),
+                participantes: participantes.join(','),
+                observacoes: document.getElementById('observacoes').value
+            };
+            
+            try {
+                const response = await fetch('/api/partidas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(partida)
+                });
+                
+                const result = await response.json();
+                
+                const mensagem = document.getElementById('mensagem');
+                if (result.sucesso) {
+                    mensagem.innerHTML = `
+                        <div class="message-success">
+                            <i class="fas fa-check-circle"></i> ${result.mensagem}
+                        </div>
+                    `;
+                    document.getElementById('form-partida').reset();
+                    // Marcar data atual
+                    document.getElementById('data').value = new Date().toISOString().split('T')[0];
+                } else {
+                    mensagem.innerHTML = `
+                        <div class="message-error">
+                            <i class="fas fa-exclamation-circle"></i> Erro: ${result.error}
+                        </div>
+                    `;
+                }
+                mensagem.style.display = 'block';
+                
+            } catch (error) {
+                document.getElementById('mensagem').innerHTML = `
+                    <div class="message-error">
+                        <i class="fas fa-exclamation-circle"></i> Erro de conexão
+                    </div>
+                `;
+            }
+        });
+        
+        // Data atual como padrão
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('data').value = new Date().toISOString().split('T')[0];
+            carregarJogadores();
+        });
+    </script>
+</body>
+</html>

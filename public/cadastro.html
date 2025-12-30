@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Cadastro - WAR Board GameRank</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">➕</div>
+                <h1>ALISTAMENTO <span class="nav-subtitle">WAR Board</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
+                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
+                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
+                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="cadastro.html" class="nav-link active"><i class="fas fa-user-plus"></i> Alistar</a>
+            </div>
+            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="section-title">ALISTAR NOVA TROPA</h2>
+            
+            <form id="form-cadastro">
+                <div class="form-group">
+                    <label class="form-label">Nome Completo:</label>
+                    <input type="text" class="form-control" id="nome" placeholder="Ex: Comandante Silva" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Apelido de Guerra:</label>
+                    <input type="text" class="form-control" id="apelido" placeholder="Ex: Silva" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">E-mail:</label>
+                    <input type="email" class="form-control" id="email" placeholder="exemplo@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Patente Inicial:</label>
+                    <select class="form-control" id="patente">
+                        <option value="Cabo 🪖">Cabo 🪖 (Iniciante)</option>
+                        <option value="Soldado 🛡️">Soldado 🛡️</option>
+                        <option value="Tenente ⚔️">Tenente ⚔️</option>
+                        <option value="Capitão 👮">Capitão 👮</option>
+                        <option value="Major 💪">Major 💪</option>
+                        <option value="Coronel 🎖️">Coronel 🎖️</option>
+                        <option value="General ⭐">General ⭐</option>
+                        <option value="Marechal 🏆">Marechal 🏆</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observações:</label>
+                    <textarea class="form-control" id="observacoes" rows="3" placeholder="Informações adicionais..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> ALISTAR TROPA
+                    </button>
+                    <a href="jogadores.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> VOLTAR
+                    </a>
+                </div>
+                
+                <div id="mensagem" class="message" style="display: none;"></div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 WAR Board GameRank - Sistema de Cadastro</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
+        
+        document.getElementById('form-cadastro').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const jogador = {
+                nome: document.getElementById('nome').value,
+                apelido: document.getElementById('apelido').value,
+                email: document.getElementById('email').value,
+                patente: document.getElementById('patente').value,
+                observacoes: document.getElementById('observacoes').value
+            };
+            
+            try {
+                const response = await fetch('/api/jogadores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jogador)
+                });
+                
+                const result = await response.json();
+                
+                const mensagem = document.getElementById('mensagem');
+                if (result.sucesso) {
+                    mensagem.innerHTML = `
+                        <div class="message-success">
+                            <i class="fas fa-check-circle"></i> ${result.mensagem}
+                        </div>
+                    `;
+                    document.getElementById('form-cadastro').reset();
+                } else {
+                    mensagem.innerHTML = `
+                        <div class="message-error">
+                            <i class="fas fa-exclamation-circle"></i> Erro: ${result.error || 'Falha no cadastro'}
+                        </div>
+                    `;
+                }
+                mensagem.style.display = 'block';
+                
+            } catch (error) {
+                document.getElementById('mensagem').innerHTML = `
+                    <div class="message-error">
+                        <i class="fas fa-exclamation-circle"></i> Erro de conexão
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
