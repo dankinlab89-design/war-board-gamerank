@@ -29,7 +29,12 @@
     <main class="container">
         <h2 class="section-title">HISTÓRICO DE BATALHAS</h2>
         
-        <div class="table-responsive">
+        <div id="loading" class="loading" style="text-align: center; padding: 40px;">
+            <div class="spinner"></div>
+            <p>Carregando batalhas...</p>
+        </div>
+        
+        <div class="table-responsive" id="tabela-container" style="display: none;">
             <table class="table" id="tabela-partidas">
                 <thead>
                     <tr>
@@ -44,6 +49,13 @@
                     <!-- Carregado via JS -->
                 </tbody>
             </table>
+        </div>
+        
+        <div id="sem-dados" style="display: none; text-align: center; padding: 40px;">
+            <p>Nenhuma batalha registrada ainda.</p>
+            <a href="nova-partida.html" class="btn btn-primary">
+                <i class="fas fa-plus"></i> REGISTRAR PRIMEIRA BATALHA
+            </a>
         </div>
         
         <div class="text-center" style="margin-top: 40px;">
@@ -61,11 +73,112 @@
         </div>
     </footer>
 
-    <script src="js/partidas.js"></script>
+    <script src="js/main.js"></script>
     <script>
-        document.querySelector('.nav-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
+        // Menu mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                });
+            }
+            
+            // Carregar partidas
+            carregarPartidas();
         });
+        
+        async function carregarPartidas() {
+            try {
+                const response = await fetch('/api/partidas');
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}`);
+                }
+                
+                const partidas = await response.json();
+                
+                const loading = document.getElementById('loading');
+                const tabelaContainer = document.getElementById('tabela-container');
+                const semDados = document.getElementById('sem-dados');
+                
+                if (loading) loading.style.display = 'none';
+                
+                if (!partidas || partidas.length === 0) {
+                    if (semDados) semDados.style.display = 'block';
+                    return;
+                }
+                
+                const tbody = document.getElementById('lista-partidas');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    
+                    partidas.forEach(partida => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatarData(partida.data)}</td>
+                            <td>
+                                <span class="badge ${getBadgeClass(partida.tipo)}">
+                                    ${partida.tipo || 'global'}
+                                </span>
+                            </td>
+                            <td>
+                                <strong style="color: #10b981;">
+                                    ${partida.vencedor_nome || `Jogador ${partida.vencedor_id}`}
+                                </strong>
+                            </td>
+                            <td>${formatarParticipantes(partida.participantes)}</td>
+                            <td>${partida.observacoes || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    if (tabelaContainer) tabelaContainer.style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar partidas:', error);
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.innerHTML = `
+                        <div class="message message-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Erro ao carregar batalhas. Tente recarregar a página.
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function formatarData(dataString) {
+            if (!dataString) return '-';
+            try {
+                const data = new Date(dataString);
+                return data.toLocaleDateString('pt-BR');
+            } catch {
+                return dataString;
+            }
+        }
+        
+        function formatarParticipantes(participantes) {
+            if (!participantes) return '0';
+            if (typeof participantes === 'string') {
+                return `${participantes.split(',').length} jogadores`;
+            }
+            return '1+';
+        }
+        
+        function getBadgeClass(tipo) {
+            const classes = {
+                'global': 'badge-primary',
+                'campeonato': 'badge-warning',
+                'amistosa': 'badge-info',
+                'eliminatoria': 'badge-danger'
+            };
+            return classes[tipo] || 'badge-secondary';
+        }
     </script>
 </body>
 </html>
