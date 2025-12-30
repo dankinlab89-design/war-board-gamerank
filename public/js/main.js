@@ -716,7 +716,52 @@ async function loadJogadoresForForm() {
         console.error('Erro ao carregar jogadores:', error);
     }
 }
+// Função para carregar jogadores nos selects
+async function loadJogadoresForSelects() {
+    try {
+        const response = await fetch('/api/jogadores');
+        const jogadores = await response.json();
+        
+        // Para formulário de nova partida (se existir)
+        const vencedorSelect = document.getElementById('vencedor');
+        const participantesContainer = document.getElementById('participantes-container');
+        
+        if (vencedorSelect) {
+            vencedorSelect.innerHTML = '<option value="">Selecione o vencedor</option>';
+            jogadores.forEach(jogador => {
+                const option = document.createElement('option');
+                option.value = jogador.id;
+                option.textContent = `${jogador.apelido} (${jogador.patente})`;
+                vencedorSelect.appendChild(option);
+            });
+        }
+        
+        if (participantesContainer) {
+            participantesContainer.innerHTML = '<div class="participantes-grid"></div>';
+            const grid = participantesContainer.querySelector('.participantes-grid');
+            
+            jogadores.forEach(jogador => {
+                const div = document.createElement('div');
+                div.className = 'participante-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="jogador-${jogador.id}" value="${jogador.id}">
+                    <label for="jogador-${jogador.id}">
+                        ${jogador.apelido} (${jogador.patente})
+                    </label>
+                `;
+                grid.appendChild(div);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar jogadores:', error);
+    }
+}
 
+// Chamar quando a página carregar
+if (document.getElementById('vencedor') || document.getElementById('participantes-container')) {
+    document.addEventListener('DOMContentLoaded', loadJogadoresForSelects);
+}
 // Exportar funções úteis para uso global
 window.WAR = {
     formatDate: (dateString) => {
