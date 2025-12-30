@@ -153,26 +153,75 @@ async addJogador(jogador) {
         }
     }
 
-    async addPartida(partida) {
-        try {
-            const result = await this.pool.query(
-                `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
-                 VALUES ($1, $2, $3, $4) 
-                 RETURNING id`,
-                [
-                    partida.vencedor_id,
-                    partida.participantes,
-                    partida.observacoes || '',
-                    partida.tipo || 'global'
-                ]
-            );
-            
-            return { sucesso: true, id: result.rows[0].id };
-        } catch (error) {
-            console.error('Erro addPartida:', error.message);
-            throw error;
+async addPartida(partida) {
+    try {
+        // VALIDAÇÃO: Mínimo de 3 participantes
+        const participantes = partida.participantes.split(',').map(id => parseInt(id.trim()));
+        
+        if (participantes.length < 3) {
+            throw new Error('É necessário pelo menos 3 participantes');
         }
+        
+        if (!participantes.includes(partida.vencedor_id)) {
+            throw new Error('O vencedor deve estar entre os participantes');
+        }
+        
+        // Verificar se todos os participantes existem no banco
+        const placeholders = participantes.map((_, i) => `$${i + 1}`).join(',');
+        const jogadoresResult = await this.pool.query(
+            `SELECT COUNT(*) as count FROM jogadores WHERE id IN (${placeholders})`,
+            participantes
+        );
+        
+        if (parseInt(jogadoresResult.rows[0].count) !== participantes.length) {
+            throw new Error('Um ou mais participantes não existem no sistema');
+        }
+        
+        const result = await this.pool.query(
+            `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
+             VALUES ($1, $2, $3, $4) 
+             RETURNING id`,
+            [
+                partida.vencedor_id,
+                partida.participantes,
+                partida.observacoes || '',
+                partida.tipo || 'global'
+            ]
+        );
+        
+        console.log(`✅ Partida registrada: ID=${result.rows[0].id} (${participantes.length} participantes)`);
+        
+        return { 
+            sucesso: true, 
+            id: result.rows[0].id 
+        };
+    } catch (error) {
+        console.error('Erro ao registrar partida:', error.message);
+        throw error;
     }
+}
+
+    
+    //async addPartida(partida) {
+   //     try {
+  //          const result = await this.pool.query(
+  //              `INSERT INTO partidas (vencedor_id, participantes, observacoes, tipo) 
+  //               VALUES ($1, $2, $3, $4) 
+  //               RETURNING id`,
+  //              [
+  //                  partida.vencedor_id,
+  //                  partida.participantes,
+  //                  partida.observacoes || '',
+  //                  partida.tipo || 'global'
+  //              ]
+  //          );
+  //          
+ //           return { sucesso: true, id: result.rows[0].id };
+  //      } catch (error) {
+  //          console.error('Erro addPartida:', error.message);
+  //          throw error;
+  //      }
+ //   }
 
     async getRankingGlobal() {
         try {
@@ -229,4 +278,5 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
+
 
