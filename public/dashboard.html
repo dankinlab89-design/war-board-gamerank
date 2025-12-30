@@ -286,5 +286,151 @@
                 minute: '2-digit' 
             });
     </script>
+<script>
+// Carregar estatísticas do dashboard
+async function loadDashboardStats() {
+    try {
+        // Carregar estatísticas
+        const statsResponse = await fetch('/api/estatisticas');
+        const stats = await statsResponse.json();
+        
+        // Atualizar cards
+        document.getElementById('stat-jogadores').textContent = stats.total_jogadores || 0;
+        document.getElementById('stat-partidas').textContent = stats.total_partidas || 0;
+        document.getElementById('stat-record').textContent = stats.record_vitorias || 0;
+        
+        // Carregar ranking para record holder
+        const rankingResponse = await fetch('/api/ranking/global');
+        const ranking = await rankingResponse.json();
+        
+        if (ranking.length > 0) {
+            document.getElementById('record-holder').textContent = ranking[0].apelido;
+        }
+        
+        // Calcular média
+        const media = stats.total_jogadores > 0 ? 
+            (stats.total_partidas / stats.total_jogadores).toFixed(1) : 0;
+        document.getElementById('stat-media').textContent = media;
+        
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+    }
+}
+
+// Carregar ranking global
+async function loadRankingGlobal() {
+    try {
+        const response = await fetch('/api/ranking/global');
+        const ranking = await response.json();
+        
+        const tbody = document.querySelector('#ranking-global tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        ranking.forEach((jogador, index) => {
+            const percentual = jogador.partidas > 0 ? 
+                ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
+                        ${index + 1}
+                    </div>
+                </td>
+                <td><strong>${jogador.apelido}</strong></td>
+                <td>
+                    <span class="patente-badge ${getPatenteClass(jogador.patente)}">
+                        ${jogador.patente}
+                    </span>
+                </td>
+                <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
+                <td>${jogador.partidas || 0}</td>
+                <td>
+                    <div class="performance-bar-container">
+                        <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
+                        <span class="performance-bar-text">${percentual}%</span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Erro ao carregar ranking:', error);
+    }
+}
+
+// Carregar últimas partidas
+async function loadUltimasPartidas() {
+    try {
+        const response = await fetch('/api/partidas');
+        const partidas = await response.json();
+        
+        const tbody = document.querySelector('#ultimas-partidas tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        partidas.slice(0, 10).forEach(partida => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td>
+                <td><strong style="color: #10b981;">${partida.vencedor_nome}</strong></td>
+                <td>
+                    <span class="badge ${getBadgeClass(partida.tipo)}">
+                        ${partida.tipo}
+                    </span>
+                </td>
+                <td>${partida.participantes ? partida.participantes.split(',').length : 0}</td>
+                <td>${partida.observacoes || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Erro ao carregar partidas:', error);
+    }
+}
+
+// Funções auxiliares
+function getPatenteClass(patente) {
+    if (!patente) return 'patente-cabo';
+    if (patente.includes('Marechal')) return 'patente-marechal';
+    if (patente.includes('General')) return 'patente-general';
+    if (patente.includes('Coronel')) return 'patente-coronel';
+    if (patente.includes('Major')) return 'patente-major';
+    if (patente.includes('Capitão')) return 'patente-capitao';
+    if (patente.includes('Tenente')) return 'patente-tenente';
+    if (patente.includes('Soldado')) return 'patente-soldado';
+    return 'patente-cabo';
+}
+
+function getBadgeClass(tipo) {
+    const classes = {
+        'global': 'badge-primary',
+        'campeonato': 'badge-warning',
+        'amistosa': 'badge-info',
+        'eliminatoria': 'badge-danger'
+    };
+    return classes[tipo] || 'badge-secondary';
+}
+
+// Carregar tudo quando a página abrir
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadRankingGlobal();
+    loadUltimasPartidas();
+    
+    // Atualizar a cada 30 segundos
+    setInterval(() => {
+        loadDashboardStats();
+        loadUltimasPartidas();
+    }, 30000);
+});
+</script>
+    
 </body>
+
 </html>
