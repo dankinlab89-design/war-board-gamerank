@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const path = require('path');
+const { getDatabase } = require('./database');
 
 const app = express();
 
@@ -11,185 +11,291 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.urlencoded({ extended: true }));
 
-// Simulação de banco de dados em memória (substitua por SQLite real)
-let jogadores = [
-  { id: 1, nome: 'Comandante Silva', apelido: 'Silva', email: 'silva@email.com', patente: 'General ⭐', status: 'Ativo' },
-  { id: 2, nome: 'Capitão Santos', apelido: 'Santos', email: 'santos@email.com', patente: 'Capitão 👮', status: 'Ativo' },
-  { id: 3, nome: 'Tenente Costa', apelido: 'Costa', email: 'costa@email.com', patente: 'Tenente ⚔️', status: 'Ativo' },
-  { id: 4, nome: 'Soldado Lima', apelido: 'Lima', email: 'lima@email.com', patente: 'Soldado 🛡️', status: 'Ativo' },
-  { id: 5, nome: 'Recruta Souza', apelido: 'Souza', email: 'souza@email.com', patente: 'Cabo 🪖', status: 'Ativo' }
-];
+// Inicializar banco de dados
+const db = getDatabase();
 
-let partidas = [
-  { id: 1, data: '2024-01-15', tipo: 'global', vencedor_id: 1, participantes: '1,2,3,4', vencedor_nome: 'Silva', observacoes: 'Partida intensa' },
-  { id: 2, data: '2024-01-20', tipo: 'campeonato', vencedor_id: 2, participantes: '1,2,5', vencedor_nome: 'Santos', observacoes: 'Final emocionante' },
-  { id: 3, data: '2024-02-05', tipo: 'global', vencedor_id: 1, participantes: '1,3,4,5', vencedor_nome: 'Silva', observacoes: 'Vitória rápida' }
-];
+// ============ ROTAS DA API ============
 
-// Rotas da API
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'online', 
+        timestamp: new Date().toISOString(),
+        service: 'WAR Board GameRank API',
+        version: '2.0.0'
+    });
+});
+
+// JOGADORES
 app.get('/api/jogadores', (req, res) => {
-  res.json(jogadores.filter(j => j.status === 'Ativo'));
+    try {
+        const jogadores = db.getJogadores();
+        res.json(jogadores);
+    } catch (error) {
+        console.error('Erro GET /jogadores:', error);
+        res.status(500).json({ 
+            error: 'Erro ao buscar jogadores',
+            details: error.message 
+        });
+    }
 });
 
 app.post('/api/jogadores', (req, res) => {
-  const novoJogador = {
-    id: jogadores.length + 1,
-    ...req.body,
-    patente: 'Cabo 🪖',
-    status: 'Ativo',
-    data_cadastro: new Date().toISOString()
-  };
-  jogadores.push(novoJogador);
-  res.json({ 
-    sucesso: true, 
-    id: novoJogador.id,
-    mensagem: 'Jogador cadastrado com sucesso!' 
-  });
+    try {
+        const { nome, apelido, email, observacoes } = req.body;
+        
+        // Validações
+        if (!nome || !apelido) {
+            return res.status(400).json({ 
+                error: 'Nome e apelido são obrigatórios' 
+            });
+        }
+        
+        if (apelido.length < 2) {
+            return res.status(400).json({ 
+                error: 'Apelido deve ter pelo menos 2 caracteres' 
+            });
+        }
+        
+        const result = db.addJogador({
+            nome: nome.trim(),
+            apelido: apelido.trim(),
+            email: email?.trim() || null,
+            observacoes: observacoes?.trim() || ''
+        });
+        
+        res.json({
+            ...result,
+            mensagem: `Jogador ${apelido} cadastrado com sucesso!`
+        });
+    } catch (error) {
+        console.error('Erro POST /jogadores:', error);
+        
+        if (error.message.includes('já está em uso')) {
+            res.status(409).json({ 
+                error: error.message 
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Erro ao cadastrar jogador',
+                details: error.message 
+            });
+        }
+    }
 });
 
+// PARTIDAS
 app.get('/api/partidas', (req, res) => {
-  res.json(partidas);
+    try {
+        const partidas = db.getPartidas();
+        res.json(partidas);
+    } catch (error) {
+        console.error('Erro GET /partidas:', error);
+        res.status(500).json({ 
+            error: 'Erro ao buscar partidas',
+            details: error.message 
+        });
+    }
 });
 
 app.post('/api/partidas', (req, res) => {
-  const novaPartida = {
-    id: partidas.length + 1,
-    ...req.body,
-    data: new Date().toISOString()
-  };
-  partidas.unshift(novaPartida);
-  res.json({ 
-    sucesso: true, 
-    id: novaPartida.id,
-    mensagem: 'Partida registrada com sucesso!' 
-  });
+    try {
+        const { data, tipo, vencedor_id, participantes, observacoes } = req.body;
+        
+        // Validações
+        if (!vencedor_id) {
+            return res.status(400).json({ 
+                error: 'Selecione um vencedor' 
+            });
+        }
+        
+        if (!participantes) {
+            return res.status(400).json({ 
+                error: 'Selecione os participantes' 
+            });
+        }
+        
+        // Converter participantes para array se for string
+        let participantesArray;
+        if (typeof participantes === 'string') {
+            participantesArray = participantes.split(',').map(id => parseInt(id.trim()));
+        } else if (Array.isArray(participantes)) {
+            participantesArray = participantes.map(id => parseInt(id));
+        } else {
+            return res.status(400).json({ 
+                error: 'Formato de participantes inválido' 
+            });
+        }
+        
+        if (participantesArray.length < 2) {
+            return res.status(400).json({ 
+                error: 'É necessário pelo menos 2 participantes' 
+            });
+        }
+        
+        if (!participantesArray.includes(parseInt(vencedor_id))) {
+            return res.status(400).json({ 
+                error: 'O vencedor deve estar entre os participantes' 
+            });
+        }
+        
+        const result = db.addPartida({
+            data: data || new Date().toISOString().split('T')[0],
+            tipo: tipo || 'global',
+            vencedor_id: parseInt(vencedor_id),
+            participantes: participantesArray.join(','),
+            observacoes: observacoes || ''
+        });
+        
+        res.json({
+            ...result,
+            mensagem: 'Partida registrada com sucesso!'
+        });
+    } catch (error) {
+        console.error('Erro POST /partidas:', error);
+        
+        if (error.message.includes('participantes') || error.message.includes('vencedor')) {
+            res.status(400).json({ 
+                error: error.message 
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Erro ao registrar partida',
+                details: error.message 
+            });
+        }
+    }
 });
 
+// RANKINGS
 app.get('/api/ranking/global', (req, res) => {
-  const ranking = jogadores.map(jogador => {
-    const partidasJogadas = partidas.filter(p => 
-      p.participantes.split(',').includes(jogador.id.toString())
-    ).length;
-    
-    const vitorias = partidas.filter(p => 
-      p.vencedor_id === jogador.id
-    ).length;
-    
-    return {
-      id: jogador.id,
-      apelido: jogador.apelido,
-      patente: jogador.patente,
-      partidas: partidasJogadas,
-      vitorias: vitorias
-    };
-  }).sort((a, b) => b.vitorias - a.vitorias);
-  
-  res.json(ranking);
+    try {
+        const ranking = db.getRankingGlobal();
+        res.json(ranking);
+    } catch (error) {
+        console.error('Erro GET /ranking/global:', error);
+        res.status(500).json({ 
+            error: 'Erro ao calcular ranking',
+            details: error.message 
+        });
+    }
 });
 
 app.get('/api/ranking/mensal/:mesAno', (req, res) => {
-  const [mes, ano] = req.params.mesAno.split('/');
-  const partidasMes = partidas.filter(p => {
-    const data = new Date(p.data);
-    return (data.getMonth() + 1) === parseInt(mes) && 
-           data.getFullYear() === parseInt(ano);
-  });
-  
-  const ranking = jogadores.map(jogador => {
-    const partidasJogadas = partidasMes.filter(p => 
-      p.participantes.split(',').includes(jogador.id.toString())
-    ).length;
-    
-    const vitorias = partidasMes.filter(p => 
-      p.vencedor_id === jogador.id
-    ).length;
-    
-    return {
-      id: jogador.id,
-      apelido: jogador.apelido,
-      patente: jogador.patente,
-      partidas: partidasJogadas,
-      vitorias: vitorias
-    };
-  }).filter(r => r.partidas > 0)
-    .sort((a, b) => b.vitorias - a.vitorias);
-  
-  res.json(ranking);
-});
-
-app.get('/api/vencedores/:ano', (req, res) => {
-  const ano = req.params.ano;
-  const vencedores = [];
-  
-  for (let mes = 1; mes <= 12; mes++) {
-    const mesAno = `${mes.toString().padStart(2, '0')}/${ano}`;
-    const partidasMes = partidas.filter(p => {
-      const data = new Date(p.data);
-      return (data.getMonth() + 1) === mes && 
-             data.getFullYear() === parseInt(ano);
-    });
-    
-    if (partidasMes.length > 0) {
-      const vitoriasPorJogador = {};
-      partidasMes.forEach(p => {
-        vitoriasPorJogador[p.vencedor_id] = (vitoriasPorJogador[p.vencedor_id] || 0) + 1;
-      });
-      
-      const vencedorId = Object.keys(vitoriasPorJogador).reduce((a, b) => 
-        vitoriasPorJogador[a] > vitoriasPorJogador[b] ? a : b
-      );
-      
-      const jogador = jogadores.find(j => j.id === parseInt(vencedorId));
-      if (jogador) {
-        vencedores.push({
-          mes_ano: mesAno,
-          vencedor: jogador.apelido,
-          vitorias: vitoriasPorJogador[vencedorId],
-          patente: jogador.patente
+    try {
+        const { mesAno } = req.params;
+        
+        // Validar formato MM/YYYY
+        if (!/^\d{2}\/\d{4}$/.test(mesAno)) {
+            return res.status(400).json({ 
+                error: 'Formato inválido. Use MM/YYYY (ex: 01/2024)' 
+            });
+        }
+        
+        const ranking = db.getRankingMensal(mesAno);
+        res.json(ranking);
+    } catch (error) {
+        console.error('Erro GET /ranking/mensal:', error);
+        res.status(500).json({ 
+            error: 'Erro ao calcular ranking mensal',
+            details: error.message 
         });
-      }
     }
-  }
-  
-  res.json(vencedores);
 });
 
+// ESTATÍSTICAS
 app.get('/api/estatisticas', (req, res) => {
-  const total_jogadores = jogadores.filter(j => j.status === 'Ativo').length;
-  const total_partidas = partidas.length;
-  
-  const vitoriasPorJogador = {};
-  partidas.forEach(p => {
-    vitoriasPorJogador[p.vencedor_id] = (vitoriasPorJogador[p.vencedor_id] || 0) + 1;
-  });
-  
-  const record_vitorias = Object.values(vitoriasPorJogador).length > 0 
-    ? Math.max(...Object.values(vitoriasPorJogador))
-    : 0;
-  
-  res.json({
-    total_jogadores,
-    total_partidas,
-    record_vitorias
-  });
+    try {
+        const estatisticas = db.getEstatisticas();
+        res.json(estatisticas);
+    } catch (error) {
+        console.error('Erro GET /estatisticas:', error);
+        res.status(500).json({ 
+            error: 'Erro ao buscar estatísticas',
+            details: error.message 
+        });
+    }
 });
 
-// Rota principal
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+// VENCEDORES MENSAIS
+app.get('/api/vencedores/:ano', (req, res) => {
+    try {
+        const { ano } = req.params;
+        
+        // Validar ano (4 dígitos)
+        if (!/^\d{4}$/.test(ano)) {
+            return res.status(400).json({ 
+                error: 'Ano inválido. Use YYYY (ex: 2024)' 
+            });
+        }
+        
+        const vencedores = db.getVencedoresMensais(ano);
+        res.json(vencedores);
+    } catch (error) {
+        console.error('Erro GET /vencedores:', error);
+        res.status(500).json({ 
+            error: 'Erro ao buscar vencedores',
+            details: error.message 
+        });
+    }
 });
 
-// Para Netlify Functions
+// Rota para obter informações de um jogador específico
+app.get('/api/jogadores/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const jogador = db.getJogadorById(parseInt(id));
+        
+        if (!jogador) {
+            return res.status(404).json({ 
+                error: 'Jogador não encontrado' 
+            });
+        }
+        
+        res.json(jogador);
+    } catch (error) {
+        console.error('Erro GET /jogadores/:id:', error);
+        res.status(500).json({ 
+            error: 'Erro ao buscar jogador',
+            details: error.message 
+        });
+    }
+});
+
+// Rota para backup do banco (apenas para admin futuramente)
+app.get('/api/admin/backup', (req, res) => {
+    try {
+        // Em produção, adicionar autenticação aqui
+        const backupPath = db.backupDatabase();
+        res.json({ 
+            sucesso: true, 
+            mensagem: 'Backup criado com sucesso',
+            caminho: backupPath 
+        });
+    } catch (error) {
+        console.error('Erro ao criar backup:', error);
+        res.status(500).json({ 
+            error: 'Erro ao criar backup',
+            details: error.message 
+        });
+    }
+});
+
+// Rota para Netlify Functions
 const serverless = require('serverless-http');
 module.exports.handler = serverless(app);
 
 // Para desenvolvimento local
 if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`🌐 Acesse: http://localhost:${PORT}`);
-  });
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        console.log(`🌐 API disponível em: http://localhost:${PORT}/api`);
+        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`👥 Jogadores: http://localhost:${PORT}/api/jogadores`);
+        console.log(`🎮 Partidas: http://localhost:${PORT}/api/partidas`);
+        console.log(`🏆 Ranking: http://localhost:${PORT}/api/ranking/global`);
+    });
 }
