@@ -748,6 +748,279 @@ app.get('/api/vencedores-anual', async (req, res) => {
     }
 });
 
+// ============ NOVAS ROTAS API ============
+
+// Rota para estatísticas com recorde consecutivo
+app.get('/api/estatisticas/completo', async (req, res) => {
+    try {
+        // Buscar jogadores e partidas
+        const jogadoresResult = await pool.query(
+            "SELECT COUNT(*) as total FROM jogadores WHERE status = 'Ativo'"
+        );
+        
+        const partidasResult = await pool.query(
+            "SELECT COUNT(*) as total FROM partidas"
+        );
+        
+        // Buscar recorde de vitórias consecutivas
+        const recordResult = await pool.query(`
+            WITH partidas_ordenadas AS (
+                SELECT 
+                    p.*,
+                    ROW_NUMBER() OVER (PARTITION BY p.vencedor_id ORDER BY p.data) as rn
+                FROM partidas p
+                ORDER BY p.vencedor_id, p.data
+            ),
+            grupos_consecutivos AS (
+                SELECT 
+                    vencedor_id,
+                    j.apelido,
+                    COUNT(*) as consecutivas,
+                    ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as rank
+                FROM partidas_ordenadas po
+                JOIN jogadores j ON po.vencedor_id = j.id
+                GROUP BY vencedor_id, j.apelido
+                ORDER BY consecutivas DESC
+            )
+            SELECT * FROM grupos_consecutivos WHERE rank = 1
+        `);
+        
+        const record = recordResult.rows[0] || { apelido: '-', consecutivas: 0 };
+        
+        // Buscar distribuição de patentes
+        const patentesResult = await pool.query(`
+            SELECT 
+                patente,
+                COUNT(*) as quantidade
+            FROM jogadores 
+            WHERE status = 'Ativo'
+            GROUP BY patente
+            ORDER BY 
+                CASE patente
+                    WHEN 'Marechal 🏆' THEN 1
+                    WHEN 'General ⭐' THEN 2
+                    WHEN 'Coronel 🎖️' THEN 3
+                    WHEN 'Major 💪' THEN 4
+                    WHEN 'Capitão 👮' THEN 5
+                    WHEN 'Tenente ⚔️' THEN 6
+                    WHEN 'Soldado 🛡️' THEN 7
+                    WHEN 'Cabo 🪖' THEN 8
+                    ELSE 9
+                END
+        `);
+        
+        res.json({
+            total_jogadores: parseInt(jogadoresResult.rows[0].total),
+            total_partidas: parseInt(partidasResult.rows[0].total),
+            record_consecutivas: record.consecutivas,
+            record_holder: record.apelido,
+            patentes: patentesResult.rows.reduce((obj, item) => {
+                obj[item.patente] = parseInt(item.quantidade);
+                return obj;
+            }, {})
+        });
+        
+    } catch (error) {
+        console.error('Erro nas estatísticas:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para ranking mensal
+app.get('/api/ranking/mensal/:ano/:mes', async (req, res) => {
+    try {
+        const { ano, mes } = req.params;
+        
+        const result = await pool.query(`
+            WITH partidas_mes AS (
+                SELECT * FROM partidas 
+                WHERE EXTRACT(YEAR FROM data) = $1 
+                AND EXTRACT(MONTH FROM data) = $2
+            )
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(pm.id) as partidas,
+                SUM(CASE WHEN pm.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias
+            FROM jogadores j
+            LEFT JOIN partidas_mes pm ON pm.participantes LIKE '%' || j.id || '%'
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(pm.id) > 0
+            ORDER BY vitorias DESC, partidas DESC
+        `, [ano, mes]);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro no ranking mensal:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para ranking de performance
+app.get('/api/ranking/performance', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(p.id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias,
+                CASE 
+                    WHEN COUNT(p.id) >= 3 THEN 
+                        ROUND((SUM(CASE WHEN p.vencedor_id = j.id THEN 1.0 ELSE 0 END) / COUNT(p.id)) * 100, 1)
+                    ELSE 0 
+                END as performance
+            FROM jogadores j
+            LEFT JOIN partidas p ON p.participantes LIKE '%' || j.id || '%'
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(p.id) >= 3
+            ORDER BY performance DESC, vitorias DESC
+        `);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro no ranking performance:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para vencedores mensais por ano
+app.get('/api/vencedores/mensal/:ano', async (req, res) => {
+    try {
+        const { ano } = req.params;
+        
+        const result = await pool.query(`
+            WITH vencedores_mes AS (
+                SELECT 
+                    EXTRACT(MONTH FROM p.data) as mes,
+                    j.apelido as vencedor,
+                    j.patente,
+                    COUNT(*) as vitorias,
+                    ROW_NUMBER() OVER (PARTITION BY EXTRACT(MONTH FROM p.data) ORDER BY COUNT(*) DESC) as rank
+                FROM partidas p
+                JOIN jogadores j ON p.vencedor_id = j.id
+                WHERE EXTRACT(YEAR FROM p.data) = $1
+                GROUP BY EXTRACT(MONTH FROM p.data), j.apelido, j.patente
+            )
+            SELECT * FROM vencedores_mes WHERE rank = 1
+            ORDER BY mes
+        `, [ano]);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro nos vencedores mensais:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para distribuição de patentes (para gráfico)
+app.get('/api/estatisticas/patentes', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                patente,
+                COUNT(*) as quantidade
+            FROM jogadores 
+            WHERE status = 'Ativo'
+            GROUP BY patente
+            ORDER BY 
+                CASE patente
+                    WHEN 'Marechal 🏆' THEN 1
+                    WHEN 'General ⭐' THEN 2
+                    WHEN 'Coronel 🎖️' THEN 3
+                    WHEN 'Major 💪' THEN 4
+                    WHEN 'Capitão 👮' THEN 5
+                    WHEN 'Tenente ⚔️' THEN 6
+                    WHEN 'Soldado 🛡️' THEN 7
+                    WHEN 'Cabo 🪖' THEN 8
+                    ELSE 9
+                END
+        `);
+        
+        const data = result.rows.reduce((obj, item) => {
+            obj[item.patente] = parseInt(item.quantidade);
+            return obj;
+        }, {});
+        
+        res.json(data);
+        
+    } catch (error) {
+        console.error('Erro nas estatísticas de patentes:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para assiduidade (para gráfico)
+app.get('/api/estatisticas/assiduidade', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                j.apelido,
+                COUNT(p.id) as partidas
+            FROM jogadores j
+            LEFT JOIN partidas p ON p.participantes LIKE '%' || j.id || '%'
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido
+            ORDER BY partidas DESC
+            LIMIT 8
+        `);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro na assiduidade:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para exportação de partidas
+app.get('/api/partidas/export', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                p.*,
+                j.apelido as vencedor_nome
+            FROM partidas p
+            LEFT JOIN jogadores j ON p.vencedor_id = j.id
+            ORDER BY p.data DESC
+        `);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro na exportação:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Rota para partidas recentes
+app.get('/api/partidas/recentes', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                p.*,
+                j.apelido as vencedor_nome
+            FROM partidas p
+            LEFT JOIN jogadores j ON p.vencedor_id = j.id
+            ORDER BY p.data DESC
+            LIMIT 10
+        `);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Erro nas partidas recentes:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
 // ============ ROTA PARA TESTE RÁPIDO ============
 
 app.get('/api/teste', async (req, res) => {

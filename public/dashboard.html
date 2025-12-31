@@ -8,6 +8,146 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adicione este CSS no head do dashboard.html -->
+<style>
+/* Estilos para os novos elementos do dashboard */
+.year-selector {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.vencedores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.mes-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.mes-card:hover {
+    border-color: var(--secondary);
+    transform: translateY(-5px);
+}
+
+.mes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mes-header h4 {
+    color: white;
+    margin: 0;
+}
+
+.mes-badge {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.9rem;
+}
+
+.mes-badge.vencedor {
+    background: linear-gradient(135deg, #ffd700, #ffc400);
+    color: #000;
+}
+
+.mes-badge.sem-dados {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.vencedor-nome {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.vencedor-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vitorias {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.sem-vencedor {
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 20px 0;
+    font-style: italic;
+}
+
+/* Estilos para estatísticas de tendência */
+.stat-trend {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+}
+
+.trend-positive {
+    color: #10b981;
+}
+
+.trend-negative {
+    color: #dc3545;
+}
+
+/* Botões de exportação */
+.export-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    color: #28a745;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    background: rgba(40, 167, 69, 0.3);
+    transform: translateY(-2px);
+}
+
+.export-btn.csv {
+    background: rgba(23, 162, 184, 0.2);
+    border-color: rgba(23, 162, 184, 0.3);
+    color: #17a2b8;
+}
+
+.export-btn.csv:hover {
+    background: rgba(23, 162, 184, 0.3);
+}
+</style>
 </head>
 <body>
     <!-- Navegação -->
@@ -31,6 +171,22 @@
         </div>
     </nav>
 
+    <!-- Seção de Exportação -->
+<section class="export-section">
+    <h2 class="section-title">EXPORTAÇÃO DE DADOS</h2>
+    <div class="export-buttons">
+        <button id="export-jogadores" class="export-btn">
+            <i class="fas fa-file-excel"></i> Exportar Jogadores (CSV)
+        </button>
+        <button id="export-partidas" class="export-btn csv">
+            <i class="fas fa-file-excel"></i> Exportar Batalhas (CSV)
+        </button>
+        <button id="export-estatisticas" class="export-btn">
+            <i class="fas fa-chart-bar"></i> Exportar Estatísticas
+        </button>
+    </div>
+</section>
+    
     <!-- Dashboard Container -->
     <main class="container">
         <!-- Estatísticas Rápidas -->
@@ -434,4 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </body>
 
 </html>
+
+
 

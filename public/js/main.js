@@ -613,3 +613,35 @@ window.WAR = {
         return icons[patente] || '🎖️';
     }
 };
+
+// Métodos adicionais para exportação
+exportCSV(data, filename) {
+    const csv = this.convertToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+convertToCSV(data) {
+    if (!data.length) return '';
+    
+    const headers = Object.keys(data[0]);
+    const rows = data.map(row => 
+        headers.map(header => {
+            const value = row[header] || '';
+            // Escapar aspas e vírgulas
+            return `"${String(value).replace(/"/g, '""')}"`;
+        }).join(',')
+    );
+    
+    return [headers.join(','), ...rows].join('\n');
+}
