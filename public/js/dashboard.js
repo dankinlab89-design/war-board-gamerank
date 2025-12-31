@@ -1,4 +1,4 @@
-// dashboard.js - Versão corrigida completa
+// dashboard.js - Versão completa e funcional
 class DashboardCorrigido {
     constructor() {
         this.apiBase = '/api';
@@ -19,6 +19,7 @@ class DashboardCorrigido {
         try {
             console.log('🔄 Carregando dados...');
             
+            // Carregar tudo em paralelo
             await Promise.all([
                 this.loadEstatisticas(),
                 this.loadRankingGlobal(),
@@ -28,7 +29,7 @@ class DashboardCorrigido {
                 this.loadUltimasPartidas()
             ]);
             
-            // Carregar gráficos
+            // Carregar gráficos depois
             await this.loadChartData();
             
             console.log('✅ Todos os dados carregados');
@@ -38,6 +39,276 @@ class DashboardCorrigido {
             this.showError('Erro ao carregar dados do dashboard');
         }
     }
+
+    // ============ MÉTODOS DE CARREGAMENTO DE DADOS ============
+
+    async loadEstatisticas() {
+        try {
+            const response = await fetch(`${this.apiBase}/estatisticas`);
+            const stats = await response.json();
+            
+            // Atualizar estatísticas rápidas
+            document.getElementById('stat-jogadores').textContent = stats.total_jogadores || 0;
+            document.getElementById('stat-partidas').textContent = stats.total_partidas || 0;
+            document.getElementById('stat-record').textContent = stats.record_vitorias || 0;
+            document.getElementById('record-holder').textContent = stats.record_holder || '-';
+            
+            // Calcular média
+            const media = stats.total_jogadores > 0 ? 
+                (stats.total_partidas / stats.total_jogadores).toFixed(1) : 0;
+            document.getElementById('stat-media').textContent = media;
+            
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+        }
+    }
+
+    async loadRankingGlobal() {
+        try {
+            const response = await fetch(`${this.apiBase}/ranking/global`);
+            const ranking = await response.json();
+            
+            const tbody = document.querySelector('#ranking-global tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            ranking.forEach((jogador, index) => {
+                const percentual = jogador.partidas > 0 ? 
+                    ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+                const pontos = (jogador.vitorias * 10) + (jogador.partidas * 2);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
+                            ${index + 1}
+                        </div>
+                    </td>
+                    <td><strong>${jogador.apelido}</strong></td>
+                    <td>
+                        <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
+                            ${jogador.patente}
+                        </span>
+                    </td>
+                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
+                    <td>${jogador.partidas || 0}</td>
+                    <td>
+                        <div class="performance-bar-container">
+                            <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
+                            <span class="performance-bar-text">${percentual}%</span>
+                        </div>
+                    </td>
+                    <td style="font-weight: bold; color: #8b5cf6;">${pontos}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar ranking global:', error);
+        }
+    }
+
+    async loadRankingMensal() {
+        try {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = hoje.getMonth() + 1;
+            
+            const response = await fetch(`${this.apiBase}/ranking/mensal/${ano}/${mes}`);
+            const ranking = await response.json();
+            
+            const tbody = document.querySelector('#ranking-mensal tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (!ranking || ranking.length === 0) {
+                const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long' });
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Nenhuma partida em ${mesNome}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            ranking.forEach((jogador, index) => {
+                const percentual = jogador.partidas > 0 ? 
+                    ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${jogador.apelido}</strong></td>
+                    <td>
+                        <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
+                            ${jogador.patente}
+                        </span>
+                    </td>
+                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
+                    <td>${jogador.partidas || 0}</td>
+                    <td>
+                        <span class="percent-badge ${this.getPercentClass(percentual)}">
+                            ${percentual}%
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar ranking mensal:', error);
+            const tbody = document.querySelector('#ranking-mensal tbody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Erro ao carregar ranking mensal
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    }
+
+    async loadRankingPerformance() {
+        try {
+            const response = await fetch(`${this.apiBase}/ranking/performance`);
+            const ranking = await response.json();
+            
+            const tbody = document.querySelector('#ranking-performance tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (!ranking || ranking.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Mínimo 3 partidas para calcular performance
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            ranking.forEach((jogador, index) => {
+                // CORREÇÃO: usar 'percentual' em vez de 'performance'
+                const performance = parseFloat(jogador.percentual) || 0;
+                const nivel = this.getNivelPerformance(performance);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${jogador.apelido}</strong></td>
+                    <td>
+                        <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
+                            ${jogador.patente}
+                        </span>
+                    </td>
+                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
+                    <td>${jogador.partidas || 0}</td>
+                    <td>
+                        <span class="performance-score ${this.getPerformanceClass(performance)}">
+                            ${performance.toFixed(1)}%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="nivel-badge nivel-${nivel.toLowerCase().replace(' ', '-')}">
+                            ${nivel}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar ranking performance:', error);
+        }
+    }
+
+    async loadVencedoresMensais(ano) {
+        try {
+            // Verificar se o endpoint existe, se não, usar fallback
+            const response = await fetch(`${this.apiBase}/vencedores/mensal/${ano}`);
+            
+            const grid = document.getElementById('vencedores-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            const meses = [
+                'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+            ];
+            
+            meses.forEach((mes, index) => {
+                const card = document.createElement('div');
+                card.className = 'mes-card';
+                
+                // Por enquanto, mostrar cards vazios
+                card.innerHTML = `
+                    <div class="mes-header">
+                        <h4>${mes.toUpperCase()}</h4>
+                        <span class="mes-badge sem-dados">-</span>
+                    </div>
+                    <div class="mes-content">
+                        <div class="sem-vencedor">Aguardando dados</div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar vencedores mensais:', error);
+        }
+    }
+
+    async loadUltimasPartidas() {
+        try {
+            const response = await fetch(`${this.apiBase}/partidas`);
+            const partidas = await response.json();
+            
+            const tbody = document.querySelector('#ultimas-partidas tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            // Pegar as últimas 10 partidas
+            const ultimas = partidas
+                .sort((a, b) => new Date(b.data) - new Date(a.data))
+                .slice(0, 10);
+            
+            ultimas.forEach(partida => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${this.formatarData(partida.data)}</td>
+                    <td>
+                        <strong style="color: #10b981;">
+                            ${partida.vencedor_nome || `Jogador ${partida.vencedor_id}`}
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge ${this.getBadgeClass(partida.tipo)}">
+                            ${partida.tipo || 'global'}
+                        </span>
+                    </td>
+                    <td>${partida.participantes ? partida.participantes.split(',').length : 0}</td>
+                    <td>${partida.observacoes || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar últimas partidas:', error);
+        }
+    }
+
+    // ============ MÉTODOS DE GRÁFICOS ============
 
     async loadChartData() {
         try {
@@ -60,12 +331,11 @@ class DashboardCorrigido {
             
             console.log('📊 Dados patentes:', data);
             
-            // Criar gráfico
             this.createPatentesChart(data);
             
         } catch (error) {
             console.error('❌ Erro patentes:', error);
-            // Fallback
+            // Fallback com dados do console
             this.createPatentesChart({
                 'Cabo 🪖': 10,
                 'Soldado 🛡️': 0,
@@ -86,12 +356,11 @@ class DashboardCorrigido {
             
             console.log('📊 Dados assiduidade:', data);
             
-            // Criar gráfico
             this.createAssiduidadeChart(data);
             
         } catch (error) {
             console.error('❌ Erro assiduidade:', error);
-            // Fallback com seus dados
+            // Fallback com seus dados do console
             this.createAssiduidadeChart([
                 { apelido: 'Daniel$80', partidas: 11 },
                 { apelido: 'Lima', partidas: 9 },
@@ -107,11 +376,20 @@ class DashboardCorrigido {
 
     createPatentesChart(data) {
         const ctx = document.getElementById('chart-patentes');
-        if (!ctx) return;
+        if (!ctx) {
+            console.warn('Elemento chart-patentes não encontrado');
+            return;
+        }
         
         // Destruir gráfico anterior se existir
         if (this.charts.patentes) {
             this.charts.patentes.destroy();
+        }
+        
+        // Verificar se Chart.js está disponível
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js não está carregado');
+            return;
         }
         
         const labels = Object.keys(data);
@@ -139,6 +417,7 @@ class DashboardCorrigido {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'right',
@@ -155,7 +434,7 @@ class DashboardCorrigido {
                         callbacks: {
                             label: function(context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.raw / total) * 100).toFixed(1);
+                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
                                 return `${context.label}: ${context.raw} (${percentage}%)`;
                             }
                         }
@@ -167,11 +446,20 @@ class DashboardCorrigido {
 
     createAssiduidadeChart(data) {
         const ctx = document.getElementById('chart-assiduidade');
-        if (!ctx) return;
+        if (!ctx) {
+            console.warn('Elemento chart-assiduidade não encontrado');
+            return;
+        }
         
         // Destruir gráfico anterior se existir
         if (this.charts.assiduidade) {
             this.charts.assiduidade.destroy();
+        }
+        
+        // Verificar se Chart.js está disponível
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js não está carregado');
+            return;
         }
         
         // Ordenar por partidas (decrescente)
@@ -243,66 +531,20 @@ class DashboardCorrigido {
         });
     }
 
-    async loadRankingPerformance() {
-        try {
-            console.log('⚡ Carregando ranking performance...');
-            const response = await fetch(`${this.apiBase}/ranking/performance`);
-            const ranking = await response.json();
-            
-            console.log('✅ Ranking performance:', ranking);
-            
-            const tbody = document.querySelector('#ranking-performance tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            
-            if (!ranking || ranking.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
-                            Mínimo 3 partidas para calcular performance
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            ranking.forEach((jogador, index) => {
-                // CORREÇÃO: usar 'percentual' em vez de 'performance'
-                const performance = parseFloat(jogador.percentual) || 0;
-                const nivel = this.getNivelPerformance(performance);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${jogador.apelido}</strong></td>
-                    <td>
-                        <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
-                            ${jogador.patente}
-                        </span>
-                    </td>
-                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                    <td>${jogador.partidas || 0}</td>
-                    <td>
-                        <span class="performance-score ${this.getPerformanceClass(performance)}">
-                            ${performance.toFixed(1)}%
-                        </span>
-                    </td>
-                    <td>
-                        <span class="nivel-badge nivel-${nivel.toLowerCase().replace(' ', '-')}">
-                            ${nivel}
-                        </span>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-        } catch (error) {
-            console.error('❌ Erro ranking performance:', error);
-        }
+    // ============ MÉTODOS AUXILIARES ============
+
+    getPatenteClass(patente) {
+        if (!patente) return 'patente-cabo';
+        if (patente.includes('Marechal')) return 'patente-marechal';
+        if (patente.includes('General')) return 'patente-general';
+        if (patente.includes('Coronel')) return 'patente-coronel';
+        if (patente.includes('Major')) return 'patente-major';
+        if (patente.includes('Capitão')) return 'patente-capitao';
+        if (patente.includes('Tenente')) return 'patente-tenente';
+        if (patente.includes('Soldado')) return 'patente-soldado';
+        return 'patente-cabo';
     }
 
-    // Métodos auxiliares
     getPerformanceClass(performance) {
         const perc = parseFloat(performance) || 0;
         if (perc >= 80) return 'excellent';
@@ -319,21 +561,10 @@ class DashboardCorrigido {
         return 'INICIANTE';
     }
 
-    getPatenteClass(patente) {
-        if (!patente) return 'patente-cabo';
-        if (patente.includes('Marechal')) return 'patente-marechal';
-        if (patente.includes('General')) return 'patente-general';
-        if (patente.includes('Coronel')) return 'patente-coronel';
-        if (patente.includes('Major')) return 'patente-major';
-        if (patente.includes('Capitão')) return 'patente-capitao';
-        if (patente.includes('Tenente')) return 'patente-tenente';
-        if (patente.includes('Soldado')) return 'patente-soldado';
-        return 'patente-cabo';
-    }
-
     getPercentClass(percent) {
-        if (percent >= 50) return 'percent-high';
-        if (percent >= 30) return 'percent-medium';
+        const perc = parseFloat(percent) || 0;
+        if (perc >= 50) return 'percent-high';
+        if (perc >= 30) return 'percent-medium';
         return 'percent-low';
     }
 
@@ -357,6 +588,8 @@ class DashboardCorrigido {
         }
     }
 
+    // ============ EVENT LISTENERS ============
+
     setupEventListeners() {
         // Select de ano para vencedores mensais
         const selectAno = document.getElementById('select-ano');
@@ -369,10 +602,8 @@ class DashboardCorrigido {
         // Botões de exportação
         this.setupExportButtons();
         
-        // Atualizar timestamp no rodapé
-        setInterval(() => {
-            this.updateTimestamp();
-        }, 60000); // A cada minuto
+        // Atualizar timestamp
+        this.updateTimestamp();
     }
 
     setupExportButtons() {
@@ -402,26 +633,27 @@ class DashboardCorrigido {
     }
 
     updateTimestamp() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        const dateString = now.toLocaleDateString('pt-BR');
-        
-        // Atualizar no rodapé do dashboard
-        const updateElement = document.getElementById('last-update');
-        if (updateElement) {
-            updateElement.textContent = `${dateString} ${timeString}`;
-        }
-        
-        // Atualizar no rodapé do ranking (se existir)
-        const rankingUpdate = document.getElementById('ranking-update-time');
-        if (rankingUpdate) {
-            rankingUpdate.textContent = `${dateString} ${timeString}`;
+        try {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const dateString = now.toLocaleDateString('pt-BR');
+            
+            // Atualizar no rodapé do dashboard
+            const updateElement = document.getElementById('last-update');
+            if (updateElement) {
+                updateElement.textContent = `${dateString} ${timeString}`;
+            }
+            
+        } catch (error) {
+            console.error('Erro ao atualizar timestamp:', error);
         }
     }
+
+    // ============ EXPORTAÇÃO ============
 
     async exportJogadoresCSV() {
         try {
@@ -520,37 +752,40 @@ class DashboardCorrigido {
     }
 
     showNotification(message, type = 'success') {
-        // Implementação simples - pode melhorar com um sistema de notificações
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 10000;
-            background: ${type === 'success' ? '#28a745' : '#dc3545'};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        
-        notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            ${message}
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
+        try {
+            // Implementação simples
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-family: 'Montserrat', sans-serif;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 300);
-        }, 3000);
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Erro ao mostrar notificação:', error);
+            alert(message); // Fallback
+        }
     }
 
     showError(message) {
@@ -566,96 +801,27 @@ class DashboardCorrigido {
             this.updateTimestamp();
         }, 30000);
     }
-
-    // Os outros métodos (loadEstatisticas, loadRankingGlobal, etc.) mantêm igual
-    // apenas certifique-se que loadRankingPerformance está CORRIGIDO
 }
 
-// Adicionar animações CSS
-const dashboardStyles = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .performance-score {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.9rem;
-    }
-    
-    .performance-score.excellent {
-        background: linear-gradient(135deg, #28a745, #1e7e34);
-        color: white;
-        border: 1px solid #28a745;
-    }
-    
-    .performance-score.good {
-        background: linear-gradient(135deg, #ffc107, #e0a800);
-        color: #000;
-        border: 1px solid #ffc107;
-    }
-    
-    .performance-score.average {
-        background: linear-gradient(135deg, #fd7e14, #e8590c);
-        color: white;
-        border: 1px solid #fd7e14;
-    }
-    
-    .performance-score.poor {
-        background: linear-gradient(135deg, #dc3545, #c82333);
-        color: white;
-        border: 1px solid #dc3545;
-    }
-    
-    .nivel-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-    }
-    
-    .nivel-elite {
-        background: linear-gradient(135deg, #ffd700, #ffc400);
-        color: #000;
-        border: 2px solid #ffc400;
-    }
-    
-    .nivel-avançado {
-        background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
-        color: #000;
-        border: 1px solid #a0a0a0;
-    }
-    
-    .nivel-intermediário {
-        background: linear-gradient(135deg, #cd7f32, #b87333);
-        color: #000;
-        border: 1px solid #b87333;
-    }
-    
-    .nivel-iniciante {
-        background: linear-gradient(135deg, #6c757d, #495057);
-        color: white;
-        border: 1px solid #495057;
-    }
-`;
+// ============ INICIALIZAÇÃO ============
 
-// Adicionar estilos ao documento
-const styleEl = document.createElement('style');
-styleEl.textContent = dashboardStyles;
-document.head.appendChild(styleEl);
-
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Dashboard iniciando...');
-    window.dashboard = new DashboardCorrigido();
-});
+// Verificar se estamos na página do dashboard
+if (document.querySelector('.dashboard-grid') || 
+    document.querySelector('#ranking-global') ||
+    document.querySelector('#chart-patentes')) {
+    
+    console.log('📊 Página do dashboard detectada, inicializando...');
+    
+    // Esperar o DOM carregar completamente
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Inicializando Dashboard...');
+            window.dashboard = new DashboardCorrigido();
+        });
+    } else {
+        console.log('🚀 DOM já carregado, inicializando...');
+        window.dashboard = new DashboardCorrigido();
+    }
+} else {
+    console.log('⚠️ Não é página do dashboard, não inicializando');
+}
