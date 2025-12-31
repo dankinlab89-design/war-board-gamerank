@@ -26,89 +26,107 @@
     </nav>
 
     <main class="container">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('global')">
-                <i class="fas fa-globe"></i> Ranking Global
-            </button>
-            <button class="tab-btn" onclick="switchTab('mensal')">
-                <i class="fas fa-calendar-alt"></i> Ranking Mensal
-            </button>
-            <button class="tab-btn" onclick="switchTab('performance')">
-                <i class="fas fa-bolt"></i> Performance
-            </button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('global')">
+            <i class="fas fa-globe"></i> Ranking Global
+        </button>
+        <button class="tab-btn" onclick="switchTab('mensal')">
+            <i class="fas fa-calendar-alt"></i> Ranking Mensal
+        </button>
+        <button class="tab-btn" onclick="switchTab('performance')">
+            <i class="fas fa-bolt"></i> Ranking Performance
+        </button>
+    </div>
+    
+    <div class="tab-content active" id="tab-global">
+        <h2 class="section-title">RANKING GLOBAL</h2>
+        <div class="table-responsive">
+            <table class="table" id="ranking-global">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>COMANDANTE</th>
+                        <th>PATENTE</th>
+                        <th>VITÓRIAS</th>
+                        <th>BATALHAS</th>
+                        <th>% VITÓRIAS</th>
+                        <th>PONTOS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dados carregados via JavaScript -->
+                </tbody>
+            </table>
         </div>
-        
-        <div class="tab-content active" id="tab-global">
-            <h2 class="section-title">RANKING GLOBAL</h2>
-            <div class="table-responsive">
-                <table class="table" id="ranking-global">
-                    <thead>
-                        <tr>
-                            <th>POSIÇÃO</th>
-                            <th>COMANDANTE</th>
-                            <th>PATENTE</th>
-                            <th>VITÓRIAS</th>
-                            <th>PARTIDAS</th>
-                            <th>% VITÓRIAS</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-ranking-global">
-                        <!-- Carregado via JS -->
-                    </tbody>
-                </table>
-            </div>
+    </div>
+    
+    <div class="tab-content" id="tab-mensal">
+        <h2 class="section-title">RANKING MENSAL</h2>
+        <div class="table-responsive">
+            <table class="table" id="ranking-mensal">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>COMANDANTE</th>
+                        <th>PATENTE</th>
+                        <th>VITÓRIAS</th>
+                        <th>BATALHAS</th>
+                        <th>% VITÓRIAS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dados carregados via JavaScript -->
+                </tbody>
+            </table>
         </div>
-        
-        <div class="tab-content" id="tab-mensal">
-            <h2 class="section-title">RANKING MENSAL</h2>
-            <div class="table-responsive">
-                <table class="table" id="ranking-mensal">
-                    <thead>
-                        <tr>
-                            <th>POSIÇÃO</th>
-                            <th>COMANDANTE</th>
-                            <th>PATENTE</th>
-                            <th>VITÓRIAS</th>
-                            <th>PARTIDAS</th>
-                            <th>% VITÓRIAS</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-ranking-mensal">
-                        <!-- Carregado via JS -->
-                    </tbody>
-                </table>
-            </div>
+    </div>
+    
+    <div class="tab-content" id="tab-performance">
+        <h2 class="section-title">RANKING DE PERFORMANCE</h2>
+        <div class="table-responsive">
+            <table class="table" id="ranking-performance">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>COMANDANTE</th>
+                        <th>PATENTE</th>
+                        <th>VITÓRIAS</th>
+                        <th>BATALHAS</th>
+                        <th>PERFORMANCE</th>
+                        <th>NÍVEL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dados carregados via JavaScript -->
+                </tbody>
+            </table>
         </div>
-        
-        <div class="tab-content" id="tab-performance">
-            <h2 class="section-title">RANKING DE PERFORMANCE</h2>
-            <div class="table-responsive">
-                <table class="table" id="ranking-performance">
-                    <thead>
-                        <tr>
-                            <th>POSIÇÃO</th>
-                            <th>COMANDANTE</th>
-                            <th>PATENTE</th>
-                            <th>VITÓRIAS</th>
-                            <th>PARTIDAS</th>
-                            <th>PERFORMANCE</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-ranking-performance">
-                        <!-- Carregado via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+    </div>
+</main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 WAR Board GameRank - Sistema de Rankings</p>
+<!-- Adicionar footer com exportação -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-export">
+            <h4>EXPORTAR RANKINGS</h4>
+            <div class="export-buttons">
+                <button id="export-ranking-global" class="export-btn">
+                    <i class="fas fa-file-excel"></i> Ranking Global
+                </button>
+                <button id="export-ranking-mensal" class="export-btn csv">
+                    <i class="fas fa-file-excel"></i> Ranking Mensal
+                </button>
+                <button id="export-ranking-performance" class="export-btn">
+                    <i class="fas fa-chart-bar"></i> Ranking Performance
+                </button>
             </div>
         </div>
-    </footer>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 WAR Board GameRank - Sistema de Rankings</p>
+        </div>
+    </div>
+</footer>
 
     <script src="js/main.js"></script>
     <script>

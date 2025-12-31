@@ -1147,3 +1147,70 @@ h1, h2, h3, h4 {
     color: var(--secondary);
 }
 
+/* Footer Export */
+.footer-export {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-export h4 {
+    color: var(--secondary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.footer-export .export-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Estilos para ranking na página específica */
+.ranking-page .tab-content {
+    margin-top: 20px;
+}
+
+/* Mensagem para dados vazios */
+.empty-data-message {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+/* Chart container melhorado */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}
+
+/* Badges de performance corrigidos */
+.performance-score.excellent {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+    border: 1px solid #28a745;
+}
+
+.performance-score.good {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #000;
+    border: 1px solid #ffc107;
+}
+
+.performance-score.average {
+    background: linear-gradient(135deg, #fd7e14, #e8590c);
+    color: white;
+    border: 1px solid #fd7e14;
+}
+
+.performance-score.poor {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: 1px solid #dc3545;
+}
