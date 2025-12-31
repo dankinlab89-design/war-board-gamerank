@@ -1,4 +1,4 @@
-// ranking.js - Sistema completo de ranking
+// ranking.js - Funcionalidades específicas da página de ranking
 class RankingPage {
     constructor() {
         this.apiBase = '/api';
@@ -6,21 +6,24 @@ class RankingPage {
     }
 
     async init() {
-        console.log('🚀 Iniciando sistema de ranking...');
+        console.log('🎯 Inicializando página de ranking...');
         await this.loadAllRankings();
         this.setupEventListeners();
-        this.setupExportButtons();
+        this.updateTimestamp();
     }
 
     async loadAllRankings() {
         try {
-            // Carregar todos os rankings em paralelo
+            console.log('🔄 Carregando rankings...');
+            
             await Promise.all([
                 this.loadRankingGlobal(),
                 this.loadRankingMensal(),
                 this.loadRankingPerformance()
             ]);
-            console.log('✅ Todos os rankings carregados');
+            
+            console.log('✅ Rankings carregados');
+            
         } catch (error) {
             console.error('❌ Erro ao carregar rankings:', error);
             this.showError('Erro ao carregar rankings');
@@ -29,15 +32,11 @@ class RankingPage {
 
     async loadRankingGlobal() {
         try {
-            console.log('🌍 Carregando ranking global...');
             const response = await fetch(`${this.apiBase}/ranking/global`);
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
             const ranking = await response.json();
-            console.log('✅ Ranking global:', ranking);
             
             this.renderRankingGlobal(ranking);
+            
         } catch (error) {
             console.error('❌ Erro ranking global:', error);
             this.showTableError('ranking-global', 'Erro ao carregar ranking global');
@@ -46,19 +45,15 @@ class RankingPage {
 
     async loadRankingMensal() {
         try {
-            console.log('📅 Carregando ranking mensal...');
             const hoje = new Date();
             const ano = hoje.getFullYear();
             const mes = hoje.getMonth() + 1;
             
             const response = await fetch(`${this.apiBase}/ranking/mensal/${ano}/${mes}`);
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
             const ranking = await response.json();
-            console.log('✅ Ranking mensal:', ranking);
             
             this.renderRankingMensal(ranking);
+            
         } catch (error) {
             console.error('❌ Erro ranking mensal:', error);
             this.showTableError('ranking-mensal', 'Erro ao carregar ranking mensal');
@@ -67,15 +62,11 @@ class RankingPage {
 
     async loadRankingPerformance() {
         try {
-            console.log('⚡ Carregando ranking performance...');
             const response = await fetch(`${this.apiBase}/ranking/performance`);
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
             const ranking = await response.json();
-            console.log('✅ Ranking performance:', ranking);
             
             this.renderRankingPerformance(ranking);
+            
         } catch (error) {
             console.error('❌ Erro ranking performance:', error);
             this.showTableError('ranking-performance', 'Erro ao carregar ranking performance');
@@ -89,16 +80,14 @@ class RankingPage {
         tbody.innerHTML = '';
         
         if (!ranking || ranking.length === 0) {
-            tbody.innerHTML = this.createEmptyRow(7, 'Nenhum dado disponível para ranking global');
+            tbody.innerHTML = this.createEmptyRow(7, 'Nenhum dado disponível');
             return;
         }
         
         ranking.forEach((jogador, index) => {
             const percentual = jogador.partidas > 0 ? 
                 ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
-            
-            // Calcular pontos: 10 pontos por vitória + 2 por partida
-            const pontos = (parseInt(jogador.vitorias) * 10) + (parseInt(jogador.partidas) * 2);
+            const pontos = (jogador.vitorias * 10) + (jogador.partidas * 2);
             
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -182,7 +171,6 @@ class RankingPage {
         }
         
         ranking.forEach((jogador, index) => {
-            // IMPORTANTE: API retorna 'percentual', não 'performance'
             const performance = parseFloat(jogador.percentual) || 0;
             const nivel = this.getNivelPerformance(performance);
             
@@ -217,29 +205,27 @@ class RankingPage {
     }
 
     setupEventListeners() {
-        // Botões de exportação
+        // Export buttons
         this.setupExportButtons();
         
-        // Auto-refresh a cada 30 segundos
+        // Auto-refresh
         setInterval(() => {
             this.loadAllRankings();
+            this.updateTimestamp();
         }, 30000);
     }
 
     setupExportButtons() {
-        // Exportar ranking global
-        document.getElementById('export-ranking-global')?.addEventListener('click', async () => {
-            await this.exportRanking('global', 'ranking-global.csv');
+        document.getElementById('export-ranking-global')?.addEventListener('click', () => {
+            this.exportRanking('global', 'ranking-global.csv');
         });
         
-        // Exportar ranking mensal
-        document.getElementById('export-ranking-mensal')?.addEventListener('click', async () => {
-            await this.exportRanking('mensal', 'ranking-mensal.csv');
+        document.getElementById('export-ranking-mensal')?.addEventListener('click', () => {
+            this.exportRanking('mensal', 'ranking-mensal.csv');
         });
         
-        // Exportar ranking performance
-        document.getElementById('export-ranking-performance')?.addEventListener('click', async () => {
-            await this.exportRanking('performance', 'ranking-performance.csv');
+        document.getElementById('export-ranking-performance')?.addEventListener('click', () => {
+            this.exportRanking('performance', 'ranking-performance.csv');
         });
     }
 
@@ -276,34 +262,18 @@ class RankingPage {
                 csv += `${index + 1},"${item.apelido}","${item.patente}",${item.vitorias},${item.partidas},${percentual},${pontos},"${nivel}"\n`;
             });
             
-            // Baixar arquivo
-            this.downloadCSV(csv, filename);
+            // Baixar
+            this.downloadFile(csv, filename, 'text/csv');
             
-            this.showNotification('✅ Ranking exportado com sucesso!', 'success');
+            this.showNotification('✅ Ranking exportado!', 'success');
             
         } catch (error) {
-            console.error('❌ Erro ao exportar:', error);
-            this.showNotification('❌ Erro ao exportar ranking', 'error');
+            console.error('❌ Erro exportação:', error);
+            this.showNotification('❌ Erro ao exportar', 'error');
         }
     }
 
-    downloadCSV(content, filename) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        
-        if (navigator.msSaveBlob) {
-            navigator.msSaveBlob(blob, filename);
-        } else {
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-
-    // Métodos auxiliares
+    // Métodos auxiliares (mesmos do dashboard)
     getPatenteClass(patente) {
         if (!patente) return 'patente-cabo';
         if (patente.includes('Marechal')) return 'patente-marechal';
@@ -335,9 +305,8 @@ class RankingPage {
     createEmptyRow(colspan, message) {
         return `
             <tr>
-                <td colspan="${colspan}" class="empty-data-message">
-                    <i class="fas fa-info-circle"></i>
-                    ${message}
+                <td colspan="${colspan}" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                    <i class="fas fa-info-circle"></i> ${message}
                 </td>
             </tr>
         `;
@@ -350,18 +319,48 @@ class RankingPage {
         }
     }
 
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     showNotification(message, type = 'success') {
-        // Implementação simples
-        alert(message);
+        alert(message); // Simplificado
     }
 
     showError(message) {
         console.error(message);
     }
+
+    updateTimestamp() {
+        try {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const updateElement = document.getElementById('ranking-update-time');
+            if (updateElement) {
+                updateElement.textContent = timeString;
+            }
+        } catch (error) {
+            console.error('Erro timestamp:', error);
+        }
+    }
 }
 
-// Inicializar quando a página carregar
+// Inicializar
 if (document.querySelector('#ranking-global')) {
-    console.log('🎯 Inicializando página de ranking...');
-    window.rankingPage = new RankingPage();
+    console.log('🎯 Página de ranking detectada');
+    document.addEventListener('DOMContentLoaded', () => {
+        window.rankingPage = new RankingPage();
+    });
 }
