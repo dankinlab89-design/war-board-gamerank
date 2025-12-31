@@ -154,59 +154,62 @@ class DashboardCompleto {
         }
     }
 
-    async loadRankingPerformance() {
-        try {
-            const response = await fetch(`${this.apiBase}/ranking/performance`);
-            const ranking = await response.json();
-            
-            const tbody = document.querySelector('#ranking-performance tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            
-            if (ranking.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
-                            Mínimo 3 partidas para calcular performance
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            ranking.forEach((jogador, index) => {
-                const nivel = this.getNivelPerformance(jogador.performance);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${jogador.apelido}</strong></td>
-                    <td>
-                        <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
-                            ${jogador.patente}
-                        </span>
+   // NO dashboard.js - CORREÇÃO DO BUG DE 'undefined%'
+async loadRankingPerformance() {
+    try {
+        const response = await fetch(`${this.apiBase}/ranking/performance`);
+        const ranking = await response.json();
+        
+        const tbody = document.querySelector('#ranking-performance tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (!ranking || ranking.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty-data-message">
+                        Mínimo 3 partidas para calcular performance
                     </td>
-                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                    <td>${jogador.partidas || 0}</td>
-                    <td>
-                        <span class="performance-score ${this.getPerformanceClass(jogador.performance)}">
-                            ${jogador.performance}%
-                        </span>
-                    </td>
-                    <td>
-                        <span class="nivel-badge nivel-${nivel.toLowerCase().replace(' ', '-')}">
-                            ${nivel}
-                        </span>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-        } catch (error) {
-            console.error('Erro ao carregar ranking performance:', error);
+                </tr>
+            `;
+            return;
         }
+        
+        ranking.forEach((jogador, index) => {
+            // CORREÇÃO AQUI: usar 'percentual' em vez de 'performance'
+            const performance = parseFloat(jogador.percentual) || 0;
+            const nivel = this.getNivelPerformance(performance);
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><strong>${jogador.apelido}</strong></td>
+                <td>
+                    <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
+                        ${jogador.patente}
+                    </span>
+                </td>
+                <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
+                <td>${jogador.partidas || 0}</td>
+                <td>
+                    <span class="performance-score ${this.getPerformanceClass(performance)}">
+                        ${performance.toFixed(1)}%
+                    </span>
+                </td>
+                <td>
+                    <span class="nivel-badge nivel-${nivel.toLowerCase().replace(' ', '-')}">
+                        ${nivel}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Erro ao carregar ranking performance:', error);
     }
+}
 
     async loadVencedoresMensais(ano) {
         try {
@@ -1029,3 +1032,4 @@ document.addEventListener('DOMContentLoaded', () => {
     new Dashboard();
 
 });
+
