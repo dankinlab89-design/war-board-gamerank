@@ -396,6 +396,130 @@ app.get('/api/ranking/performance', async (req, res) => {
   // Ranking baseado em porcentagem de vitórias
 });
 
+// ============ RANKINGS AVANÇADOS ============
+
+// Ranking Global (já existe)
+app.get('/api/ranking/global', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(p.id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias
+            FROM jogadores j
+            LEFT JOIN partidas p ON p.participantes LIKE '%' || j.id || '%'
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            ORDER BY vitorias DESC, partidas DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ranking global:', error);
+        res.json([]);
+    }
+});
+
+// Ranking Mensal
+app.get('/api/ranking/mensal/:ano/:mes', async (req, res) => {
+    try {
+        const { ano, mes } = req.params;
+        const mesFormatado = mes.padStart(2, '0');
+        
+        const result = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(p.id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias
+            FROM jogadores j
+            LEFT JOIN partidas p ON p.participantes LIKE '%' || j.id || '%'
+                AND EXTRACT(YEAR FROM p.data) = $1
+                AND EXTRACT(MONTH FROM p.data) = $2
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(p.id) > 0
+            ORDER BY vitorias DESC, partidas DESC
+        `, [ano, mesFormatado]);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ranking mensal:', error);
+        res.json([]);
+    }
+});
+
+// Ranking de Performance (% de vitórias)
+app.get('/api/ranking/performance', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(p.id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias,
+                CASE 
+                    WHEN COUNT(p.id) > 0 THEN 
+                        ROUND((SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END)::DECIMAL / COUNT(p.id)) * 100, 1)
+                    ELSE 0 
+                END as percentual
+            FROM jogadores j
+            LEFT JOIN partidas p ON p.participantes LIKE '%' || j.id || '%'
+            WHERE j.status = 'Ativo' AND COUNT(p.id) > 0
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(p.id) >= 3  -- Mínimo 3 partidas para ter performance
+            ORDER BY percentual DESC, vitorias DESC
+        `);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ranking performance:', error);
+        res.json([]);
+    }
+});
+
+// Vencedores mensais por ano
+app.get('/api/vencedores-mensais/:ano', async (req, res) => {
+    try {
+        const { ano } = req.params;
+        
+        const result = await pool.query(`
+            SELECT 
+                EXTRACT(MONTH FROM p.data) as mes,
+                j.apelido as vencedor,
+                j.patente,
+                COUNT(*) as vitorias
+            FROM partidas p
+            JOIN jogadores j ON p.vencedor_id = j.id
+            WHERE EXTRACT(YEAR FROM p.data) = $1
+            GROUP BY EXTRACT(MONTH FROM p.data), j.apelido, j.patente
+            ORDER BY mes
+        `, [ano]);
+        
+        // Organizar por mês
+        const vencedoresPorMes = {};
+        for (let i = 1; i <= 12; i++) {
+            vencedoresPorMes[i] = null;
+        }
+        
+        result.rows.forEach(row => {
+            vencedoresPorMes[parseInt(row.mes)] = {
+                vencedor: row.vencedor,
+                patente: row.patente,
+                vitorias: parseInt(row.vitorias)
+            };
+        });
+        
+        res.json(vencedoresPorMes);
+    } catch (error) {
+        console.error('Erro vencedores mensais:', error);
+        res.json({});
+    }
+});
+
 // GET estatísticas
 app.get('/api/estatisticas', async (req, res) => {
   try {
