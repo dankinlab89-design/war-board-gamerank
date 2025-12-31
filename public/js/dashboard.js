@@ -231,37 +231,99 @@ class DashboardCorrigido {
     }
 
     async loadVencedoresMensais(ano) {
-        try {
-            // Verificar se o endpoint existe, se não, usar fallback
-            const response = await fetch(`${this.apiBase}/vencedores/mensal/${ano}`);
-            
-            const grid = document.getElementById('vencedores-grid');
-            if (!grid) return;
-            
-            grid.innerHTML = '';
-            
-            const meses = [
-                'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-                'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-            ];
-            
-            meses.forEach((mes, index) => {
-                const card = document.createElement('div');
-                card.className = 'mes-card';
-                
-                // Por enquanto, mostrar cards vazios
-                card.innerHTML = `
-                    <div class="mes-header">
-                        <h4>${mes.toUpperCase()}</h4>
-                        <span class="mes-badge sem-dados">-</span>
+    try {
+        // Primeiro, tentar obter anos disponíveis
+        const anosResponse = await fetch(`${this.apiBase}/vencedores-anos`);
+        const anosDisponiveis = await anosResponse.json();
+        
+        // Atualizar select de anos
+        this.atualizarSelectAnos(anosDisponiveis, ano);
+        
+        // Buscar vencedores do ano selecionado
+        const response = await fetch(`${this.apiBase}/vencedores-mensais/${ano}`);
+        const vencedores = await response.json();
+        
+        this.renderVencedoresMensais(vencedores, ano);
+        
+    } catch (error) {
+        console.error('❌ Erro vencedores mensais:', error);
+        // Fallback: mostrar meses vazios
+        this.renderVencedoresMensais({}, ano);
+    }
+}
+
+atualizarSelectAnos(anosDisponiveis, anoAtual) {
+    const selectAno = document.getElementById('select-ano');
+    if (!selectAno) return;
+    
+    selectAno.innerHTML = '';
+    
+    anosDisponiveis.forEach(ano => {
+        const option = document.createElement('option');
+        option.value = ano;
+        option.textContent = ano;
+        if (ano == anoAtual) {
+            option.selected = true;
+        }
+        selectAno.appendChild(option);
+    });
+}
+
+renderVencedoresMensais(vencedores, ano) {
+    const grid = document.getElementById('vencedores-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    const meses = [
+        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+    
+    meses.forEach((mesNome, index) => {
+        const mesNum = index + 1;
+        const vencedor = vencedores[mesNum];
+        
+        const card = document.createElement('div');
+        card.className = 'mes-card';
+        
+        if (vencedor) {
+            card.innerHTML = `
+                <div class="mes-header">
+                    <h4>${mesNome.toUpperCase()}</h4>
+                    <span class="mes-badge vencedor">🏆</span>
+                </div>
+                <div class="mes-content">
+                    <div class="vencedor-nome">${vencedor.vencedor}</div>
+                    <div class="vencedor-stats">
+                        <span class="vitorias">${vencedor.vitorias} vitórias</span>
+                        <span class="patente-badge ${this.getPatenteClass(vencedor.patente)}">
+                            ${vencedor.patente}
+                        </span>
                     </div>
-                    <div class="mes-content">
-                        <div class="sem-vencedor">Aguardando dados</div>
+                    <div class="vencedor-detalhes">
+                        <small>${vencedor.partidas} partidas • ${vencedor.percentual}%</small>
                     </div>
-                `;
-                
-                grid.appendChild(card);
-            });
+                </div>
+            `;
+        } else {
+            card.innerHTML = `
+                <div class="mes-header">
+                    <h4>${mesNome.toUpperCase()}</h4>
+                    <span class="mes-badge sem-dados">-</span>
+                </div>
+                <div class="mes-content">
+                    <div class="sem-vencedor">Sem vencedor</div>
+                    <div class="vencedor-detalhes">
+                        <small>${ano}</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        grid.appendChild(card);
+    });
+}
             
         } catch (error) {
             console.error('Erro ao carregar vencedores mensais:', error);
@@ -825,3 +887,4 @@ if (document.querySelector('.dashboard-grid') ||
 } else {
     console.log('⚠️ Não é página do dashboard, não inicializando');
 }
+
