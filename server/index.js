@@ -5,6 +5,62 @@ const { Pool } = require('pg');
 
 const app = express();
 
+// No início do arquivo, após os requires:
+const DatabaseBackup = require('./backup');
+const backupSystem = new DatabaseBackup();
+
+// Agendar backup automático (toda segunda-feira às 2:00)
+const schedule = require('node-schedule');
+schedule.scheduleJob('0 2 * * 1', () => { // Toda segunda às 2:00
+    console.log('🔄 Backup automático agendado...');
+    backupSystem.createBackup();
+});
+
+// ============ ROTAS DE BACKUP ============
+
+// Backup manual (protegido por senha simples)
+app.post('/api/admin/backup', async (req, res) => {
+    const { password } = req.body;
+    
+    // Senha simples para proteção (altere para uma senha forte)
+    if (password !== 'war123') {
+        return res.status(401).json({ error: 'Senha incorreta' });
+    }
+    
+    const result = await backupSystem.createBackup();
+    
+    if (result.success) {
+        res.json({
+            success: true,
+            message: 'Backup criado e enviado por email',
+            file: result.file
+        });
+    } else {
+        res.status(500).json({
+            success: false,
+            error: result.error
+        });
+    }
+});
+
+// Listar backups
+app.get('/api/admin/backups', (req, res) => {
+    const backups = backupSystem.listBackups();
+    res.json(backups);
+});
+
+// Download backup
+app.get('/api/admin/backup/:filename', (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, 'backups', filename);
+    
+    if (fs.existsSync(filePath)) {
+        res.download(filePath);
+    } else {
+        res.status(404).json({ error: 'Backup não encontrado' });
+    }
+});
+
 // Configurações básicas
 app.use(cors());
 app.use(express.json());
