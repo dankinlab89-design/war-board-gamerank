@@ -520,6 +520,112 @@ app.get('/api/vencedores-mensais/:ano', async (req, res) => {
     }
 });
 
+// Função para registrar vencedor do mês automaticamente
+async function registrarVencedorMensal() {
+    try {
+        const hoje = new Date();
+        const mesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+        const ano = mesPassado.getFullYear();
+        const mes = mesPassado.getMonth() + 1;
+        
+        console.log(`🏆 Calculando vencedor do mês: ${mes}/${ano}`);
+        
+        // Buscar ranking do mês passado
+        const result = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                COUNT(*) as vitorias
+            FROM partidas p
+            JOIN jogadores j ON p.vencedor_id = j.id
+            WHERE EXTRACT(YEAR FROM p.data) = $1
+                AND EXTRACT(MONTH FROM p.data) = $2
+            GROUP BY j.id, j.apelido
+            ORDER BY vitorias DESC
+            LIMIT 1
+        `, [ano, mes]);
+        
+        if (result.rows.length > 0) {
+            const vencedor = result.rows[0];
+            
+            // Registrar na tabela de vencedores mensais
+            await pool.query(`
+                INSERT INTO vencedores_mensais (ano, mes, jogador_id, vitorias)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (ano, mes) DO UPDATE 
+                SET jogador_id = $3, vitorias = $4, atualizado_em = CURRENT_TIMESTAMP
+            `, [ano, mes, vencedor.id, vencedor.vitorias]);
+            
+            console.log(`✅ Vencedor do mês ${mes}/${ano}: ${vencedor.apelido} (${vencedor.vitorias} vitórias)`);
+            
+            // Atualizar patente do vencedor
+            await atualizarPatente(vencedor.id);
+        }
+        
+    } catch (error) {
+        console.error('Erro ao registrar vencedor mensal:', error);
+    }
+}
+
+// Agendar para dia 1 de cada mês às 00:05
+schedule.scheduleJob('5 0 1 * *', () => {
+    console.log('🔄 Executando cálculo de vencedor mensal...');
+    registrarVencedorMensal();
+});
+
+// Criar tabela para vencedores mensais
+async function criarTabelaVencedoresMensais() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS vencedores_mensais (
+                id SERIAL PRIMARY KEY,
+                ano INTEGER NOT NULL,
+                mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
+                jogador_id INTEGER REFERENCES jogadores(id),
+                vitorias INTEGER DEFAULT 0,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(ano, mes)
+            )
+        `);
+        console.log('✅ Tabela vencedores_mensais criada');
+    } catch (error) {
+        console.error('Erro ao criar tabela vencedores:', error);
+    }
+}
+
+// Atualizar patente baseado em vitórias
+async function atualizarPatente(jogadorId) {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) as total_vitorias
+            FROM partidas
+            WHERE vencedor_id = $1
+        `, [jogadorId]);
+        
+        const vitorias = parseInt(result.rows[0].total_vitorias);
+        let novaPatente = 'Cabo 🪖';
+        
+        if (vitorias >= 50) novaPatente = 'Marechal 🏆';
+        else if (vitorias >= 30) novaPatente = 'General ⭐';
+        else if (vitorias >= 20) novaPatente = 'Coronel 🎖️';
+        else if (vitorias >= 15) novaPatente = 'Major 💪';
+        else if (vitorias >= 10) novaPatente = 'Capitão 👮';
+        else if (vitorias >= 5) novaPatente = 'Tenente ⚔️';
+        else if (vitorias >= 3) novaPatente = 'Soldado 🛡️';
+        
+        await pool.query(
+            'UPDATE jogadores SET patente = $1 WHERE id = $2',
+            [novaPatente, jogadorId]
+        );
+        
+        console.log(`⭐ Jogador ${jogadorId} promovido para: ${novaPatente}`);
+        
+    } catch (error) {
+        console.error('Erro ao atualizar patente:', error);
+    }
+}
+
 // GET estatísticas
 app.get('/api/estatisticas', async (req, res) => {
   try {
