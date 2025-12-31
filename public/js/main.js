@@ -43,69 +43,61 @@ class WARSystem {
         this.setupPartidaForm();
     }
 
-    setupCadastroForm() {
-        const form = document.getElementById('form-cadastro');
-        if (!form) {
-            return; // Não está na página de cadastro
+setupCadastroForm() {
+    const form = document.getElementById('form-cadastro');
+    if (!form) return;
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Coletar dados
+        const jogador = {
+            nome: document.getElementById('nome')?.value.trim(),
+            apelido: document.getElementById('apelido')?.value.trim(),
+            email: document.getElementById('email')?.value.trim() || null,
+            observacoes: document.getElementById('observacoes')?.value.trim() || ''
+        };
+        
+        // Validação
+        if (!jogador.nome || !jogador.apelido) {
+            this.showMessage('Nome e apelido são obrigatórios!', 'error');
+            return;
         }
         
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        try {
+            const response = await fetch(`${this.apiBase}/jogadores`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jogador)
+            });
             
-            // Coletar dados do formulário
-            const nomeInput = document.getElementById('nome');
-            const apelidoInput = document.getElementById('apelido');
-            const emailInput = document.getElementById('email');
-            const observacoesInput = document.getElementById('observacoes');
-            const mensagemDiv = document.getElementById('mensagem');
+            const result = await response.json();
             
-            if (!nomeInput || !apelidoInput) {
-                console.error('Campos do formulário não encontrados');
-                return;
+            if (response.ok) {
+                this.showMessage(`✅ ${jogador.apelido} cadastrado com sucesso!`, 'success');
+                
+                // Redirecionar após 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'jogadores.html';
+                }, 2000);
+            } else {
+                this.showMessage(`Erro: ${result.error || 'Falha no cadastro'}`, 'error');
             }
             
-            const jogador = {
-                nome: nomeInput.value.trim(),
-                apelido: apelidoInput.value.trim(),
-                email: emailInput ? emailInput.value.trim() : null,
-                observacoes: observacoesInput ? observacoesInput.value.trim() : ''
-            };
-            
-            // Validação
-            if (!jogador.nome || !jogador.apelido) {
-                this.showMessage(mensagemDiv, 'Nome e apelido são obrigatórios!', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${this.apiBase}/jogadores`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(jogador)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    this.showMessage(mensagemDiv, result.mensagem || 'Jogador cadastrado com sucesso!', 'success');
-                    form.reset();
-                    
-                    // Redirecionar após 2 segundos
-                    setTimeout(() => {
-                        window.location.href = 'jogadores.html';
-                    }, 2000);
-                } else {
-                    this.showMessage(mensagemDiv, result.error || 'Erro no cadastro', 'error');
-                }
-                
-            } catch (error) {
-                console.error('Erro no cadastro:', error);
-                this.showMessage(mensagemDiv, 'Erro de conexão com o servidor', 'error');
-            }
-        });
-    }
+        } catch (error) {
+            console.error('Erro no cadastro:', error);
+            this.showMessage('Erro de conexão com o servidor', 'error');
+        }
+    });
+}
+
+// E chame no init():
+init() {
+    this.setupEventListeners();
+    this.setupMobileMenu();
+    this.setupCadastroForm();  // <-- ADICIONE ESTA LINHA
+    this.loadInitialData();
+}
 
     setupPartidaForm() {
         const form = document.getElementById('form-partida');
