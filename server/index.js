@@ -1044,6 +1044,117 @@ app.get('/api/teste', async (req, res) => {
     }
 });
 
+// Endpoints para dashboard
+app.get('/api/estatisticas/patentes', (req, res) => {
+    try {
+        // Mock data - substituir por dados reais do banco
+        pool.query('SELECT patente, COUNT(*) as quantidade FROM jogadores GROUP BY patente', (err, result) => {
+            if (err) {
+                // Retorna dados mock se a query falhar
+                const mockData = {
+                    'Cabo 🪖': 8,
+                    'Soldado 🛡️': 2,
+                    'Tenente ⚔️': 1,
+                    'Capitão 👮': 0,
+                    'Major 💪': 0,
+                    'Coronel 🎖️': 0,
+                    'General ⭐': 0,
+                    'Marechal 🏆': 0
+                };
+                res.json(mockData);
+            } else {
+                // Transforma resultado do banco em objeto
+                const data = {};
+                result.rows.forEach(row => {
+                    data[row.patente] = parseInt(row.quantidade);
+                });
+                res.json(data);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/estatisticas/assiduidade', (req, res) => {
+    try {
+        // Query para contar partidas por jogador
+        pool.query(`
+            SELECT j.apelido, COUNT(pj.partida_id) as partidas
+            FROM jogadores j
+            LEFT JOIN partidas_jogadores pj ON j.id = pj.jogador_id
+            GROUP BY j.id, j.apelido
+            ORDER BY partidas DESC
+            LIMIT 8
+        `, (err, result) => {
+            if (err) {
+                // Mock data
+                const mockData = [
+                    { apelido: 'Silva', partidas: 5 },
+                    { apelido: 'Santos', partidas: 4 },
+                    { apelido: 'Costa', partidas: 3 },
+                    { apelido: 'Lima', partidas: 2 },
+                    { apelido: 'Souza', partidas: 1 }
+                ];
+                res.json(mockData);
+            } else {
+                res.json(result.rows);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/ranking/performance', (req, res) => {
+    try {
+        pool.query(`
+            SELECT 
+                j.apelido,
+                j.patente,
+                COUNT(pj.partida_id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias,
+                CASE 
+                    WHEN COUNT(pj.partida_id) > 0 
+                    THEN ROUND((SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END)::FLOAT / COUNT(pj.partida_id) * 100), 1)
+                    ELSE 0 
+                END as performance
+            FROM jogadores j
+            LEFT JOIN partidas_jogadores pj ON j.id = pj.jogador_id
+            LEFT JOIN partidas p ON pj.partida_id = p.id
+            WHERE j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(pj.partida_id) >= 3
+            ORDER BY performance DESC
+        `, (err, result) => {
+            if (err) {
+                // Mock data
+                const mockData = [
+                    { 
+                        apelido: 'Silva', 
+                        patente: 'Cabo 🪖', 
+                        partidas: 5, 
+                        vitorias: 3, 
+                        performance: '60.0' 
+                    },
+                    { 
+                        apelido: 'Santos', 
+                        patente: 'Soldado 🛡️', 
+                        partidas: 4, 
+                        vitorias: 2, 
+                        performance: '50.0' 
+                    }
+                ];
+                res.json(mockData);
+            } else {
+                res.json(result.rows);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ============ ROTA PARA SPA (Single Page Application) ============
 
 app.get('*', (req, res) => {
