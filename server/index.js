@@ -329,6 +329,17 @@ app.get('/api/ranking/global', async (req, res) => {
   }
 });
 
+// Ranking mensal
+app.get('/api/ranking/mensal/:mes', async (req, res) => {
+  const { mes } = req.params; // formato: "MM/YYYY"
+  // Lógica para filtrar por mês
+});
+
+// Ranking por performance
+app.get('/api/ranking/performance', async (req, res) => {
+  // Ranking baseado em porcentagem de vitórias
+});
+
 // GET estatísticas
 app.get('/api/estatisticas', async (req, res) => {
   try {
