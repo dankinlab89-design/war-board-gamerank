@@ -1055,3 +1055,95 @@ h1, h2, h3, h4 {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Estilos para ranking de performance */
+.performance-score {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.performance-excellent {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.performance-good {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.performance-average {
+    background: rgba(253, 126, 20, 0.2);
+    color: #fd7e14;
+    border: 1px solid rgba(253, 126, 20, 0.3);
+}
+
+.performance-poor {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* Badges de nível */
+.nivel-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nivel-elite {
+    background: linear-gradient(135deg, #ffd700, #ffc400);
+    color: #000;
+    border: 2px solid #ffc400;
+}
+
+.nivel-avançado {
+    background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+    color: #000;
+    border: 1px solid #a0a0a0;
+}
+
+.nivel-intermediário {
+    background: linear-gradient(135deg, #cd7f32, #b87333);
+    color: #000;
+    border: 1px solid #b87333;
+}
+
+.nivel-iniciante {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    border: 1px solid #495057;
+}
+
+/* Controles do gráfico */
+.chart-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.chart-btn {
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chart-btn:hover,
+.chart-btn.active {
+    background: rgba(184, 134, 11, 0.3);
+    border-color: var(--secondary);
+    color: var(--secondary);
+}
+
