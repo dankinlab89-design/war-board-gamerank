@@ -1,4 +1,4 @@
-// ranking.js - Funcionalidades específicas da página de ranking
+// ranking.js - Versão corrigida
 class RankingPage {
     constructor() {
         this.apiBase = '/api';
@@ -7,9 +7,23 @@ class RankingPage {
 
     async init() {
         console.log('🎯 Inicializando página de ranking...');
+        
+        // Verificar se estamos na página correta
+        if (!this.verificarPagina()) {
+            console.log('⚠️ Não é página de ranking, não inicializando');
+            return;
+        }
+        
         await this.loadAllRankings();
         this.setupEventListeners();
         this.updateTimestamp();
+    }
+
+    verificarPagina() {
+        // Verificar se temos pelo menos um elemento da página de ranking
+        return document.querySelector('#ranking-global') || 
+               document.querySelector('#ranking-mensal') || 
+               document.querySelector('#ranking-performance');
     }
 
     async loadAllRankings() {
@@ -75,7 +89,10 @@ class RankingPage {
 
     renderRankingGlobal(ranking) {
         const tbody = document.querySelector('#ranking-global tbody');
-        if (!tbody) return;
+        if (!tbody) {
+            console.warn('❌ Elemento ranking-global não encontrado');
+            return;
+        }
         
         tbody.innerHTML = '';
         
@@ -118,7 +135,10 @@ class RankingPage {
 
     renderRankingMensal(ranking) {
         const tbody = document.querySelector('#ranking-mensal tbody');
-        if (!tbody) return;
+        if (!tbody) {
+            console.warn('❌ Elemento ranking-mensal não encontrado');
+            return;
+        }
         
         tbody.innerHTML = '';
         
@@ -161,7 +181,10 @@ class RankingPage {
 
     renderRankingPerformance(ranking) {
         const tbody = document.querySelector('#ranking-performance tbody');
-        if (!tbody) return;
+        if (!tbody) {
+            console.warn('❌ Elemento ranking-performance não encontrado');
+            return;
+        }
         
         tbody.innerHTML = '';
         
@@ -205,28 +228,68 @@ class RankingPage {
     }
 
     setupEventListeners() {
-        // Export buttons
+        // Sistema de tabs
+        this.setupTabs();
+        
+        // Botões de exportação
         this.setupExportButtons();
         
-        // Auto-refresh
+        // Auto-refresh a cada 30 segundos
         setInterval(() => {
             this.loadAllRankings();
             this.updateTimestamp();
         }, 30000);
     }
 
+    setupTabs() {
+        // Adicionar event listeners às tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                if (tabName) {
+                    this.switchTab(tabName);
+                }
+            });
+        });
+    }
+
+    switchTab(tabName) {
+        // Remover active de todas
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Adicionar active na selecionada
+        const btn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+        const content = document.getElementById(`tab-${tabName}`);
+        
+        if (btn) btn.classList.add('active');
+        if (content) content.classList.add('active');
+    }
+
     setupExportButtons() {
-        document.getElementById('export-ranking-global')?.addEventListener('click', () => {
-            this.exportRanking('global', 'ranking-global.csv');
-        });
+        // Exportar ranking global
+        const exportGlobal = document.getElementById('export-ranking-global');
+        if (exportGlobal) {
+            exportGlobal.addEventListener('click', async () => {
+                await this.exportRanking('global', 'ranking-global.csv');
+            });
+        }
         
-        document.getElementById('export-ranking-mensal')?.addEventListener('click', () => {
-            this.exportRanking('mensal', 'ranking-mensal.csv');
-        });
+        // Exportar ranking mensal
+        const exportMensal = document.getElementById('export-ranking-mensal');
+        if (exportMensal) {
+            exportMensal.addEventListener('click', async () => {
+                await this.exportRanking('mensal', 'ranking-mensal.csv');
+            });
+        }
         
-        document.getElementById('export-ranking-performance')?.addEventListener('click', () => {
-            this.exportRanking('performance', 'ranking-performance.csv');
-        });
+        // Exportar ranking performance
+        const exportPerformance = document.getElementById('export-ranking-performance');
+        if (exportPerformance) {
+            exportPerformance.addEventListener('click', async () => {
+                await this.exportRanking('performance', 'ranking-performance.csv');
+            });
+        }
     }
 
     async exportRanking(tipo, filename) {
@@ -273,7 +336,7 @@ class RankingPage {
         }
     }
 
-    // Métodos auxiliares (mesmos do dashboard)
+    // Métodos auxiliares
     getPatenteClass(patente) {
         if (!patente) return 'patente-cabo';
         if (patente.includes('Marechal')) return 'patente-marechal';
@@ -332,11 +395,44 @@ class RankingPage {
     }
 
     showNotification(message, type = 'success') {
-        alert(message); // Simplificado
+        try {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-family: 'Montserrat', sans-serif;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Erro ao mostrar notificação:', error);
+            alert(message);
+        }
     }
 
     showError(message) {
         console.error(message);
+        this.showNotification(message, 'error');
     }
 
     updateTimestamp() {
@@ -357,10 +453,20 @@ class RankingPage {
     }
 }
 
-// Inicializar
-if (document.querySelector('#ranking-global')) {
-    console.log('🎯 Página de ranking detectada');
-    document.addEventListener('DOMContentLoaded', () => {
+// ============ INICIALIZAÇÃO SEGURA ============
+
+// Esperar o DOM carregar
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📊 DOM carregado, verificando página...');
+    
+    // Verificar se é página de ranking
+    if (document.querySelector('#ranking-global') || 
+        document.querySelector('#ranking-mensal') ||
+        document.querySelector('#ranking-performance')) {
+        
+        console.log('🎯 Página de ranking detectada, inicializando...');
         window.rankingPage = new RankingPage();
-    });
-}
+    } else {
+        console.log('⚠️ Não é página de ranking');
+    }
+});
