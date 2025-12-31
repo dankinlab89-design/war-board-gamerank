@@ -53,11 +53,83 @@
             </a>
         </div>
     </main>
+    
+<!-- Após a tabela, antes do footer -->
+<div id="modal-editar" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Editar Jogador</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-editar">
+                <input type="hidden" id="editar-id">
+                <div class="form-group">
+                    <label>Nome:</label>
+                    <input type="text" id="editar-nome" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Apelido:</label>
+                    <input type="text" id="editar-apelido" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="editar-email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Patente:</label>
+                    <select id="editar-patente" class="form-control">
+                        <option value="Cabo 🪖">Cabo 🪖</option>
+                        <option value="Soldado 🛡️">Soldado 🛡️</option>
+                        <option value="Tenente ⚔️">Tenente ⚔️</option>
+                        <option value="Capitão 👮">Capitão 👮</option>
+                        <option value="Major 💪">Major 💪</option>
+                        <option value="Coronel 🎖️">Coronel 🎖️</option>
+                        <option value="General ⭐">General ⭐</option>
+                        <option value="Marechal 🏆">Marechal 🏆</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="editar-status" class="form-control">
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observações:</label>
+                    <textarea id="editar-observacoes" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <button type="button" class="btn btn-secondary modal-close">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
+<!-- Modal confirmar exclusão -->
+<div id="modal-confirmar" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ Confirmar Ação</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmar-mensagem">Tem certeza que deseja realizar esta ação?</p>
+            <div class="form-actions">
+                <button id="btn-confirmar" class="btn btn-danger">Confirmar</button>
+                <button class="btn btn-secondary modal-close">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2024 WAR Board GameRank - Sistema de Gerenciamento de Tropas</p>
+                <p>&copy; 2025 WAR Board GameRank - Sistema de Gerenciamento de Tropas</p>
             </div>
         </div>
     </footer>
