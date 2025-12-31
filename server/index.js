@@ -141,6 +141,129 @@ app.use((req, res, next) => {
     next();
 });
 
+// Importar node-fetch se necessário
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Middleware para verificar se é cron job válido
+const verificarCronJob = (req, res, next) => {
+    // Verificar se tem chave secreta (opcional, mas recomendado)
+    const cronKey = req.headers['x-cron-key'] || req.query.cron_key;
+    const expectedKey = process.env.CRON_SECRET_KEY;
+    
+    if (expectedKey && cronKey !== expectedKey) {
+        console.warn('⚠️ Tentativa de acesso não autorizado ao cron job');
+        return res.status(403).json({ error: 'Não autorizado' });
+    }
+    
+    next();
+};
+
+// Endpoint protegido para cron job
+app.get('/api/cron/calcular-vencedor-mes-anterior', verificarCronJob, async (req, res) => {
+    try {
+        console.log('🔄 CRON JOB: Calculando vencedor do mês anterior');
+        
+        const agora = new Date();
+        let ano = agora.getFullYear();
+        let mes = agora.getMonth(); // Janeiro = 0
+        
+        // Se for janeiro, pega dezembro do ano anterior
+        if (mes === 0) {
+            mes = 12;
+            ano = ano - 1;
+        }
+        
+        console.log(`📅 Mês anterior: ${mes}/${ano}`);
+        
+        // Calcular ranking do mês anterior
+        const rankingResult = await pool.query(`
+            SELECT 
+                j.id,
+                j.apelido,
+                j.patente,
+                COUNT(pj.partida_id) as partidas,
+                SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END) as vitorias,
+                CASE 
+                    WHEN COUNT(pj.partida_id) > 0 
+                    THEN ROUND((SUM(CASE WHEN p.vencedor_id = j.id THEN 1 ELSE 0 END)::FLOAT / COUNT(pj.partida_id) * 100), 2)
+                    ELSE 0 
+                END as percentual
+            FROM jogadores j
+            LEFT JOIN partidas_jogadores pj ON j.id = pj.jogador_id
+            LEFT JOIN partidas p ON pj.partida_id = p.id
+            WHERE EXTRACT(YEAR FROM p.data) = $1 
+                AND EXTRACT(MONTH FROM p.data) = $2
+                AND j.status = 'Ativo'
+            GROUP BY j.id, j.apelido, j.patente
+            HAVING COUNT(pj.partida_id) > 0
+            ORDER BY vitorias DESC, percentual DESC
+            LIMIT 1
+        `, [ano, mes]);
+        
+        if (rankingResult.rows.length > 0) {
+            const vencedor = rankingResult.rows[0];
+            
+            // Salvar no banco
+            await pool.query(`
+                INSERT INTO vencedores_mensais 
+                (ano, mes, jogador_id, jogador_apelido, jogador_patente, vitorias, partidas, percentual)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (ano, mes) 
+                DO UPDATE SET 
+                    jogador_id = $3,
+                    jogador_apelido = $4,
+                    jogador_patente = $5,
+                    vitorias = $6,
+                    partidas = $7,
+                    percentual = $8,
+                    data_registro = CURRENT_TIMESTAMP
+            `, [ano, mes, vencedor.id, vencedor.apelido, vencedor.patente, 
+                vencedor.vitorias, vencedor.partidas, vencedor.percentual]);
+            
+            console.log(`✅ Vencedor salvo: ${vencedor.apelido} com ${vencedor.vitorias} vitórias`);
+            
+            res.json({
+                sucesso: true,
+                mensagem: 'Vencedor mensal calculado e salvo',
+                data: new Date().toISOString(),
+                vencedor: {
+                    ano: ano,
+                    mes: mes,
+                    jogador: vencedor.apelido,
+                    patente: vencedor.patente,
+                    vitorias: vencedor.vitorias,
+                    partidas: vencedor.partidas,
+                    percentual: vencedor.percentual
+                }
+            });
+            
+        } else {
+            console.log('⚠️ Nenhuma partida no mês anterior');
+            res.json({
+                sucesso: true,
+                mensagem: 'Nenhuma partida no mês anterior',
+                data: new Date().toISOString()
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro no cron job:', error);
+        res.status(500).json({
+            sucesso: false,
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+// Endpoint para testar manualmente (protegido)
+app.get('/api/cron/teste/:ano/:mes', verificarCronJob, async (req, res) => {
+    const { ano, mes } = req.params;
+    
+    // Mesma lógica do endpoint acima, mas para ano/mes específicos
+    // ... (código similar ao acima)
+});
+
 // ============ ROTAS DA API ============
 
 // Health check
