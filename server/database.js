@@ -161,6 +161,79 @@ class WARDatabase {
     }
 
     // ============ MÉTODOS PÚBLICOS ============
+
+// No database.js, adicione estes métodos:
+
+// Método para atualizar jogador
+async updateJogador(id, dados) {
+    if (this.devMode) {
+        const index = this.devData.jogadores.findIndex(j => j.id == id);
+        if (index !== -1) {
+            this.devData.jogadores[index] = {
+                ...this.devData.jogadores[index],
+                ...dados
+            };
+            return { sucesso: true };
+        }
+        throw new Error('Jogador não encontrado');
+    }
+    
+    try {
+        const result = await this.pool.query(`
+            UPDATE jogadores 
+            SET nome = $1, apelido = $2, email = $3, patente = $4, status = $5, observacoes = $6
+            WHERE id = $7 
+            RETURNING *
+        `, [
+            dados.nome,
+            dados.apelido,
+            dados.email || null,
+            dados.patente,
+            dados.status,
+            dados.observacoes || '',
+            id
+        ]);
+        
+        if (result.rows.length === 0) {
+            throw new Error('Jogador não encontrado');
+        }
+        
+        return { sucesso: true, jogador: result.rows[0] };
+        
+    } catch (error) {
+        console.error('Erro ao atualizar jogador:', error.message);
+        throw error;
+    }
+}
+
+// Método para alterar status
+async updateStatus(id, status) {
+    if (this.devMode) {
+        const index = this.devData.jogadores.findIndex(j => j.id == id);
+        if (index !== -1) {
+            this.devData.jogadores[index].status = status;
+            return { sucesso: true };
+        }
+        throw new Error('Jogador não encontrado');
+    }
+    
+    try {
+        const result = await this.pool.query(
+            'UPDATE jogadores SET status = $1 WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+        
+        if (result.rows.length === 0) {
+            throw new Error('Jogador não encontrado');
+        }
+        
+        return { sucesso: true, jogador: result.rows[0] };
+        
+    } catch (error) {
+        console.error('Erro ao alterar status:', error.message);
+        throw error;
+    }
+}
     
     async getJogadores() {
         if (this.devMode) {
@@ -365,3 +438,4 @@ function getDatabase() {
 }
 
 module.exports = { getDatabase };
+
