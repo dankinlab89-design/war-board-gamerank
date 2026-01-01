@@ -28,14 +28,33 @@ app.use(express.urlencoded({ extended: true }));
 // SERVIR ARQUIVOS ESTÁTICOS
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Conectar MongoDB
-console.log('🔄 Conectando ao MongoDB...');
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/war-database', {
+// Conectar ao MongoDB com logs detalhados
+console.log('🔄 Iniciando conexão MongoDB...');
+console.log('📍 String usada:', process.env.MONGODB_URI ? 'Configurada via variável de ambiente' : 'NÃO CONFIGURADA!');
+
+const mongoOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB conectado!'))
-.catch(err => console.error('❌ Erro MongoDB:', err));
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/controle_partidas', mongoOptions)
+  .then(() => {
+    console.log('✅ MONGODB CONECTADO COM SUCESSO!');
+    console.log('📊 Banco de dados:', mongoose.connection.name);
+    console.log('🔗 Host:', mongoose.connection.host);
+    console.log('👤 Usuário:', mongoose.connection.user);
+  })
+  .catch((err) => {
+    console.error('❌ ERRO NA CONEXÃO MONGODB:');
+    console.error('   Código:', err.code);
+    console.error('   Mensagem:', err.message);
+    console.error('   🛠️ Soluções possíveis:');
+    console.error('   1. Verifique senha do usuário "sistema_war"');
+    console.error('   2. Confirme IP liberado (0.0.0.0/0) no MongoDB Atlas');
+    console.error('   3. Teste a string no MongoDB Compass');
+  });
 
 // ROTAS DA API
 app.get('/api/health', (req, res) => {
