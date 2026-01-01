@@ -7,77 +7,26 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: #4dabf7;
-            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
-        }
-        
-        .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
+        .card { max-width: 600px; margin: 0 auto; }
         .patente-fixa {
             padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             border-radius: 6px;
             text-align: center;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255,255,255,0.1);
             font-size: 1.2rem;
             margin-bottom: 5px;
         }
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { background: #5a6268; }
     </style>
 </head>
 <body>
@@ -99,18 +48,16 @@
     </nav>
 
     <main class="container">
-        <div style="margin-bottom: 30px;">
-            <a href="/jogadores" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Voltar para Jogadores
-            </a>
-        </div>
+        <a href="/jogadores" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Voltar para Jogadores
+        </a>
 
-        <div class="form-container">
-            <h1 style="margin-bottom: 30px; text-align: center;">
+        <div class="card">
+            <h1 class="card-title">
                 <i class="fas fa-user-plus"></i> Cadastrar Novo Jogador
             </h1>
             
-            <form id="form-cadastro-jogador">
+            <form id="form-cadastro">
                 <div class="form-group">
                     <label for="nome" class="form-label">
                         <i class="fas fa-user"></i> Nome Completo *
@@ -125,7 +72,7 @@
                     </label>
                     <input type="text" id="apelido" class="form-control" 
                            placeholder="Ex: João_WAR" required>
-                    <small style="color: rgba(255, 255, 255, 0.6); display: block; margin-top: 5px;">
+                    <small class="form-text">
                         Este apelido será usado no ranking e partidas
                     </small>
                 </div>
@@ -145,12 +92,8 @@
                     <div class="patente-fixa">
                         🪖 <strong>Cabo</strong> (Todos iniciam aqui)
                     </div>
-                    <small style="color: rgba(255, 255, 255, 0.6); display: block; margin-top: 8px;">
-                        A patente evolui automaticamente conforme as vitórias:
-                        <br>• 0-4 vitórias: Cabo 🪖
-                        <br>• 5-9 vitórias: Soldado 🛡️
-                        <br>• 10-14 vitórias: Tenente ⚔️
-                        <br>• E continua conforme mais vitórias...
+                    <small class="form-text">
+                        A patente evolui automaticamente conforme as vitórias
                     </small>
                 </div>
                 
@@ -159,23 +102,77 @@
                         <i class="fas fa-sticky-note"></i> Observações (opcional)
                     </label>
                     <textarea id="observacoes" class="form-control" 
-                              rows="3" placeholder="Ex: Joga principalmente à noite, preferência por Europa..."></textarea>
+                              rows="3" placeholder="Ex: Joga principalmente à noite..."></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="data-cadastro" class="form-label">
-                        <i class="fas fa-calendar"></i> Data de Cadastro
-                    </label>
-                    <input type="date" id="data-cadastro" class="form-control" readonly>
-                </div>
-                
-                <button type="submit" class="btn-submit">
+                <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save"></i> Cadastrar Jogador
                 </button>
             </form>
         </div>
     </main>
 
-    <script src="/js/cadastro-funcional.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar data atual
+            const dataInput = document.getElementById('data-cadastro');
+            if (dataInput) {
+                const hoje = new Date().toISOString().split('T')[0];
+                dataInput.value = hoje;
+            }
+            
+            // Configurar formulário
+            const form = document.getElementById('form-cadastro');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const jogador = {
+                        nome: document.getElementById('nome').value.trim(),
+                        apelido: document.getElementById('apelido').value.trim(),
+                        email: document.getElementById('email').value.trim() || '',
+                        patente: 'Cabo 🪖',
+                        observacoes: document.getElementById('observacoes').value.trim() || ''
+                    };
+                    
+                    if (!jogador.nome || !jogador.apelido) {
+                        alert('Nome e apelido são obrigatórios!');
+                        return;
+                    }
+                    
+                    const btn = this.querySelector('button[type="submit"]');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cadastrando...';
+                    btn.disabled = true;
+                    
+                    try {
+                        const response = await fetch('/api/jogadores', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(jogador)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert('✅ Jogador cadastrado com sucesso!');
+                            this.reset();
+                            setTimeout(() => {
+                                window.location.href = '/jogadores';
+                            }, 1000);
+                        } else {
+                            alert('❌ Erro: ' + (result.error || 'Falha no cadastro'));
+                        }
+                    } catch (error) {
+                        console.error('Erro:', error);
+                        alert('❌ Erro de conexão');
+                    } finally {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
