@@ -5,5 +5,10 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
+      - key: MONGODB_URI
+        sync: false
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+    staticPublishPath: ./public
