@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inserir Dados WAR</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        .success { color: green; }
+        .error { color: red; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Inserir Dados no Sistema WAR</h1>
+    
+    <button onclick="inserirJogadores()">1. Inserir Jogadores (7)</button>
+    <button onclick="inserirPartidas()">2. Inserir Partidas (2)</button>
+    <button onclick="verificarDados()">3. Verificar Dados</button>
+    
+    <div id="log"></div>
+    
+    <script>
+        const API_URL = 'https://war-board-gamerank.onrender.com/api';
+        const log = document.getElementById('log');
+        
+        // DADOS DOS JOGADORES
+        const jogadores = [
+            { nome: "Daniel", apelido: "Daniel$80", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:05", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "Gustavo", apelido: "PetroIdeal", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:06", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "Tuca", apelido: "TucaRei", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:07", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "Lucas", apelido: "LucasHelderEng", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:07", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "Raimundo Ney", apelido: "Ney2002", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:08", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "Diego", apelido: "Dark508", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:09", ativo: true, vitorias: 0, partidas: 0 },
+            { nome: "BOT", apelido: "BOT qualquer", email: "", patente: "Cabo 🪖", observacoes: "Novo jogador cadastrado em 28/12/2025 21:17", ativo: true, vitorias: 0, partidas: 0 }
+        ];
+
+        // DADOS DAS PARTIDAS
+        const partidas = [
+            { data: "2026-01-01T11:58:00Z", vencedor: "Daniel$80", participantes: ["BOT qualquer", "Daniel$80", "PetroIdeal", "Ney2002"], tipo: "global", observacoes: "Ranking Global - WAR", pontos: 100 },
+            { data: "2026-01-01T13:27:00Z", vencedor: "Ney2002", participantes: ["BOT qualquer", "Daniel$80", "Ney2002", "PetroIdeal", "TucaRei"], tipo: "global", observacoes: "Ranking Global - WAR", pontos: 100 }
+        ];
+
+        function logMessage(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(p);
+            console.log(message);
+        }
+
+        async function inserirJogadores() {
+            logMessage('Iniciando inserção de jogadores...');
+            
+            for (let i = 0; i < jogadores.length; i++) {
+                const jogador = jogadores[i];
+                
+                try {
+                    const response = await fetch(`${API_URL}/jogadores`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(jogador)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        logMessage(`✅ ${jogador.apelido} cadastrado`, 'success');
+                    } else {
+                        logMessage(`❌ Erro ao cadastrar ${jogador.apelido}: ${result.error}`, 'error');
+                    }
+                } catch (error) {
+                    logMessage(`❌ Erro de conexão para ${jogador.apelido}: ${error.message}`, 'error');
+                }
+                
+                // Aguardar 500ms entre requisições
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            logMessage('Inserção de jogadores concluída!');
+        }
+
+        async function inserirPartidas() {
+            logMessage('Iniciando inserção de partidas...');
+            
+            for (let i = 0; i < partidas.length; i++) {
+                const partida = partidas[i];
+                
+                try {
+                    const response = await fetch(`${API_URL}/partidas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(partida)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        logMessage(`✅ Partida ${i+1} registrada (Vencedor: ${partida.vencedor})`, 'success');
+                    } else {
+                        logMessage(`❌ Erro ao registrar partida ${i+1}: ${result.error}`, 'error');
+                    }
+                } catch (error) {
+                    logMessage(`❌ Erro de conexão para partida ${i+1}: ${error.message}`, 'error');
+                }
+                
+                // Aguardar 1 segundo entre requisições
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            logMessage('Inserção de partidas concluída!');
+        }
+
+        async function verificarDados() {
+            logMessage('Verificando dados no sistema...');
+            
+            try {
+                // Verificar jogadores
+                const jogadoresRes = await fetch(`${API_URL}/jogadores`);
+                const jogadoresData = await jogadoresRes.json();
+                logMessage(`📊 Jogadores cadastrados: ${jogadoresData.jogadores ? jogadoresData.jogadores.length : 0}`);
+                
+                // Verificar partidas
+                const partidasRes = await fetch(`${API_URL}/partidas`);
+                const partidasData = await partidasRes.json();
+                logMessage(`🎮 Partidas registradas: ${partidasData.partidas ? partidasData.partidas.length : 0}`);
+                
+                // Verificar estatísticas
+                const statsRes = await fetch(`${API_URL}/estatisticas`);
+                const statsData = await statsRes.json();
+                logMessage(`📈 Estatísticas: ${statsData.total_jogadores} jogadores, ${statsData.total_partidas} partidas`);
+                
+                // Verificar ranking
+                const rankingRes = await fetch(`${API_URL}/ranking/global`);
+                const rankingData = await rankingRes.json();
+                logMessage(`🏆 Ranking: ${rankingData.length} jogadores no ranking`);
+                
+                if (rankingData.length > 0) {
+                    logMessage(`🥇 1º lugar: ${rankingData[0].apelido} (${rankingData[0].vitorias} vitórias)`);
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
