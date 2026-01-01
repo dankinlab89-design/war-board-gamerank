@@ -28,7 +28,10 @@ app.use(express.urlencoded({ extended: true }));
 // SERVIR ARQUIVOS ESTÁTICOS
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Conectar ao MongoDB com logs detalhados
+// ============================================
+// CONEXÃO MONGODB
+// ============================================
+
 console.log('🔄 Iniciando conexão MongoDB...');
 console.log('📍 String usada:', process.env.MONGODB_URI ? 'Configurada via variável de ambiente' : 'NÃO CONFIGURADA!');
 
@@ -44,7 +47,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/controle_
     console.log('✅ MONGODB CONECTADO COM SUCESSO!');
     console.log('📊 Banco de dados:', mongoose.connection.name);
     console.log('🔗 Host:', mongoose.connection.host);
-    console.log('👤 Usuário:', mongoose.connection.user);
   })
   .catch((err) => {
     console.error('❌ ERRO NA CONEXÃO MONGODB:');
@@ -55,61 +57,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/controle_
     console.error('   2. Confirme IP liberado (0.0.0.0/0) no MongoDB Atlas');
     console.error('   3. Teste a string no MongoDB Compass');
   });
-
-// MODELOS MONGODB - Adicione antes das rotas
-
-const partidaSchema = new mongoose.Schema({
-  data: { type: Date, default: Date.now },
-  jogadores: [{
-    nome: String,
-    cor: String,
-    territorios: Number,
-    exercitos: Number,
-    eliminado: Boolean,
-    posicao: Number
-  }],
-  vencedor: String,
-  duracao: Number, // em minutos
-  pontos: Number,
-  torneio: String,
-  observacoes: String
-});
-
-const jogadorSchema = new mongoose.Schema({
-  nome: String,
-  email: String,
-  ativo: { type: Boolean, default: true },
-  data_cadastro: { type: Date, default: Date.now },
-  vitorias: { type: Number, default: 0 },
-  derrotas: { type: Number, default: 0 }
-});
-
-const Partida = mongoose.model('Partida', partidaSchema);
-const Jogador = mongoose.model('Jogador', jogadorSchema);
-
-// ROTAS REAIS - Substitua as rotas atuais /api/matches
-app.post('/api/partidas', async (req, res) => {
-  try {
-    const partida = new Partida(req.body);
-    await partida.save();
-    res.status(201).json({ 
-      success: true, 
-      message: 'Partida salva com sucesso!',
-      partida: partida 
-    });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-});
-
-app.get('/api/partidas', async (req, res) => {
-  try {
-    const partidas = await Partida.find().sort({ data: -1 }).limit(50);
-    res.json({ success: true, partidas: partidas });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // ============================================
 // MODELOS MONGODB - Para seu sistema WAR
@@ -131,7 +78,7 @@ const partidaSchema = new mongoose.Schema({
   data: { type: Date, default: Date.now },
   tipo: { type: String, default: 'global' },
   vencedor: { type: String, required: true },
-  participantes: [{ type: String }], // Array de apelidos
+  participantes: [{ type: String }],
   observacoes: String,
   pontos: { type: Number, default: 100 }
 });
@@ -196,15 +143,17 @@ app.post('/api/partidas', async (req, res) => {
       }
     );
     
-    // Atualizar estatísticas dos participantes
+    // Atualizar estatísticas dos participantes (apenas partidas, não vitórias)
     if (req.body.participantes && Array.isArray(req.body.participantes)) {
-      await Jogador.updateMany(
-        { 
-          apelido: { $in: req.body.participantes },
-          apelido: { $ne: req.body.vencedor } // Não atualizar o vencedor de novo
-        },
-        { $inc: { partidas: 1 } }
-      );
+      // Remover o vencedor da lista para não contar duas vezes
+      const outrosParticipantes = req.body.participantes.filter(p => p !== req.body.vencedor);
+      
+      if (outrosParticipantes.length > 0) {
+        await Jogador.updateMany(
+          { apelido: { $in: outrosParticipantes } },
+          { $inc: { partidas: 1 } }
+        );
+      }
     }
     
     const partida = new Partida(req.body);
@@ -282,7 +231,7 @@ app.get('/api/ranking/global', async (req, res) => {
 });
 
 // ============================================
-// ROTAS EXTRAS
+// ROTAS DA API - DASHBOARD
 // ============================================
 
 // GET dados para dashboard
@@ -306,33 +255,48 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
-// ROTAS DA API
+// ============================================
+// ROTAS DE TESTE E HEALTH
+// ============================================
+
 app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  const statusMap = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  
   res.json({ 
     status: 'online',
-    database: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
-    message: 'War Board API funcionando!'
+    database: statusMap[dbStatus] || 'unknown',
+    message: 'War Board API funcionando!',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Exemplo de rota para partidas
-app.get('/api/partidas', (req, res) => {
-  res.json([
-    { id: 1, data: '2024-01-20', vencedor: 'João', jogadores: 4 },
-    { id: 2, data: '2024-01-18', vencedor: 'Maria', jogadores: 3 }
-  ]);
+app.get('/api/test', async (req, res) => {
+  try {
+    const jogadoresCount = await Jogador.countDocuments();
+    const partidasCount = await Partida.countDocuments();
+    
+    res.json({
+      success: true,
+      jogadores: jogadoresCount,
+      partidas: partidasCount,
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
-app.post('/api/partidas', (req, res) => {
-  console.log('Nova partida:', req.body);
-  res.json({ 
-    success: true, 
-    message: 'Partida salva!',
-    data: req.body 
-  });
-});
-
+// ============================================
 // ROTAS PARA PÁGINAS HTML
+// ============================================
+
+// Rota principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
@@ -357,10 +321,36 @@ app.get('/nova-partida', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/nova-partida.html'));
 });
 
-// Iniciar servidor
+app.get('/cadastro', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/cadastro.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
+});
+
+// Rota catch-all para SPA (Single Page Application)
+app.get('*', (req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
+});
+
+// ============================================
+// INICIAR SERVIDOR
+// ============================================
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando: http://localhost:${PORT}`);
   console.log(`📁 Frontend servido de: ${path.join(__dirname, '../public')}`);
   console.log(`🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? 'Conectado' : 'Aguardando...'}`);
+  console.log(`🌍 CORS permitindo: ${allowedOrigins.join(', ')}`);
+  console.log(`🔗 API Endpoints disponíveis:`);
+  console.log(`   GET  /api/health`);
+  console.log(`   GET  /api/jogadores`);
+  console.log(`   POST /api/jogadores`);
+  console.log(`   GET  /api/partidas`);
+  console.log(`   POST /api/partidas`);
+  console.log(`   GET  /api/estatisticas`);
+  console.log(`   GET  /api/ranking/global`);
+  console.log(`   GET  /api/dashboard`);
 });
