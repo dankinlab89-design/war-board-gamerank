@@ -56,6 +56,63 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/controle_
     console.error('   3. Teste a string no MongoDB Compass');
   });
 
+// MODELOS MONGODB - Adicione antes das rotas
+
+const partidaSchema = new mongoose.Schema({
+  data: { type: Date, default: Date.now },
+  jogadores: [{
+    nome: String,
+    cor: String,
+    territorios: Number,
+    exercitos: Number,
+    eliminado: Boolean,
+    posicao: Number
+  }],
+  vencedor: String,
+  duracao: Number, // em minutos
+  pontos: Number,
+  torneio: String,
+  observacoes: String
+});
+
+const jogadorSchema = new mongoose.Schema({
+  nome: String,
+  email: String,
+  ativo: { type: Boolean, default: true },
+  data_cadastro: { type: Date, default: Date.now },
+  vitorias: { type: Number, default: 0 },
+  derrotas: { type: Number, default: 0 }
+});
+
+const Partida = mongoose.model('Partida', partidaSchema);
+const Jogador = mongoose.model('Jogador', jogadorSchema);
+
+// ROTAS REAIS - Substitua as rotas atuais /api/matches
+app.post('/api/partidas', async (req, res) => {
+  try {
+    const partida = new Partida(req.body);
+    await partida.save();
+    res.status(201).json({ 
+      success: true, 
+      message: 'Partida salva com sucesso!',
+      partida: partida 
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/partidas', async (req, res) => {
+  try {
+    const partidas = await Partida.find().sort({ data: -1 }).limit(50);
+    res.json({ success: true, partidas: partidas });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+
+
 // ROTAS DA API
 app.get('/api/health', (req, res) => {
   res.json({ 
