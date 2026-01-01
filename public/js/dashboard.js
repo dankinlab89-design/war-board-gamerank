@@ -25,12 +25,17 @@ class DashboardCorrigido {
                 this.loadRankingGlobal(),
                 this.loadRankingMensal(),
                 this.loadRankingPerformance(),
-                this.loadVencedoresMensais(this.currentYear),
                 this.loadUltimasPartidas()
             ]);
             
-            // Carregar gráficos depois
+            // Carregar dados dos gráficos/tabelas
             await this.loadChartData();
+            
+            // Carregar vencedores mensais (se tiver select)
+            const selectAno = document.getElementById('select-ano');
+            if (selectAno) {
+                await this.loadVencedoresMensais(this.currentYear);
+            }
             
             console.log('✅ Todos os dados carregados');
             
@@ -69,14 +74,30 @@ class DashboardCorrigido {
             const ranking = await response.json();
             
             const tbody = document.querySelector('#ranking-global tbody');
-            if (!tbody) return;
+            if (!tbody) {
+                console.warn('❌ Elemento #ranking-global tbody não encontrado');
+                return;
+            }
             
             tbody.innerHTML = '';
             
+            if (!ranking || ranking.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Nenhum jogador com partidas
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
             ranking.forEach((jogador, index) => {
-                const percentual = jogador.partidas > 0 ? 
-                    ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
-                const pontos = (jogador.vitorias * 10) + (jogador.partidas * 2);
+                const partidas = parseInt(jogador.partidas) || 0;
+                const vitorias = parseInt(jogador.vitorias) || 0;
+                const percentual = partidas > 0 ? 
+                    ((vitorias / partidas) * 100).toFixed(1) : 0;
+                const pontos = (vitorias * 10) + (partidas * 2);
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -91,8 +112,8 @@ class DashboardCorrigido {
                             ${jogador.patente}
                         </span>
                     </td>
-                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                    <td>${jogador.partidas || 0}</td>
+                    <td style="color: #10b981; font-weight: bold;">${vitorias}</td>
+                    <td>${partidas}</td>
                     <td>
                         <div class="performance-bar-container">
                             <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
@@ -119,7 +140,10 @@ class DashboardCorrigido {
             const ranking = await response.json();
             
             const tbody = document.querySelector('#ranking-mensal tbody');
-            if (!tbody) return;
+            if (!tbody) {
+                console.warn('❌ Elemento #ranking-mensal tbody não encontrado');
+                return;
+            }
             
             tbody.innerHTML = '';
             
@@ -136,8 +160,10 @@ class DashboardCorrigido {
             }
             
             ranking.forEach((jogador, index) => {
-                const percentual = jogador.partidas > 0 ? 
-                    ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+                const partidas = parseInt(jogador.partidas) || 0;
+                const vitorias = parseInt(jogador.vitorias) || 0;
+                const percentual = partidas > 0 ? 
+                    ((vitorias / partidas) * 100).toFixed(1) : 0;
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -148,8 +174,8 @@ class DashboardCorrigido {
                             ${jogador.patente}
                         </span>
                     </td>
-                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                    <td>${jogador.partidas || 0}</td>
+                    <td style="color: #10b981; font-weight: bold;">${vitorias}</td>
+                    <td>${partidas}</td>
                     <td>
                         <span class="percent-badge ${this.getPercentClass(percentual)}">
                             ${percentual}%
@@ -180,7 +206,10 @@ class DashboardCorrigido {
             const ranking = await response.json();
             
             const tbody = document.querySelector('#ranking-performance tbody');
-            if (!tbody) return;
+            if (!tbody) {
+                console.warn('❌ Elemento #ranking-performance tbody não encontrado');
+                return;
+            }
             
             tbody.innerHTML = '';
             
@@ -196,9 +225,10 @@ class DashboardCorrigido {
             }
             
             ranking.forEach((jogador, index) => {
-                // CORREÇÃO: usar 'percentual' em vez de 'performance'
                 const performance = parseFloat(jogador.percentual) || 0;
                 const nivel = this.getNivelPerformance(performance);
+                const partidas = parseInt(jogador.partidas) || 0;
+                const vitorias = parseInt(jogador.vitorias) || 0;
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -209,8 +239,8 @@ class DashboardCorrigido {
                             ${jogador.patente}
                         </span>
                     </td>
-                    <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                    <td>${jogador.partidas || 0}</td>
+                    <td style="color: #10b981; font-weight: bold;">${vitorias}</td>
+                    <td>${partidas}</td>
                     <td>
                         <span class="performance-score ${this.getPerformanceClass(performance)}">
                             ${performance.toFixed(1)}%
@@ -227,106 +257,16 @@ class DashboardCorrigido {
             
         } catch (error) {
             console.error('Erro ao carregar ranking performance:', error);
-        }
-    }
-
-    async loadVencedoresMensais(ano) {
-    try {
-        // Primeiro, tentar obter anos disponíveis
-        const anosResponse = await fetch(`${this.apiBase}/vencedores-anos`);
-        const anosDisponiveis = await anosResponse.json();
-        
-        // Atualizar select de anos
-        this.atualizarSelectAnos(anosDisponiveis, ano);
-        
-        // Buscar vencedores do ano selecionado
-        const response = await fetch(`${this.apiBase}/vencedores-mensais/${ano}`);
-        const vencedores = await response.json();
-        
-        this.renderVencedoresMensais(vencedores, ano);
-        
-    } catch (error) {
-        console.error('❌ Erro vencedores mensais:', error);
-        // Fallback: mostrar meses vazios
-        this.renderVencedoresMensais({}, ano);
-    }
-}
-
-atualizarSelectAnos(anosDisponiveis, anoAtual) {
-    const selectAno = document.getElementById('select-ano');
-    if (!selectAno) return;
-    
-    selectAno.innerHTML = '';
-    
-    anosDisponiveis.forEach(ano => {
-        const option = document.createElement('option');
-        option.value = ano;
-        option.textContent = ano;
-        if (ano == anoAtual) {
-            option.selected = true;
-        }
-        selectAno.appendChild(option);
-    });
-}
-
-renderVencedoresMensais(vencedores, ano) {
-    const grid = document.getElementById('vencedores-grid');
-    if (!grid) return;
-    
-    grid.innerHTML = '';
-    
-    const meses = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-    ];
-    
-    meses.forEach((mesNome, index) => {
-        const mesNum = index + 1;
-        const vencedor = vencedores[mesNum];
-        
-        const card = document.createElement('div');
-        card.className = 'mes-card';
-        
-        if (vencedor) {
-            card.innerHTML = `
-                <div class="mes-header">
-                    <h4>${mesNome.toUpperCase()}</h4>
-                    <span class="mes-badge vencedor">🏆</span>
-                </div>
-                <div class="mes-content">
-                    <div class="vencedor-nome">${vencedor.vencedor}</div>
-                    <div class="vencedor-stats">
-                        <span class="vitorias">${vencedor.vitorias} vitórias</span>
-                        <span class="patente-badge ${this.getPatenteClass(vencedor.patente)}">
-                            ${vencedor.patente}
-                        </span>
-                    </div>
-                    <div class="vencedor-detalhes">
-                        <small>${vencedor.partidas} partidas • ${vencedor.percentual}%</small>
-                    </div>
-                </div>
-            `;
-        } else {
-            card.innerHTML = `
-                <div class="mes-header">
-                    <h4>${mesNome.toUpperCase()}</h4>
-                    <span class="mes-badge sem-dados">-</span>
-                </div>
-                <div class="mes-content">
-                    <div class="sem-vencedor">Sem vencedor</div>
-                    <div class="vencedor-detalhes">
-                        <small>${ano}</small>
-                    </div>
-                </div>
-            `;
-        }
-        
-        grid.appendChild(card);
-    });
-}
-            
-        } catch (error) {
-            console.error('Erro ao carregar vencedores mensais:', error);
+            const tbody = document.querySelector('#ranking-performance tbody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Erro ao carregar ranking performance
+                        </td>
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -336,16 +276,33 @@ renderVencedoresMensais(vencedores, ano) {
             const partidas = await response.json();
             
             const tbody = document.querySelector('#ultimas-partidas tbody');
-            if (!tbody) return;
+            if (!tbody) {
+                console.warn('❌ Elemento #ultimas-partidas tbody não encontrado');
+                return;
+            }
             
             tbody.innerHTML = '';
             
-            // Pegar as últimas 10 partidas
-            const ultimas = partidas
+            if (!partidas || partidas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                            Nenhuma partida registrada
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Pegar as últimas 10 partidas (mais recentes primeiro)
+            const ultimas = [...partidas]
                 .sort((a, b) => new Date(b.data) - new Date(a.data))
                 .slice(0, 10);
             
             ultimas.forEach(partida => {
+                const participantes = partida.participantes ? 
+                    partida.participantes.split(',').length : 0;
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${this.formatarData(partida.data)}</td>
@@ -359,7 +316,7 @@ renderVencedoresMensais(vencedores, ano) {
                             ${partida.tipo || 'global'}
                         </span>
                     </td>
-                    <td>${partida.participantes ? partida.participantes.split(',').length : 0}</td>
+                    <td>${participantes} jogadores</td>
                     <td>${partida.observacoes || '-'}</td>
                 `;
                 tbody.appendChild(row);
@@ -370,35 +327,36 @@ renderVencedoresMensais(vencedores, ano) {
         }
     }
 
-    // ============ MÉTODOS DE GRÁFICOS ============
+    // ============ MÉTODOS DE GRÁFICOS/TABELAS ============
 
     async loadChartData() {
         try {
-            console.log('📊 Carregando gráficos...');
+            console.log('📊 Carregando dados dos gráficos...');
             
+            // Carregar patentes e assiduidade em paralelo
             await Promise.all([
-                this.loadPatentesChart(),
-                this.loadAssiduidadeChart()
+                this.mostrarDadosPatentes(),
+                this.mostrarDadosAssiduidade()
             ]);
             
         } catch (error) {
-            console.error('❌ Erro nos gráficos:', error);
+            console.error('❌ Erro ao carregar dados dos gráficos:', error);
         }
     }
 
-    async loadPatentesChart() {
+    async mostrarDadosPatentes() {
         try {
             const response = await fetch(`${this.apiBase}/estatisticas/patentes`);
             const data = await response.json();
             
-            console.log('📊 Dados patentes:', data);
+            console.log('📊 Dados de patentes:', data);
             
-            this.createPatentesChart(data);
+            this.criarTabelaPatentes(data);
             
         } catch (error) {
-            console.error('❌ Erro patentes:', error);
-            // Fallback com dados do console
-            this.createPatentesChart({
+            console.error('❌ Erro ao carregar patentes:', error);
+            // Mostrar dados de fallback
+            this.criarTabelaPatentes({
                 'Cabo 🪖': 10,
                 'Soldado 🛡️': 0,
                 'Tenente ⚔️': 0,
@@ -411,19 +369,19 @@ renderVencedoresMensais(vencedores, ano) {
         }
     }
 
-    async loadAssiduidadeChart() {
+    async mostrarDadosAssiduidade() {
         try {
             const response = await fetch(`${this.apiBase}/estatisticas/assiduidade`);
             const data = await response.json();
             
-            console.log('📊 Dados assiduidade:', data);
+            console.log('📊 Dados de assiduidade:', data);
             
-            this.createAssiduidadeChart(data);
+            this.criarTabelaAssiduidade(data);
             
         } catch (error) {
-            console.error('❌ Erro assiduidade:', error);
-            // Fallback com seus dados do console
-            this.createAssiduidadeChart([
+            console.error('❌ Erro ao carregar assiduidade:', error);
+            // Mostrar dados de fallback
+            this.criarTabelaAssiduidade([
                 { apelido: 'Daniel$80', partidas: 11 },
                 { apelido: 'Lima', partidas: 9 },
                 { apelido: 'Costa', partidas: 8 },
@@ -436,161 +394,199 @@ renderVencedoresMensais(vencedores, ano) {
         }
     }
 
-    createPatentesChart(data) {
-        const ctx = document.getElementById('chart-patentes');
-        if (!ctx) {
-            console.warn('Elemento chart-patentes não encontrado');
+    criarTabelaPatentes(data) {
+        const container = document.getElementById('chart-patentes');
+        if (!container) {
+            console.warn('❌ Elemento #chart-patentes não encontrado');
             return;
         }
         
-        // Destruir gráfico anterior se existir
-        if (this.charts.patentes) {
-            this.charts.patentes.destroy();
-        }
+        // Limpar container
+        container.innerHTML = '';
         
-        // Verificar se Chart.js está disponível
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js não está carregado');
-            return;
-        }
+        // Calcular total
+        const total = Object.values(data).reduce((sum, val) => sum + parseInt(val), 0);
         
-        const labels = Object.keys(data);
-        const values = Object.values(data);
+        // Criar tabela
+        let html = `
+            <div class="grafico-titulo">
+                <i class="fas fa-chart-pie"></i> DISTRIBUIÇÃO DE PATENTES
+            </div>
+            <table class="grafico-tabela">
+                <thead>
+                    <tr>
+                        <th>PATENTE</th>
+                        <th>JOGADORES</th>
+                        <th>%</th>
+                        <th>BARRA</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
         
-        this.charts.patentes = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: [
-                        '#6c757d', // Cabo
-                        '#28a745', // Soldado
-                        '#007bff', // Tenente
-                        '#6610f2', // Capitão
-                        '#e83e8c', // Major
-                        '#fd7e14', // Coronel
-                        '#ffc107', // General
-                        '#ffd700'  // Marechal
-                    ],
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            padding: 15,
-                            font: {
-                                family: 'Montserrat',
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
-                                return `${context.label}: ${context.raw} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
+        Object.entries(data).forEach(([patente, quantidade]) => {
+            const percentual = total > 0 ? ((quantidade / total) * 100).toFixed(1) : 0;
+            
+            html += `
+                <tr>
+                    <td>
+                        <span class="patente-badge ${this.getPatenteClass(patente)}">
+                            ${patente}
+                        </span>
+                    </td>
+                    <td style="text-align: center; font-weight: bold;">${quantidade}</td>
+                    <td style="text-align: center;">${percentual}%</td>
+                    <td>
+                        <div style="height: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;">
+                            <div style="height: 100%; width: ${percentual}%; background: linear-gradient(90deg, var(--secondary), #ffd700); border-radius: 10px;"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
+        
+        html += `
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td style="font-weight: bold;">TOTAL</td>
+                        <td style="text-align: center; font-weight: bold;">${total}</td>
+                        <td style="text-align: center;">100%</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+        
+        container.innerHTML = html;
     }
 
-    createAssiduidadeChart(data) {
-        const ctx = document.getElementById('chart-assiduidade');
-        if (!ctx) {
-            console.warn('Elemento chart-assiduidade não encontrado');
+    criarTabelaAssiduidade(data) {
+        const container = document.getElementById('chart-assiduidade');
+        if (!container) {
+            console.warn('❌ Elemento #chart-assiduidade não encontrado');
             return;
         }
         
-        // Destruir gráfico anterior se existir
-        if (this.charts.assiduidade) {
-            this.charts.assiduidade.destroy();
-        }
-        
-        // Verificar se Chart.js está disponível
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js não está carregado');
-            return;
-        }
+        // Limpar container
+        container.innerHTML = '';
         
         // Ordenar por partidas (decrescente)
         const sortedData = [...data].sort((a, b) => b.partidas - a.partidas);
-        const labels = sortedData.map(item => item.apelido);
-        const values = sortedData.map(item => item.partidas);
+        const maxPartidas = sortedData[0]?.partidas || 1;
         
-        this.charts.assiduidade = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Partidas Jogadas',
-                    data: values,
-                    backgroundColor: 'rgba(184, 134, 11, 0.8)',
-                    borderColor: 'rgba(184, 134, 11, 1)',
-                    borderWidth: 2,
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: 'rgba(255, 255, 255, 0.8)'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Partidas: ${context.raw}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Partidas',
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            stepSize: 1
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Jogadores',
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        },
-                        ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)'
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
+        // Criar tabela
+        let html = `
+            <div class="grafico-titulo">
+                <i class="fas fa-chart-bar"></i> ASSIDUIDADE - TOP 8
+            </div>
+            <table class="grafico-tabela">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>JOGADOR</th>
+                        <th>PARTIDAS</th>
+                        <th>BARRA</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        sortedData.slice(0, 8).forEach((item, index) => {
+            const percentual = maxPartidas > 0 ? (item.partidas / maxPartidas) * 100 : 0;
+            
+            html += `
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+                    <td><strong>${item.apelido}</strong></td>
+                    <td style="text-align: center; font-weight: bold; color: var(--secondary);">${item.partidas}</td>
+                    <td>
+                        <div style="height: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;">
+                            <div style="height: 100%; width: ${percentual}%; background: linear-gradient(90deg, #b8860b, #ffd700); border-radius: 10px;"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
+        
+        html += `
+                </tbody>
+            </table>
+        `;
+        
+        container.innerHTML = html;
+    }
+
+    async loadVencedoresMensais(ano) {
+        try {
+            // Verificar se o endpoint existe
+            const response = await fetch(`${this.apiBase}/vencedores-mensais/${ano}`);
+            
+            const grid = document.getElementById('vencedores-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            const meses = [
+                'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+            ];
+            
+            // Tentar obter dados
+            let vencedores = {};
+            try {
+                vencedores = await response.json();
+            } catch {
+                // Se não houver dados, mostrar cards vazios
+            }
+            
+            meses.forEach((mesNome, index) => {
+                const mesNum = index + 1;
+                const vencedor = vencedores[mesNum];
+                
+                const card = document.createElement('div');
+                card.className = 'mes-card';
+                
+                if (vencedor && vencedor.vencedor) {
+                    card.innerHTML = `
+                        <div class="mes-header">
+                            <h4>${mesNome.toUpperCase()}</h4>
+                            <span class="mes-badge vencedor">🏆</span>
+                        </div>
+                        <div class="mes-content">
+                            <div class="vencedor-nome">${vencedor.vencedor}</div>
+                            <div class="vencedor-stats">
+                                <span class="vitorias">${vencedor.vitorias} vitórias</span>
+                                <span class="patente-badge ${this.getPatenteClass(vencedor.patente)}">
+                                    ${vencedor.patente}
+                                </span>
+                            </div>
+                            <div class="vencedor-detalhes">
+                                <small>${vencedor.partidas} partidas • ${vencedor.percentual}%</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="mes-header">
+                            <h4>${mesNome.toUpperCase()}</h4>
+                            <span class="mes-badge sem-dados">-</span>
+                        </div>
+                        <div class="mes-content">
+                            <div class="sem-vencedor">Sem vencedor</div>
+                            <div class="vencedor-detalhes">
+                                <small>${ano}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                grid.appendChild(card);
+            });
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar vencedores mensais:', error);
+        }
     }
 
     // ============ MÉTODOS AUXILIARES ============
@@ -666,6 +662,34 @@ renderVencedoresMensais(vencedores, ano) {
         
         // Atualizar timestamp
         this.updateTimestamp();
+        
+        // Sistema de tabs
+        this.setupTabs();
+    }
+
+    setupTabs() {
+        // Adicionar event listeners às tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                if (tabName) {
+                    this.switchTab(tabName);
+                }
+            });
+        });
+    }
+
+    switchTab(tabName) {
+        // Remover active de todas
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Adicionar active na selecionada
+        const btn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+        const content = document.getElementById(`tab-${tabName}`);
+        
+        if (btn) btn.classList.add('active');
+        if (content) content.classList.add('active');
     }
 
     setupExportButtons() {
@@ -815,7 +839,6 @@ renderVencedoresMensais(vencedores, ano) {
 
     showNotification(message, type = 'success') {
         try {
-            // Implementação simples
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
@@ -846,7 +869,7 @@ renderVencedoresMensais(vencedores, ano) {
             
         } catch (error) {
             console.error('Erro ao mostrar notificação:', error);
-            alert(message); // Fallback
+            alert(message);
         }
     }
 
@@ -887,4 +910,3 @@ if (document.querySelector('.dashboard-grid') ||
 } else {
     console.log('⚠️ Não é página do dashboard, não inicializando');
 }
-
