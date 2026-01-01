@@ -43,6 +43,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Rota principal
+//
 app.get('/', (req, res) => {
   res.json({ 
     message: '🎮 API War Board - Online!',
