@@ -111,7 +111,200 @@ app.get('/api/partidas', async (req, res) => {
   }
 });
 
+// ============================================
+// MODELOS MONGODB - Para seu sistema WAR
+// ============================================
 
+const jogadorSchema = new mongoose.Schema({
+  nome: { type: String, required: true },
+  apelido: { type: String, required: true, unique: true },
+  email: { type: String },
+  observacoes: String,
+  patente: { type: String, default: 'Cabo 🪖' },
+  ativo: { type: Boolean, default: true },
+  data_cadastro: { type: Date, default: Date.now },
+  vitorias: { type: Number, default: 0 },
+  partidas: { type: Number, default: 0 }
+});
+
+const partidaSchema = new mongoose.Schema({
+  data: { type: Date, default: Date.now },
+  tipo: { type: String, default: 'global' },
+  vencedor: { type: String, required: true },
+  participantes: [{ type: String }], // Array de apelidos
+  observacoes: String,
+  pontos: { type: Number, default: 100 }
+});
+
+const Jogador = mongoose.model('Jogador', jogadorSchema);
+const Partida = mongoose.model('Partida', partidaSchema);
+
+// ============================================
+// ROTAS DA API - JOGADORES
+// ============================================
+
+// GET todos jogadores
+app.get('/api/jogadores', async (req, res) => {
+  try {
+    const jogadores = await Jogador.find({ ativo: true }).sort({ vitorias: -1 });
+    res.json({ success: true, jogadores });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST novo jogador
+app.post('/api/jogadores', async (req, res) => {
+  try {
+    const jogador = new Jogador(req.body);
+    await jogador.save();
+    res.status(201).json({ 
+      success: true, 
+      message: 'Jogador cadastrado com sucesso!',
+      jogador 
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROTAS DA API - PARTIDAS
+// ============================================
+
+// GET todas partidas
+app.get('/api/partidas', async (req, res) => {
+  try {
+    const partidas = await Partida.find().sort({ data: -1 });
+    res.json({ success: true, partidas });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST nova partida
+app.post('/api/partidas', async (req, res) => {
+  try {
+    // Atualizar estatísticas do vencedor
+    await Jogador.findOneAndUpdate(
+      { apelido: req.body.vencedor },
+      { 
+        $inc: { 
+          vitorias: 1,
+          partidas: 1 
+        }
+      }
+    );
+    
+    // Atualizar estatísticas dos participantes
+    if (req.body.participantes && Array.isArray(req.body.participantes)) {
+      await Jogador.updateMany(
+        { 
+          apelido: { $in: req.body.participantes },
+          apelido: { $ne: req.body.vencedor } // Não atualizar o vencedor de novo
+        },
+        { $inc: { partidas: 1 } }
+      );
+    }
+    
+    const partida = new Partida(req.body);
+    await partida.save();
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Partida registrada com sucesso!',
+      partida 
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROTAS DA API - ESTATÍSTICAS
+// ============================================
+
+// GET estatísticas gerais
+app.get('/api/estatisticas', async (req, res) => {
+  try {
+    const totalJogadores = await Jogador.countDocuments({ ativo: true });
+    const totalPartidas = await Partida.countDocuments();
+    
+    // Jogador com mais vitórias
+    const recordVitorias = await Jogador.findOne({ ativo: true })
+      .sort({ vitorias: -1 })
+      .select('apelido vitorias');
+    
+    // Últimas partidas
+    const ultimasPartidas = await Partida.find()
+      .sort({ data: -1 })
+      .limit(5);
+    
+    res.json({
+      success: true,
+      total_jogadores: totalJogadores,
+      total_partidas: totalPartidas,
+      record_vitorias: recordVitorias ? recordVitorias.vitorias : 0,
+      record_holder: recordVitorias ? recordVitorias.apelido : 'N/A',
+      ultimas_partidas: ultimasPartidas
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROTAS DA API - RANKING
+// ============================================
+
+// GET ranking global
+app.get('/api/ranking/global', async (req, res) => {
+  try {
+    const jogadores = await Jogador.find({ ativo: true })
+      .sort({ vitorias: -1, partidas: 1 })
+      .select('apelido patente vitorias partidas')
+      .limit(20);
+    
+    // Calcular percentual de vitórias
+    const ranking = jogadores.map(jogador => ({
+      apelido: jogador.apelido,
+      patente: jogador.patente,
+      vitorias: jogador.vitorias,
+      partidas: jogador.partidas,
+      percentual: jogador.partidas > 0 ? 
+        ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0
+    }));
+    
+    res.json(ranking);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROTAS EXTRAS
+// ============================================
+
+// GET dados para dashboard
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const totalJogadores = await Jogador.countDocuments({ ativo: true });
+    const totalPartidas = await Partida.countDocuments();
+    const ranking = await Jogador.find({ ativo: true })
+      .sort({ vitorias: -1 })
+      .limit(3)
+      .select('apelido vitorias');
+    
+    res.json({
+      success: true,
+      total_jogadores: totalJogadores,
+      total_partidas: totalPartidas,
+      podium: ranking
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // ROTAS DA API
 app.get('/api/health', (req, res) => {
