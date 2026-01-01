@@ -24,7 +24,17 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+// ... depois do app.use(cors(...)) e app.use(express.json())
 
+// SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND
+app.use(express.static('public'));
+
+// Rota para página inicial
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/../public/index.html');
+});
+
+// API Routes continuam abaixo...
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
