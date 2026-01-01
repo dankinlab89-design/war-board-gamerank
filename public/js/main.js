@@ -2,7 +2,9 @@
 
 class WARSystem {
     constructor() {
-        this.apiBase = '/api';
+       this.apiBase = window.location.origin + '/api';
+// ou especificamente:
+// this.apiBase = 'https://war-board-gamerank.onrender.com/api';
         this.init();
     }
 
