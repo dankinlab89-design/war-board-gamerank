@@ -737,6 +737,151 @@ h1, h2, h3, h4 {
     color: var(--secondary);
 }
 
+/* Estilos para as tabelas de gráficos */
+.grafico-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.grafico-tabela th {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--secondary);
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+}
+
+.grafico-tabela td {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.grafico-tabela tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Título dos gráficos */
+.grafico-titulo {
+    color: var(--secondary);
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Container dos gráficos */
+.grafico-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 25px;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Cards dos vencedores mensais */
+.mes-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.mes-card:hover {
+    border-color: var(--secondary);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+}
+
+.mes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mes-header h4 {
+    color: white;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.mes-badge {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1rem;
+}
+
+.mes-badge.vencedor {
+    background: linear-gradient(135deg, #ffd700, #ffc400);
+    color: #000;
+}
+
+.mes-badge.sem-dados {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.vencedor-nome {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.vencedor-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.vitorias {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.vencedor-detalhes {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.sem-vencedor {
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 15px 0;
+    font-style: italic;
+}
+
+/* Select de ano */
+.year-selector {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.year-selector label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
 /* =============================================
    TABELAS
 ============================================= */
@@ -1214,3 +1359,4 @@ h1, h2, h3, h4 {
     color: white;
     border: 1px solid #dc3545;
 }
+
