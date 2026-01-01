@@ -160,21 +160,3 @@ function mostrarErro(mensagem) {
         container.prepend(errorDiv);
     }
 }
-
-// Função para testar a API (opcional)
-async function testarAPI() {
-    console.log('Testando API...');
-    try {
-        const response = await fetch('/api/jogadores');
-        const data = await response.json();
-        console.log('Teste API - Status:', response.status);
-        console.log('Teste API - Dados:', data);
-        return data;
-    } catch (error) {
-        console.error('Teste API - Erro:', error);
-        return null;
-    }
-}
-
-// Testar automaticamente ao carregar (debug)
-// testarAPI();
