@@ -1,94 +1,97 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 
-// Configuração CORS segura
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:5173'];
+// Configuração CORS
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://war-board-gamerank.onrender.com']
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'Acesso não permitido por CORS';
-      return callback(new Error(msg), false);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 }));
-// ... depois do app.use(cors(...)) e app.use(express.json())
 
-// SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND
-app.use(express.static('public'));
-
-// Rota para página inicial
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/../public/index.html');
-});
-
-// API Routes continuam abaixo...
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Conectar ao MongoDB
-console.log('🔄 Conectando ao MongoDB...');
+// SERVIR ARQUIVOS ESTÁTICOS
+app.use(express.static(path.join(__dirname, '../public')));
 
-mongoose.connect(process.env.MONGODB_URI, {
+// Conectar MongoDB
+console.log('🔄 Conectando ao MongoDB...');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/war-database', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
-  console.log('✅ MongoDB conectado com sucesso!');
-})
-.catch(err => {
-  console.error('❌ ERRO MongoDB:', err.message);
-});
+.then(() => console.log('✅ MongoDB conectado!'))
+.catch(err => console.error('❌ Erro MongoDB:', err));
 
-// Rota principal
-//
-app.get('/', (req, res) => {
-  res.json({ 
-    message: '🎮 API War Board - Online!',
-    status: 'operacional',
-    database: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
-    endpoints: ['/api/health', '/api/matches']
-  });
-});
-
-// Rota de saúde
+// ROTAS DA API
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'online',
     database: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
-    tempo: process.uptime() + ' segundos'
+    message: 'War Board API funcionando!'
   });
 });
 
-// Rota para partidas (exemplo)
-app.post('/api/matches', (req, res) => {
-  res.json({ 
-    message: 'Partida salva! (funcionalidade em desenvolvimento)',
-    dados: req.body
-  });
-});
-
-app.get('/api/matches', (req, res) => {
+// Exemplo de rota para partidas
+app.get('/api/partidas', (req, res) => {
   res.json([
     { id: 1, data: '2024-01-20', vencedor: 'João', jogadores: 4 },
     { id: 2, data: '2024-01-18', vencedor: 'Maria', jogadores: 3 }
   ]);
 });
 
-// Porta do servidor
+app.post('/api/partidas', (req, res) => {
+  console.log('Nova partida:', req.body);
+  res.json({ 
+    success: true, 
+    message: 'Partida salva!',
+    data: req.body 
+  });
+});
+
+// ROTAS PARA PÁGINAS HTML
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
+app.get('/partidas', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/partidas.html'));
+});
+
+app.get('/ranking', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/ranking.html'));
+});
+
+app.get('/jogadores', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/jogadores.html'));
+});
+
+app.get('/nova-partida', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/nova-partida.html'));
+});
+
+// Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando: http://localhost:${PORT}`);
+  console.log(`📁 Frontend servido de: ${path.join(__dirname, '../public')}`);
+  console.log(`🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? 'Conectado' : 'Aguardando...'}`);
 });
