@@ -18,6 +18,68 @@ app.use(express.static('public'));
 const db = getDatabase();
 
 // ====================
+// ROTAS PARA ADMIN (ATUALIZAÇÃO)
+// ====================
+
+// Atualizar jogador (admin)
+app.put('/api/admin/jogadores/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nome, apelido, email, patente, status, observacoes } = req.body;
+        
+        if (!nome || !apelido || !patente || !status) {
+            return res.status(400).json({ 
+                sucesso: false, 
+                error: 'Dados incompletos' 
+            });
+        }
+        
+        const result = await db.updateJogador(id, {
+            nome,
+            apelido,
+            email: email || null,
+            patente,
+            status,
+            observacoes: observacoes || ''
+        });
+        
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Erro ao atualizar jogador:', error);
+        res.status(500).json({ 
+            sucesso: false, 
+            error: error.message || 'Erro interno do servidor' 
+        });
+    }
+});
+
+// Alterar status do jogador (admin)
+app.patch('/api/admin/jogadores/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        if (!status || !['Ativo', 'Inativo'].includes(status)) {
+            return res.status(400).json({ 
+                sucesso: false, 
+                error: 'Status inválido. Use "Ativo" ou "Inativo"' 
+            });
+        }
+        
+        const result = await db.updateStatus(id, status);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Erro ao alterar status:', error);
+        res.status(500).json({ 
+            sucesso: false, 
+            error: error.message || 'Erro interno do servidor' 
+        });
+    }
+});
+
+// ====================
 // ROTAS DE JOGADORES
 // ====================
 
