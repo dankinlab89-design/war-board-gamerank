@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Nova Batalha - WAR Board GameRank</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .jogadores-lista {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .jogador-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+        .jogador-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #b8860b;
+        }
+        .jogador-check {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .jogador-info {
+            display: flex;
+            align-items: center;
+        }
+        .jogador-nome {
+            font-weight: bold;
+            color: white;
+        }
+        .jogador-patente {
+            margin-left: 10px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .status-box {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-ok {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+        }
+        .status-error {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+        .status-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">➕</div>
+                <h1>NOVA BATALHA <span class="nav-subtitle">WAR Board</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
+                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
+                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
+                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="nova-partida-funcional.html" class="nav-link active"><i class="fas fa-plus"></i> Nova Batalha</a>
+            </div>
+            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="form-container">
+            <h2 class="section-title">REGISTRAR NOVA BATALHA</h2>
+            
+            <div id="status" class="status-box" style="display: none;"></div>
+            
+            <form id="form-partida">
+                <div class="form-group">
+                    <label class="form-label">Data da Batalha:</label>
+                    <input type="date" class="form-control" id="data" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Tipo de Batalha:</label>
+                    <select class="form-control" id="tipo" required>
+                        <option value="global">Global 🌎</option>
+                        <option value="campeonato">Campeonato 🏆</option>
+                        <option value="amistosa">Amistosa 🤝</option>
+                        <option value="eliminatoria">Eliminatória ⚔️</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Selecione os Participantes (mínimo 3):</label>
+                    <div id="jogadores-loading">
+                        <p><i class="fas fa-spinner fa-spin"></i> Carregando jogadores...</p>
+                    </div>
+                    <div id="jogadores-lista" class="jogadores-lista" style="display: none;"></div>
+                    <div id="contador" class="status-warning status-box" style="margin-top: 15px;">
+                        0 jogadores selecionados
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Vencedor:</label>
+                    <select class="form-control" id="vencedor" required disabled>
+                        <option value="">Primeiro selecione 3+ participantes</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observações:</label>
+                    <textarea class="form-control" id="observacoes" rows="3" placeholder="Detalhes da batalha..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" id="btn-submit" disabled>
+                        <i class="fas fa-flag"></i> REGISTRAR BATALHA
+                    </button>
+                    <a href="partidas.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> VER BATALHAS
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 WAR Board GameRank - Sistema de Batalhas</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Menu mobile
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
+        
+        // Variáveis
+        let jogadores = [];
+        let selecionados = [];
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data atual
+            document.getElementById('data').value = new Date().toISOString().split('T')[0];
+            
+            // Carregar jogadores
+            carregarJogadores();
+        });
+        
+        // Carregar jogadores do banco
+        async function carregarJogadores() {
+            try {
+                mostrarStatus('Carregando jogadores...', 'warning');
+                
+                const response = await fetch('/api/jogadores');
+                
+                if (!response.ok) {
+                    throw new Error('Erro na API: ' + response.status);
+                }
+                
+                jogadores = await response.json();
+                
+                if (jogadores.length === 0) {
+                    mostrarStatus('Nenhum jogador cadastrado. Cadastre jogadores primeiro.', 'error');
+                    return;
+                }
+                
+                // Esconder loading, mostrar lista
+                document.getElementById('jogadores-loading').style.display = 'none';
+                const lista = document.getElementById('jogadores-lista');
+                lista.style.display = 'block';
+                
+                // Adicionar jogadores à lista
+                lista.innerHTML = '';
+                jogadores.forEach(jogador => {
+                    const div = document.createElement('div');
+                    div.className = 'jogador-item';
+                    div.innerHTML = `
+                        <div class="jogador-info">
+                            <input type="checkbox" 
+                                   class="jogador-check" 
+                                   value="${jogador.id}"
+                                   id="jogador-${jogador.id}"
+                                   onchange="atualizarSelecionados()">
+                            <div>
+                                <div class="jogador-nome">${jogador.apelido}</div>
+                                <div class="jogador-patente">${jogador.patente}</div>
+                            </div>
+                        </div>
+                    `;
+                    lista.appendChild(div);
+                });
+                
+                mostrarStatus(`${jogadores.length} jogadores carregados`, 'ok');
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarStatus('Erro ao carregar jogadores: ' + error.message, 'error');
+            }
+        }
+        
+        // Atualizar lista de selecionados
+        function atualizarSelecionados() {
+            const checkboxes = document.querySelectorAll('.jogador-check:checked');
+            selecionados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            
+            // Atualizar contador
+            const contador = document.getElementById('contador');
+            contador.textContent = `${selecionados.length} jogadores selecionados`;
+            
+            if (selecionados.length < 3) {
+                contador.className = 'status-error status-box';
+                document.getElementById('vencedor').disabled = true;
+                document.getElementById('btn-submit').disabled = true;
+            } else {
+                contador.className = 'status-ok status-box';
+                atualizarVencedores();
+                document.getElementById('vencedor').disabled = false;
+                document.getElementById('btn-submit').disabled = false;
+            }
+        }
+        
+        // Atualizar lista de vencedores
+        function atualizarVencedores() {
+            const select = document.getElementById('vencedor');
+            select.innerHTML = '<option value="">Selecione o vencedor</option>';
+            
+            selecionados.forEach(id => {
+                const jogador = jogadores.find(j => j.id === id);
+                if (jogador) {
+                    const option = document.createElement('option');
+                    option.value = jogador.id;
+                    option.textContent = `${jogador.apelido} (${jogador.patente})`;
+                    select.appendChild(option);
+                }
+            });
+        }
+        
+        // Enviar formulário
+        document.getElementById('form-partida').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (selecionados.length < 3) {
+                mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
+                return;
+            }
+            
+            const vencedorId = document.getElementById('vencedor').value;
+            if (!vencedorId) {
+                mostrarStatus('Selecione um vencedor!', 'error');
+                return;
+            }
+            
+            const partida = {
+                data: document.getElementById('data').value,
+                tipo: document.getElementById('tipo').value,
+                vencedor_id: vencedorId,
+                participantes: selecionados.join(','),
+                observacoes: document.getElementById('observacoes').value || ''
+            };
+            
+            try {
+                mostrarStatus('Registrando partida...', 'warning');
+                
+                const response = await fetch('/api/partidas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(partida)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.sucesso) {
+                    mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
+                    
+                    // Limpar
+                    document.querySelectorAll('.jogador-check:checked').forEach(cb => cb.checked = false);
+                    document.getElementById('observacoes').value = '';
+                    document.getElementById('vencedor').innerHTML = '<option value="">Primeiro selecione 3+ participantes</option>';
+                    document.getElementById('vencedor').disabled = true;
+                    document.getElementById('btn-submit').disabled = true;
+                    selecionados = [];
+                    document.getElementById('contador').textContent = '0 jogadores selecionados';
+                    document.getElementById('contador').className = 'status-warning status-box';
+                    
+                    // Redirecionar após 2 segundos
+                    setTimeout(() => {
+                        window.location.href = 'partidas.html';
+                    }, 2000);
+                    
+                } else {
+                    mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarStatus('Erro de conexão: ' + error.message, 'error');
+            }
+        });
+        
+        // Função para mostrar status
+        function mostrarStatus(mensagem, tipo) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = mensagem;
+            statusDiv.className = `status-box status-${tipo}`;
+            statusDiv.style.display = 'block';
+            
+            if (tipo === 'ok') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

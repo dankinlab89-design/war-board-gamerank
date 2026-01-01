@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 WAR Board GameRank</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navegação Militar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">⚔️</div>
+                <h1>WAR <span class="nav-subtitle">Board GameRank</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Quartel General</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
+                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
+                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
+                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="cadastro.html" class="nav-btn"><i class="fas fa-user-plus"></i> Alistar</a>
+            </div>
+            <button class="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Banner Hero -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-badge">ESTRATÉGIA • HONRA • VITÓRIA</div>
+            <h2 class="hero-title">COMANDO DE OPERAÇÕES</h2>
+            <p class="hero-subtitle">Sistema de ranking e estatísticas para o jogo WAR</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-number" id="total-jogadores">0</div>
+                    <div class="stat-label">TROPAS ATIVAS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-flag"></i></div>
+                    <div class="stat-number" id="total-partidas">0</div>
+                    <div class="stat-label">BATALHAS REGISTRADAS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                    <div class="stat-number" id="record-vitorias">0</div>
+                    <div class="stat-label">RECORDE DE VITÓRIAS</div>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <a href="dashboard.html" class="btn btn-primary btn-lg">
+                    <i class="fas fa-chart-line"></i> VER DASHBOARD
+                </a>
+                <a href="cadastro.html" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-user-plus"></i> ALISTAR TROPA
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Seção Ranking Rápido -->
+    <section class="quick-ranking">
+        <div class="container">
+            <h2 class="section-title">PÓDIO ATUAL</h2>
+            <div class="podium">
+                <div class="podium-item silver">
+                    <div class="podium-rank">🥈</div>
+                    <div class="podium-player">
+                        <div class="player-name" id="podium-2">-</div>
+                        <div class="player-stats">
+                            <span id="podium-2-vitorias">0</span> vitórias
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="podium-item gold">
+                    <div class="podium-rank">🥇</div>
+                    <div class="podium-player">
+                        <div class="player-name" id="podium-1">-</div>
+                        <div class="player-stats">
+                            <span id="podium-1-vitorias">0</span> vitórias
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="podium-item bronze">
+                    <div class="podium-rank">🥉</div>
+                    <div class="podium-player">
+                        <div class="player-name" id="podium-3">-</div>
+                        <div class="player-stats">
+                            <span id="podium-3-vitorias">0</span> vitórias
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <!-- Seção de Recursos -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">RECURSOS DO SISTEMA</h2>
+            <p class="section-subtitle">Todas as ferramentas para comandar suas campanhas</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Dashboard Inteligente</h3>
+                    <p class="feature-description">Estatísticas em tempo real, gráficos interativos e análises detalhadas de desempenho.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3 class="feature-title">Ranking Multiplo</h3>
+                    <p class="feature-description">3 tipos de ranking: Global, Mensal e Performance. Acompanhe sua evolução.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚔️</div>
+                    <h3 class="feature-title">Sistema de Patentes</h3>
+                    <p class="feature-description">Do Cabo ao Marechal: suba na hierarquia conforme suas vitórias.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 class="feature-title">Totalmente Responsivo</h3>
+                    <p class="feature-description">Acesse de qualquer dispositivo: computador, tablet ou smartphone.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Seguro & Confiável</h3>
+                    <p class="feature-description">Dados protegidos com backup automático e criptografia.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Atualizações em Tempo Real</h3>
+                    <p class="feature-description">Todas as estatísticas são atualizadas instantaneamente após cada partida.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">⚔️</div>
+                    <h3>WAR Board GameRank</h3>
+                    <p>Sistema de ranking profissional para partidas de WAR</p>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>COMANDO</h4>
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="jogadores.html">Tropas</a>
+                    <a href="partidas.html">Batalhas</a>
+                    <a href="ranking.html">Ranking</a>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>OPERACÕES</h4>
+                    <a href="cadastro.html">Alistar Tropa</a>
+                    <a href="nova-partida-funcional.html">Nova Batalha</a>
+                    <a href="estatisticas.html">Estatísticas</a>
+                    <a href="historico.html">Histórico</a>
+                </div>
+                
+                <div class="footer-info">
+                    <h4>STATUS DO SISTEMA</h4>
+                    <div class="status-indicator online">
+                        <span class="status-dot"></span>
+                        Sistema Online
+                    </div>
+                    <p>Versão 2.0 • Render </p>
+                    <div class="footer-social">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 WAR Board GameRank. Todos os direitos reservados. Sistema desenvolvido por Daniel Pinheiro para Comandantes estratégicos.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Carregar estatísticas iniciais
+        async function loadInitialStats() {
+            try {
+                // Estatísticas gerais
+                const statsResponse = await fetch('/api/estatisticas');
+                const stats = await statsResponse.json();
+                
+                document.getElementById('total-jogadores').textContent = stats.total_jogadores || 0;
+                document.getElementById('total-partidas').textContent = stats.total_partidas || 0;
+                document.getElementById('record-vitorias').textContent = stats.record_vitorias || 0;
+                
+                // Ranking global para pódio
+                const rankingResponse = await fetch('/api/ranking/global');
+                const ranking = await rankingResponse.json();
+                
+                if (ranking.length > 0) {
+                    document.getElementById('podium-1').textContent = ranking[0]?.apelido || '-';
+                    document.getElementById('podium-1-vitorias').textContent = ranking[0]?.vitorias || 0;
+                    
+                    if (ranking.length > 1) {
+                        document.getElementById('podium-2').textContent = ranking[1]?.apelido || '-';
+                        document.getElementById('podium-2-vitorias').textContent = ranking[1]?.vitorias || 0;
+                    }
+                    
+                    if (ranking.length > 2) {
+                        document.getElementById('podium-3').textContent = ranking[2]?.apelido || '-';
+                        document.getElementById('podium-3-vitorias').textContent = ranking[2]?.vitorias || 0;
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadInitialStats);
+    </script>
+</body>
+
+</html>
+
