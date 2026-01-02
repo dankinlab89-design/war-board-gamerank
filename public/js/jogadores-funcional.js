@@ -150,3 +150,191 @@ window.desativarJogador = function(id, apelido) {
         // Aqui vamos chamar DELETE /api/jogadores/:id
     }
 };
+// MODAL DE EDIÇÃO
+function criarModalEdicao() {
+    // Remover modal anterior se existir
+    const modalAnterior = document.getElementById('modal-editar-jogador');
+    if (modalAnterior) modalAnterior.remove();
+    
+    const modalHTML = `
+        <div id="modal-editar-jogador" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        ">
+            <div style="
+                background: #1a1a2e;
+                padding: 30px;
+                border-radius: 10px;
+                width: 90%;
+                max-width: 500px;
+                border: 2px solid #4dabf7;
+            ">
+                <h2 style="margin-top: 0; color: white;">
+                    <i class="fas fa-edit"></i> Editar Jogador
+                </h2>
+                
+                <form id="form-editar-jogador">
+                    <input type="hidden" id="editar-id">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: white;">Nome</label>
+                        <input type="text" id="editar-nome" style="width: 100%; padding: 10px; border-radius: 5px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: white;">Apelido</label>
+                        <input type="text" id="editar-apelido" style="width: 100%; padding: 10px; border-radius: 5px;" required>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: white;">E-mail</label>
+                        <input type="email" id="editar-email" style="width: 100%; padding: 10px; border-radius: 5px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; color: white;">Observações</label>
+                        <textarea id="editar-observacoes" style="width: 100%; padding: 10px; border-radius: 5px; height: 80px;"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="fecharModal()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Cancelar
+                        </button>
+                        <button type="submit" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar formulário
+    document.getElementById('form-editar-jogador').addEventListener('submit', salvarEdicaoJogador);
+}
+
+// Função para abrir modal com dados do jogador
+window.editarJogador = async function(id) {
+    criarModalEdicao();
+    
+    try {
+        // Buscar dados do jogador
+        const response = await fetch(`/api/jogadores/${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const jogador = result.jogador;
+            
+            // Preencher formulário
+            document.getElementById('editar-id').value = jogador._id;
+            document.getElementById('editar-nome').value = jogador.nome;
+            document.getElementById('editar-apelido').value = jogador.apelido;
+            document.getElementById('editar-email').value = jogador.email || '';
+            document.getElementById('editar-observacoes').value = jogador.observacoes || '';
+            
+            // Mostrar modal
+            document.getElementById('modal-editar-jogador').style.display = 'flex';
+        } else {
+            alert('Erro ao carregar dados do jogador: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro de conexão ao carregar dados');
+    }
+};
+
+// Função para salvar edição
+async function salvarEdicaoJogador(e) {
+    e.preventDefault();
+    
+    const id = document.getElementById('editar-id').value;
+    const dados = {
+        nome: document.getElementById('editar-nome').value.trim(),
+        apelido: document.getElementById('editar-apelido').value.trim(),
+        email: document.getElementById('editar-email').value.trim() || '',
+        observacoes: document.getElementById('editar-observacoes').value.trim() || ''
+    };
+    
+    if (!dados.nome || !dados.apelido) {
+        alert('Nome e apelido são obrigatórios!');
+        return;
+    }
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/jogadores/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Jogador atualizado com sucesso!');
+            fecharModal();
+            // Recarregar lista
+            location.reload();
+        } else {
+            alert('❌ Erro: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('❌ Erro de conexão');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Função para desativar jogador
+window.desativarJogador = async function(id, apelido) {
+    if (confirm(`Tem certeza que deseja DESATIVAR o jogador "${apelido}"?\n\nEle não aparecerá mais nas listas, mas os dados históricos serão mantidos.`)) {
+        try {
+            const response = await fetch(`/api/jogadores/${id}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Jogador desativado com sucesso!');
+                // Recarregar lista
+                location.reload();
+            } else {
+                alert('❌ Erro: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('❌ Erro de conexão');
+        }
+    }
+};
+
+// Função para fechar modal
+window.fecharModal = function() {
+    const modal = document.getElementById('modal-editar-jogador');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('modal-editar-jogador');
+    if (modal && e.target === modal) {
+        fecharModal();
+    }
+});
