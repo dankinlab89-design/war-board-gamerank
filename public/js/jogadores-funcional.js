@@ -49,7 +49,7 @@ function renderizarJogadores(data) {
     if (jogadores.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
                     Nenhum jogador cadastrado
                 </td>
             </tr>
@@ -119,6 +119,18 @@ function renderizarJogadores(data) {
                     ${percentual}%
                 </span>
             </td>
+            <td>
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="editarJogador('${jogador._id}')" 
+                            style="padding: 5px 10px; background: #ffc107; color: #000; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="desativarJogador('${jogador._id}', '${jogador.apelido}')" 
+                            style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-trash"></i> Desativar
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(row);
     });
@@ -126,37 +138,15 @@ function renderizarJogadores(data) {
     console.log('Tabela de jogadores renderizada com sucesso!');
 }
 
-function mostrarErro(mensagem) {
-    const container = document.querySelector('.container') || document.body;
-    
-    // Remover erros anteriores
-    const errosAntigos = container.querySelectorAll('.error-message');
-    errosAntigos.forEach(el => el.remove());
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.style.cssText = `
-        background: #fee;
-        border: 1px solid #f99;
-        padding: 15px;
-        margin: 20px 0;
-        border-radius: 5px;
-        color: #c00;
-        font-family: Arial, sans-serif;
-    `;
-    errorDiv.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.2rem;">⚠️</span>
-            <div>
-                <strong style="display: block; margin-bottom: 5px;">Erro ao carregar jogadores</strong>
-                ${mensagem}
-            </div>
-        </div>
-    `;
-    
-    if (container.querySelector('h1')) {
-        container.querySelector('h1').after(errorDiv);
-    } else {
-        container.prepend(errorDiv);
+// Funções para os botões (adicionar no final do arquivo)
+window.editarJogador = function(id) {
+    alert(`Editar jogador ID: ${id}\n(Implementar modal de edição)`);
+    // Aqui vamos abrir um modal com formulário de edição
+};
+
+window.desativarJogador = function(id, apelido) {
+    if (confirm(`Tem certeza que deseja desativar o jogador "${apelido}"?\n\nEle não aparecerá mais no ranking, mas os dados serão mantidos.`)) {
+        alert(`Desativar jogador ID: ${id}\n(Implementar chamada API)`);
+        // Aqui vamos chamar DELETE /api/jogadores/:id
     }
-}
+};
