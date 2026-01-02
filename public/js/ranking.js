@@ -1,4 +1,4 @@
-// ranking.js - Versão corrigida
+// ranking.js - Versão corrigida para usar dados do backend
 class RankingPage {
     constructor() {
         this.apiBase = '/api';
@@ -47,6 +47,9 @@ class RankingPage {
     async loadRankingGlobal() {
         try {
             const response = await fetch(`${this.apiBase}/ranking/global`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             const ranking = await response.json();
             
             this.renderRankingGlobal(ranking);
@@ -63,9 +66,21 @@ class RankingPage {
             const ano = hoje.getFullYear();
             const mes = hoje.getMonth() + 1;
             
-            const response = await fetch(`${this.apiBase}/ranking/mensal/${ano}/${mes}`);
-            const ranking = await response.json();
+            console.log(`📅 Buscando ranking mensal: ${ano}/${mes}`);
             
+            const response = await fetch(`${this.apiBase}/ranking/mensal/${ano}/${mes}`);
+            if (!response.ok) {
+                // Tentar a rota sem parâmetros como fallback
+                const fallbackResponse = await fetch(`${this.apiBase}/ranking/mensal`);
+                if (!fallbackResponse.ok) {
+                    throw new Error(`HTTP ${fallbackResponse.status}`);
+                }
+                const ranking = await fallbackResponse.json();
+                this.renderRankingMensal(ranking);
+                return;
+            }
+            
+            const ranking = await response.json();
             this.renderRankingMensal(ranking);
             
         } catch (error) {
@@ -77,6 +92,9 @@ class RankingPage {
     async loadRankingPerformance() {
         try {
             const response = await fetch(`${this.apiBase}/ranking/performance`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             const ranking = await response.json();
             
             this.renderRankingPerformance(ranking);
@@ -102,29 +120,31 @@ class RankingPage {
         }
         
         ranking.forEach((jogador, index) => {
-            const percentual = jogador.partidas > 0 ? 
-                ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
-            const pontos = (jogador.vitorias * 10) + (jogador.partidas * 2);
+            // USAR DADOS DO BACKEND - não recalcular
+            const percentual = jogador.performance || '0.0%';
+            // Remover o símbolo % para cálculo da largura da barra
+            const percentualNumero = parseFloat(percentual.toString().replace('%', '')) || 0;
+            const pontos = jogador.pontuacao || 0;
             
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
                     <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
-                        ${index + 1}
+                        ${jogador.posicao || (index + 1)}
                     </div>
                 </td>
-                <td><strong>${jogador.apelido}</strong></td>
+                <td><strong>${jogador.apelido || 'N/A'}</strong></td>
                 <td>
                     <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
-                        ${jogador.patente}
+                        ${jogador.patente || 'Cabo 🪖'}
                     </span>
                 </td>
                 <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
                 <td>${jogador.partidas || 0}</td>
                 <td>
                     <div class="performance-bar-container">
-                        <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
-                        <span class="performance-bar-text">${percentual}%</span>
+                        <div class="performance-bar-fill" style="width: ${percentualNumero > 100 ? 100 : percentualNumero}%"></div>
+                        <span class="performance-bar-text">${percentual}</span>
                     </div>
                 </td>
                 <td style="font-weight: bold; color: #8b5cf6;">${pontos}</td>
@@ -150,28 +170,30 @@ class RankingPage {
         }
         
         ranking.forEach((jogador, index) => {
-            const percentual = jogador.partidas > 0 ? 
-                ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+            // USAR DADOS DO BACKEND - não recalcular
+            const percentual = jogador.performance || '0.0%';
+            // Remover o símbolo % para cálculo da largura da barra
+            const percentualNumero = parseFloat(percentual.toString().replace('%', '')) || 0;
             
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
                     <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
-                        ${index + 1}
+                        ${jogador.posicao || (index + 1)}
                     </div>
                 </td>
-                <td><strong>${jogador.apelido}</strong></td>
+                <td><strong>${jogador.apelido || 'N/A'}</strong></td>
                 <td>
                     <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
-                        ${jogador.patente}
+                        ${jogador.patente || 'Cabo 🪖'}
                     </span>
                 </td>
                 <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
                 <td>${jogador.partidas || 0}</td>
                 <td>
                     <div class="performance-bar-container">
-                        <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
-                        <span class="performance-bar-text">${percentual}%</span>
+                        <div class="performance-bar-fill" style="width: ${percentualNumero > 100 ? 100 : percentualNumero}%"></div>
+                        <span class="performance-bar-text">${percentual}</span>
                     </div>
                 </td>
             `;
@@ -194,32 +216,34 @@ class RankingPage {
         }
         
         ranking.forEach((jogador, index) => {
-            const performance = parseFloat(jogador.percentual) || 0;
-            const nivel = this.getNivelPerformance(performance);
+            // USAR DADOS DO BACKEND - não recalcular
+            const percentual = jogador.performance || '0.0%';
+            const percentualNumero = parseFloat(percentual.toString().replace('%', '')) || 0;
+            const classificacao = jogador.classificacao || this.getNivelPerformance(percentualNumero);
             
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
                     <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
-                        ${index + 1}
+                        ${jogador.posicao || (index + 1)}
                     </div>
                 </td>
-                <td><strong>${jogador.apelido}</strong></td>
+                <td><strong>${jogador.apelido || 'N/A'}</strong></td>
                 <td>
                     <span class="patente-badge ${this.getPatenteClass(jogador.patente)}">
-                        ${jogador.patente}
+                        ${jogador.patente || 'Cabo 🪖'}
                     </span>
                 </td>
                 <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
                 <td>${jogador.partidas || 0}</td>
                 <td>
-                    <span class="performance-score ${this.getPerformanceClass(performance)}">
-                        ${performance.toFixed(1)}%
+                    <span class="performance-score ${this.getPerformanceClass(percentualNumero)}">
+                        ${percentual}
                     </span>
                 </td>
                 <td>
-                    <span class="nivel-badge nivel-${nivel.toLowerCase().replace(' ', '-')}">
-                        ${nivel}
+                    <span class="nivel-badge nivel-${classificacao.toLowerCase().replace(/ /g, '-')}">
+                        ${classificacao}
                     </span>
                 </td>
             `;
@@ -295,34 +319,40 @@ class RankingPage {
     async exportRanking(tipo, filename) {
         try {
             let endpoint;
+            let data;
+            
             switch(tipo) {
-                case 'global': endpoint = '/ranking/global'; break;
+                case 'global': 
+                    endpoint = '/ranking/global';
+                    const responseGlobal = await fetch(`${this.apiBase}${endpoint}`);
+                    data = await responseGlobal.json();
+                    break;
                 case 'mensal': 
                     const hoje = new Date();
                     endpoint = `/ranking/mensal/${hoje.getFullYear()}/${hoje.getMonth() + 1}`;
+                    const responseMensal = await fetch(`${this.apiBase}${endpoint}`);
+                    data = await responseMensal.json();
                     break;
-                case 'performance': endpoint = '/ranking/performance'; break;
+                case 'performance': 
+                    endpoint = '/ranking/performance';
+                    const responsePerf = await fetch(`${this.apiBase}${endpoint}`);
+                    data = await responsePerf.json();
+                    break;
                 default: return;
             }
-            
-            const response = await fetch(`${this.apiBase}${endpoint}`);
-            const data = await response.json();
             
             if (!data || data.length === 0) {
                 alert('Nenhum dado para exportar');
                 return;
             }
             
-            // Criar CSV
-            let csv = 'Posição,Apelido,Patente,Vitórias,Partidas,%,Pontos,Nível\n';
+            // Criar CSV usando os dados do backend
+            let csv = 'Posição,Apelido,Patente,Vitórias,Partidas,Performance,Pontos,Classificação\n';
             
-            data.forEach((item, index) => {
-                const percentual = item.partidas > 0 ? 
-                    ((item.vitorias / item.partidas) * 100).toFixed(1) : 0;
-                const pontos = (parseInt(item.vitorias) * 10) + (parseInt(item.partidas) * 2);
-                const nivel = tipo === 'performance' ? this.getNivelPerformance(parseFloat(item.percentual)) : '-';
-                
-                csv += `${index + 1},"${item.apelido}","${item.patente}",${item.vitorias},${item.partidas},${percentual},${pontos},"${nivel}"\n`;
+            data.forEach((item) => {
+                csv += `${item.posicao || 'N/A'},"${item.apelido || 'N/A'}","${item.patente || 'N/A'}",`;
+                csv += `${item.vitorias || 0},${item.partidas || 0},"${item.performance || '0.0%'}",`;
+                csv += `${item.pontuacao || 0},"${item.classificacao || 'N/A'}"\n`;
             });
             
             // Baixar
@@ -359,9 +389,10 @@ class RankingPage {
 
     getNivelPerformance(performance) {
         const perc = parseFloat(performance) || 0;
-        if (perc >= 80) return 'ÉLITE';
-        if (perc >= 60) return 'AVANÇADO';
-        if (perc >= 40) return 'INTERMEDIÁRIO';
+        if (perc >= 80) return 'IMPARÁVEL';
+        if (perc >= 60) return 'GUERREIRO'; 
+        if (perc >= 40) return 'SOBREVIVENTE';
+        if (perc >= 20) return 'RECRUTA';
         return 'INICIANTE';
     }
 
