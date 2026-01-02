@@ -270,67 +270,81 @@ function atualizarVencedores() {
     });
 }
         
-        // Enviar formulário
-        document.getElementById('form-partida').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (selecionados.length < 3) {
-                mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
-                return;
-            }
-            
-            const vencedorId = document.getElementById('vencedor').value;
-            if (!vencedorId) {
-                mostrarStatus('Selecione um vencedor!', 'error');
-                return;
-            }
-            
-            const partida = {
-                data: document.getElementById('data').value,
-                tipo: document.getElementById('tipo').value,
-                vencedor_id: vencedorId,
-                participantes: selecionados.join(','),
-                observacoes: document.getElementById('observacoes').value || ''
-            };
-            
-            try {
-                mostrarStatus('Registrando partida...', 'warning');
-                
-                const response = await fetch('/api/partidas', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(partida)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.sucesso) {
-                    mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
-                    
-                    // Limpar
-                    document.querySelectorAll('.jogador-check:checked').forEach(cb => cb.checked = false);
-                    document.getElementById('observacoes').value = '';
-                    document.getElementById('vencedor').innerHTML = '<option value="">Primeiro selecione 3+ participantes</option>';
-                    document.getElementById('vencedor').disabled = true;
-                    document.getElementById('btn-submit').disabled = true;
-                    selecionados = [];
-                    document.getElementById('contador').textContent = '0 jogadores selecionados';
-                    document.getElementById('contador').className = 'status-warning status-box';
-                    
-                    // Redirecionar após 2 segundos
-                    setTimeout(() => {
-                        window.location.href = 'partidas.html';
-                    }, 2000);
-                    
-                } else {
-                    mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
-                }
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                mostrarStatus('Erro de conexão: ' + error.message, 'error');
-            }
+       // Enviar formulário
+document.getElementById('form-partida').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (selecionados.length < 3) {
+        mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
+        return;
+    }
+    
+    const vencedorApelido = document.getElementById('vencedor').value;
+    if (!vencedorApelido) {
+        mostrarStatus('Selecione um vencedor!', 'error');
+        return;
+    }
+    
+    // Obter apelidos dos jogadores selecionados
+    const participantesApelidos = selecionados.map(jogadorId => {
+        const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
+        return jogador.apelido;
+    });
+    
+    // Verificar se o vencedor está entre os participantes
+    if (!participantesApelidos.includes(vencedorApelido)) {
+        mostrarStatus('O vencedor deve estar entre os participantes selecionados!', 'error');
+        return;
+    }
+    
+    const partida = {
+        data: document.getElementById('data').value,
+        tipo: document.getElementById('tipo').value,
+        vencedor: vencedorApelido, // Usar apelido diretamente
+        participantes: participantesApelidos, // Array de apelidos
+        observacoes: document.getElementById('observacoes').value || ''
+    };
+    
+    try {
+        mostrarStatus('Registrando partida...', 'warning');
+        
+        const response = await fetch('/api/partidas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(partida)
         });
+        
+        const result = await response.json();
+        
+        console.log('Resposta do servidor:', result); // Para debug
+        
+        if (response.ok && result.success) {
+            mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
+            
+            // Limpar formulário
+            document.querySelectorAll('.jogador-check:checked').forEach(cb => cb.checked = false);
+            document.getElementById('observacoes').value = '';
+            document.getElementById('vencedor').innerHTML = '<option value="">Primeiro selecione 3+ participantes</option>';
+            document.getElementById('vencedor').disabled = true;
+            document.getElementById('btn-submit').disabled = true;
+            selecionados = [];
+            document.getElementById('contador').textContent = '0 jogadores selecionados';
+            document.getElementById('contador').className = 'status-warning status-box';
+            
+            // Redirecionar após 2 segundos
+            setTimeout(() => {
+                window.location.href = 'partidas.html';
+            }, 2000);
+            
+        } else {
+            mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        mostrarStatus('Erro de conexão: ' + error.message, 'error');
+    }
+});
         
         // Função para mostrar status
         function mostrarStatus(mensagem, tipo) {
