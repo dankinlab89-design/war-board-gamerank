@@ -179,70 +179,99 @@
         carregarJogadores();
     });
     
-    // Carregar jogadores do banco - VERSÃO CORRIGIDA
-    async function carregarJogadores() {
+    // Carregar jogadores do banco - VERSÃO COM DEBUG
+async function carregarJogadores() {
+    try {
+        console.log('🔍 Iniciando carregamento de jogadores...');
+        mostrarStatus('Carregando jogadores...', 'warning');
+        
+        const apiUrl = '/api/jogadores';
+        console.log('📡 Fazendo requisição para:', apiUrl);
+        
+        const response = await fetch(apiUrl);
+        
+        console.log('📥 Resposta recebida. Status:', response.status, response.statusText);
+        console.log('📥 Headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Primeiro, vamos ver o texto bruto da resposta
+        const rawText = await response.text();
+        console.log('📝 Texto bruto da resposta (primeiros 500 chars):', rawText.substring(0, 500));
+        
+        // Tentar parsear como JSON
+        let data;
         try {
-            mostrarStatus('Carregando jogadores...', 'warning');
+            data = JSON.parse(rawText);
+            console.log('✅ JSON parseado com sucesso:', data);
+        } catch (jsonError) {
+            console.error('❌ Erro ao parsear JSON:', jsonError);
+            console.error('Texto que causou erro:', rawText.substring(0, 200));
             
-            const response = await fetch('/api/jogadores');
-            
-            if (!response.ok) {
-                throw new Error('Erro na API: ' + response.status);
+            // Verificar se é HTML
+            if (rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+                console.error('⚠️ A resposta parece ser HTML, não JSON!');
+                console.error('Isso geralmente acontece quando:');
+                console.error('1. A rota /api/jogadores não existe no servidor');
+                console.error('2. Há um erro no servidor retornando HTML de erro');
+                console.error('3. Há um problema de roteamento no servidor');
             }
             
-            const data = await response.json();
-            console.log('Resposta da API jogadores:', data);
-            
-            // Verificar diferentes formatos de resposta
-            if (data.jogadores && Array.isArray(data.jogadores)) {
-                jogadores = data.jogadores.filter(j => j.ativo !== false);
-            } else if (Array.isArray(data)) {
-                jogadores = data.filter(j => j.ativo !== false);
-            } else if (data.success && Array.isArray(data.jogadores)) {
-                jogadores = data.jogadores.filter(j => j.ativo !== false);
-            } else {
-                throw new Error('Formato de resposta inválido');
-            }
-            
-            if (jogadores.length === 0) {
-                mostrarStatus('Nenhum jogador cadastrado. Cadastre jogadores primeiro.', 'error');
-                return;
-            }
-            
-            // Esconder loading, mostrar lista
-            document.getElementById('jogadores-loading').style.display = 'none';
-            const lista = document.getElementById('jogadores-lista');
-            lista.style.display = 'block';
-            
-            // Adicionar jogadores à lista
-            lista.innerHTML = '';
-            jogadores.forEach(jogador => {
-                const jogadorId = jogador._id || jogador.id;
-                const div = document.createElement('div');
-                div.className = 'jogador-item';
-                div.innerHTML = `
-                    <div class="jogador-info">
-                        <input type="checkbox" 
-                               class="jogador-check" 
-                               value="${jogadorId}"
-                               id="jogador-${jogadorId}"
-                               onchange="atualizarSelecionados('${jogadorId}', '${jogador.apelido}')">
-                        <div>
-                            <div class="jogador-nome">${jogador.apelido}</div>
-                            <div class="jogador-patente">${jogador.patente || 'Cabo 🪖'}</div>
-                        </div>
-                    </div>
-                `;
-                lista.appendChild(div);
-            });
-            
-            mostrarStatus(`${jogadores.length} jogadores carregados`, 'ok');
-            
-        } catch (error) {
-            console.error('Erro:', error);
-            mostrarStatus('Erro ao carregar jogadores: ' + error.message, 'error');
+            throw new Error('Resposta não é JSON válido: ' + jsonError.message);
         }
+        
+        // Verificar diferentes formatos de resposta
+        if (data.jogadores && Array.isArray(data.jogadores)) {
+            jogadores = data.jogadores.filter(j => j.ativo !== false);
+        } else if (Array.isArray(data)) {
+            jogadores = data.filter(j => j.ativo !== false);
+        } else if (data.success && Array.isArray(data.jogadores)) {
+            jogadores = data.jogadores.filter(j => j.ativo !== false);
+        } else {
+            console.error('❌ Formato de resposta inesperado:', data);
+            throw new Error('Formato de resposta inválido');
+        }
+        
+        console.log(`🎯 ${jogadores.length} jogadores carregados:`, jogadores);
+        
+        if (jogadores.length === 0) {
+            mostrarStatus('Nenhum jogador cadastrado. Cadastre jogadores primeiro.', 'error');
+            return;
+        }
+        
+        // Esconder loading, mostrar lista
+        document.getElementById('jogadores-loading').style.display = 'none';
+        const lista = document.getElementById('jogadores-lista');
+        lista.style.display = 'block';
+        
+        // Adicionar jogadores à lista
+        lista.innerHTML = '';
+        jogadores.forEach(jogador => {
+            const jogadorId = jogador._id || jogador.id;
+            const div = document.createElement('div');
+            div.className = 'jogador-item';
+            div.innerHTML = `
+                <div class="jogador-info">
+                    <input type="checkbox" 
+                           class="jogador-check" 
+                           value="${jogadorId}"
+                           id="jogador-${jogadorId}"
+                           onchange="atualizarSelecionados('${jogadorId}', '${jogador.apelido}')">
+                    <div>
+                        <div class="jogador-nome">${jogador.apelido}</div>
+                        <div class="jogador-patente">${jogador.patente || 'Cabo 🪖'}</div>
+                    </div>
+                </div>
+            `;
+            lista.appendChild(div);
+        });
+        
+        mostrarStatus(`${jogadores.length} jogadores carregados`, 'ok');
+        
+    } catch (error) {
+        console.error('❌ Erro completo:', error);
+        console.error('Stack trace:', error.stack);
+        mostrarStatus('Erro ao carregar jogadores: ' + error.message, 'error');
     }
+}
     
     // Atualizar lista de selecionados - VERSÃO CORRIGIDA
     function atualizarSelecionados(jogadorId, jogadorApelido) {
