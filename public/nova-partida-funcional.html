@@ -25,6 +25,7 @@
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         .jogador-item:hover {
             background: rgba(255, 255, 255, 0.08);
@@ -150,7 +151,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2024 WAR Board GameRank - Sistema de Batalhas</p>
+                <p>&copy; 2025 WAR Board GameRank - Sistema de Batalhas</p>
             </div>
         </div>
     </footer>
@@ -161,9 +162,9 @@
             document.querySelector('.nav-menu').classList.toggle('active');
         });
         
-        // Variáveis
+        // Variáveis globais
         let jogadores = [];
-        let selecionados = [];
+        let selecionados = new Map(); // Usar Map para armazenar id -> apelido
         
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
@@ -172,6 +173,17 @@
             
             // Carregar jogadores
             carregarJogadores();
+            
+            // Adicionar evento de clique aos itens de jogador (delegação de eventos)
+            document.getElementById('jogadores-lista').addEventListener('change', function(e) {
+                if (e.target.classList.contains('jogador-check')) {
+                    const jogadorId = e.target.value;
+                    const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
+                    if (jogador) {
+                        atualizarSelecionados(jogadorId, jogador.apelido);
+                    }
+                }
+            });
         });
         
         // Carregar jogadores do banco
@@ -185,7 +197,19 @@
                     throw new Error('Erro na API: ' + response.status);
                 }
                 
-                jogadores = await response.json();
+                const data = await response.json();
+                console.log('Resposta da API jogadores:', data);
+                
+                // Verificar diferentes formatos de resposta
+                if (data.jogadores && Array.isArray(data.jogadores)) {
+                    jogadores = data.jogadores.filter(j => j.ativo !== false);
+                } else if (Array.isArray(data)) {
+                    jogadores = data.filter(j => j.ativo !== false);
+                } else if (data.success && Array.isArray(data.jogadores)) {
+                    jogadores = data.jogadores.filter(j => j.ativo !== false);
+                } else {
+                    throw new Error('Formato de resposta inválido');
+                }
                 
                 if (jogadores.length === 0) {
                     mostrarStatus('Nenhum jogador cadastrado. Cadastre jogadores primeiro.', 'error');
@@ -200,18 +224,18 @@
                 // Adicionar jogadores à lista
                 lista.innerHTML = '';
                 jogadores.forEach(jogador => {
+                    const jogadorId = jogador._id || jogador.id;
                     const div = document.createElement('div');
                     div.className = 'jogador-item';
                     div.innerHTML = `
                         <div class="jogador-info">
                             <input type="checkbox" 
                                    class="jogador-check" 
-                                   value="${jogador.id}"
-                                   id="jogador-${jogador.id}"
-                                   onchange="atualizarSelecionados()">
+                                   value="${escapeHtml(jogadorId)}"
+                                   id="jogador-${escapeHtml(jogadorId)}">
                             <div>
-                                <div class="jogador-nome">${jogador.apelido}</div>
-                                <div class="jogador-patente">${jogador.patente}</div>
+                                <div class="jogador-nome">${escapeHtml(jogador.apelido)}</div>
+                                <div class="jogador-patente">${escapeHtml(jogador.patente || 'Cabo 🪖')}</div>
                             </div>
                         </div>
                     `;
@@ -226,19 +250,32 @@
             }
         }
         
+        // Função para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         // Atualizar lista de selecionados
-        function atualizarSelecionados() {
-            const checkboxes = document.querySelectorAll('.jogador-check:checked');
-            selecionados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        function atualizarSelecionados(jogadorId, jogadorApelido) {
+            const checkbox = document.getElementById(`jogador-${jogadorId}`);
+            
+            if (checkbox.checked) {
+                selecionados.set(jogadorId, jogadorApelido);
+            } else {
+                selecionados.delete(jogadorId);
+            }
             
             // Atualizar contador
             const contador = document.getElementById('contador');
-            contador.textContent = `${selecionados.length} jogadores selecionados`;
+            contador.textContent = `${selecionados.size} jogadores selecionados`;
             
-            if (selecionados.length < 3) {
+            if (selecionados.size < 3) {
                 contador.className = 'status-error status-box';
                 document.getElementById('vencedor').disabled = true;
                 document.getElementById('btn-submit').disabled = true;
+                document.getElementById('vencedor').innerHTML = '<option value="">Selecione 3+ participantes primeiro</option>';
             } else {
                 contador.className = 'status-ok status-box';
                 atualizarVencedores();
@@ -252,14 +289,16 @@
             const select = document.getElementById('vencedor');
             select.innerHTML = '<option value="">Selecione o vencedor</option>';
             
-            selecionados.forEach(id => {
-                const jogador = jogadores.find(j => j.id === id);
-                if (jogador) {
-                    const option = document.createElement('option');
-                    option.value = jogador.id;
-                    option.textContent = `${jogador.apelido} (${jogador.patente})`;
-                    select.appendChild(option);
-                }
+            // Converter Map para array e ordenar por apelido
+            const jogadoresArray = Array.from(selecionados.entries())
+                .map(([id, apelido]) => ({ id, apelido }))
+                .sort((a, b) => a.apelido.localeCompare(b.apelido));
+            
+            jogadoresArray.forEach(jogador => {
+                const option = document.createElement('option');
+                option.value = jogador.apelido;
+                option.textContent = `${jogador.apelido}`;
+                select.appendChild(option);
             });
         }
         
@@ -267,48 +306,57 @@
         document.getElementById('form-partida').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            if (selecionados.length < 3) {
+            if (selecionados.size < 3) {
                 mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
                 return;
             }
-            
-            const vencedorId = document.getElementById('vencedor').value;
-            if (!vencedorId) {
+        
+            const vencedorApelido = document.getElementById('vencedor').value;
+            if (!vencedorApelido) {
                 mostrarStatus('Selecione um vencedor!', 'error');
+                return;
+            }
+            
+            // Converter Map para array de apelidos
+            const participantesApelidos = Array.from(selecionados.values());
+            
+            // Verificar se o vencedor está entre os participantes
+            if (!participantesApelidos.includes(vencedorApelido)) {
+                mostrarStatus('O vencedor deve estar entre os participantes selecionados!', 'error');
                 return;
             }
             
             const partida = {
                 data: document.getElementById('data').value,
                 tipo: document.getElementById('tipo').value,
-                vencedor_id: vencedorId,
-                participantes: selecionados.join(','),
-                observacoes: document.getElementById('observacoes').value || ''
+                vencedor: vencedorApelido,
+                participantes: participantesApelidos,
+                observacoes: document.getElementById('observacoes').value || '',
+                pontos: 100
             };
+            
+            console.log('Enviando partida:', partida);
             
             try {
                 mostrarStatus('Registrando partida...', 'warning');
                 
                 const response = await fetch('/api/partidas', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(partida)
                 });
                 
                 const result = await response.json();
                 
-                if (response.ok && result.sucesso) {
+                console.log('Resposta do servidor:', result);
+                
+                if (response.ok && result.success) {
                     mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
                     
-                    // Limpar
-                    document.querySelectorAll('.jogador-check:checked').forEach(cb => cb.checked = false);
-                    document.getElementById('observacoes').value = '';
-                    document.getElementById('vencedor').innerHTML = '<option value="">Primeiro selecione 3+ participantes</option>';
-                    document.getElementById('vencedor').disabled = true;
-                    document.getElementById('btn-submit').disabled = true;
-                    selecionados = [];
-                    document.getElementById('contador').textContent = '0 jogadores selecionados';
-                    document.getElementById('contador').className = 'status-warning status-box';
+                    // Limpar formulário
+                    limparFormulario();
                     
                     // Redirecionar após 2 segundos
                     setTimeout(() => {
@@ -325,6 +373,27 @@
             }
         });
         
+        // Função para limpar formulário
+        function limparFormulario() {
+            // Desmarcar todos checkboxes
+            document.querySelectorAll('.jogador-check:checked').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // Limpar selecionados
+            selecionados.clear();
+            
+            // Resetar controles
+            document.getElementById('observacoes').value = '';
+            document.getElementById('vencedor').innerHTML = '<option value="">Selecione 3+ participantes primeiro</option>';
+            document.getElementById('vencedor').disabled = true;
+            document.getElementById('btn-submit').disabled = true;
+            
+            // Atualizar contador
+            document.getElementById('contador').textContent = '0 jogadores selecionados';
+            document.getElementById('contador').className = 'status-warning status-box';
+        }
+        
         // Função para mostrar status
         function mostrarStatus(mensagem, tipo) {
             const statusDiv = document.getElementById('status');
@@ -338,6 +407,51 @@
                 }, 3000);
             }
         }
+        
+        // Funções para selecionar/deselecionar todos
+        function selecionarTodos() {
+            const checkboxes = document.querySelectorAll('.jogador-check');
+            checkboxes.forEach(cb => {
+                if (!cb.checked) {
+                    cb.checked = true;
+                    const jogadorId = cb.value;
+                    const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
+                    if (jogador) {
+                        atualizarSelecionados(jogadorId, jogador.apelido);
+                    }
+                }
+            });
+        }
+        
+        function deselecionarTodos() {
+            const checkboxes = document.querySelectorAll('.jogador-check:checked');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                const jogadorId = cb.value;
+                const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
+                if (jogador) {
+                    atualizarSelecionados(jogadorId, jogador.apelido);
+                }
+            });
+        }
+        
+        // Adicionar botões de seleção
+        setTimeout(() => {
+            const lista = document.getElementById('jogadores-lista');
+            if (lista) {
+                const botoesDiv = document.createElement('div');
+                botoesDiv.style.marginBottom = '10px';
+                botoesDiv.innerHTML = `
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="selecionarTodos()">
+                        <i class="fas fa-check-double"></i> Selecionar Todos
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselecionarTodos()" style="margin-left: 10px;">
+                        <i class="fas fa-times"></i> Desmarcar Todos
+                    </button>
+                `;
+                lista.parentNode.insertBefore(botoesDiv, lista);
+            }
+        }, 100);
     </script>
 </body>
 </html>
