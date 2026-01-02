@@ -230,12 +230,7 @@
                             <label>Vencedor:</label>
                             <input type="text" id="editar-vencedor" class="form-control" required>
                         </div>
-                        <div class="col-md-4">
-                            <label>Pontos:</label>
-                            <input type="number" id="editar-pontos" class="form-control" value="100" min="50" max="200">
-                        </div>
-                    </div>
-                    
+
                     <div>
                         <label>Participantes:</label>
                         <div id="participantes-info" class="jogadores-selecionados">
@@ -311,6 +306,39 @@
         }
         
         // Carregar partidas
+        // Adicione no início da função carregarPartidas():
+async function carregarPartidas() {
+    try {
+        console.log('🔄 Iniciando carregamento de partidas...');
+        mostrarCarregando(true);
+        esconderMensagem();
+        
+        const response = await fetch('/api/partidas');
+        
+        console.log('📥 Resposta da API (status):', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Dados recebidos:', data);
+        
+        if (data.success) {
+            partidas = data.partidas || [];
+            console.log(`🎯 ${partidas.length} partidas carregadas`);
+            renderizarPartidas(partidas);
+        } else {
+            console.error('❌ API retornou success: false', data);
+            throw new Error(data.error || 'Erro desconhecido na API');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro completo ao carregar partidas:', error);
+        mostrarMensagem('Erro ao carregar batalhas: ' + error.message, 'error');
+        mostrarCarregando(false);
+    }
+}
         async function carregarPartidas() {
             try {
                 mostrarCarregando(true);
@@ -396,154 +424,187 @@
             mostrarCarregando(false);
         }
         
-        // Abrir modal de edição
-        async function abrirEdicao(partidaId) {
-            try {
-                const response = await fetch(`/api/partidas/${partidaId}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const partida = data.partida;
-                    
-                    // Preencher formulário
-                    document.getElementById('partida-id').value = partida._id;
-                    document.getElementById('editar-data').value = formatarDataParaInput(partida.data);
-                    document.getElementById('editar-tipo').value = partida.tipo || 'global';
-                    document.getElementById('editar-vencedor').value = partida.vencedor;
-                    document.getElementById('editar-pontos').value = partida.pontos || 100;
-                    document.getElementById('editar-observacoes').value = partida.observacoes || '';
-                    
-                    // Mostrar participantes
-                    const participantesDiv = document.getElementById('participantes-info');
-                    if (participantesDiv) {
-                        let html = '';
-                        if (Array.isArray(partida.participantes)) {
-                            partida.participantes.forEach(participante => {
-                                html += `<span class="jogador-tag">${participante}</span>`;
-                            });
+// Substitua as funções problemáticas por estas versões corrigidas:
+
+// Abrir modal de edição - VERSÃO CORRIGIDA
+async function abrirEdicao(partidaId) {
+    try {
+        console.log('📝 Abrindo edição da partida:', partidaId);
+        
+        const response = await fetch(`/api/partidas/${partidaId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Resposta da API (edição):', data);
+        
+        if (data.success) {
+            const partida = data.partida;
+            
+            // Preencher formulário
+            document.getElementById('partida-id').value = partida._id;
+            
+            // Formatar data para input (YYYY-MM-DD)
+            const dataObj = new Date(partida.data);
+            const dataFormatada = dataObj.toISOString().split('T')[0];
+            document.getElementById('editar-data').value = dataFormatada;
+            
+            document.getElementById('editar-tipo').value = partida.tipo || 'global';
+            document.getElementById('editar-vencedor').value = partida.vencedor;
+            document.getElementById('editar-observacoes').value = partida.observacoes || '';
+            
+            // Mostrar participantes
+            const participantesDiv = document.getElementById('participantes-info');
+            if (participantesDiv) {
+                let html = '';
+                if (Array.isArray(partida.participantes)) {
+                    partida.participantes.forEach(participante => {
+                        html += `<span class="jogador-tag">${participante}</span> `;
+                    });
+                } else if (typeof partida.participantes === 'string') {
+                    // Se for string, dividir por vírgula
+                    partida.participantes.split(',').forEach(participante => {
+                        if (participante.trim()) {
+                            html += `<span class="jogador-tag">${participante.trim()}</span> `;
                         }
-                        participantesDiv.innerHTML = html || 'Nenhum participante';
-                    }
-                    
-                    // Mostrar modal
-                    document.getElementById('modal-edicao').style.display = 'block';
+                    });
                 }
-            } catch (error) {
-                console.error('Erro ao abrir edição:', error);
-                mostrarMensagem('Erro ao carregar partida para edição', 'error');
-            }
-        }
-        
-        // Fechar modal
-        function fecharModal() {
-            document.getElementById('modal-edicao').style.display = 'none';
-        }
-        
-        // Salvar edição
-        async function salvarEdicao(e) {
-            e.preventDefault();
-            
-            const partidaId = document.getElementById('partida-id').value;
-            const dados = {
-                data: document.getElementById('editar-data').value,
-                tipo: document.getElementById('editar-tipo').value,
-                vencedor: document.getElementById('editar-vencedor').value,
-                pontos: parseInt(document.getElementById('editar-pontos').value) || 100,
-                observacoes: document.getElementById('editar-observacoes').value
-            };
-            
-            try {
-                const response = await fetch(`/api/partidas/${partidaId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(dados)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    mostrarMensagem('✅ Partida atualizada com sucesso!', 'success');
-                    fecharModal();
-                    carregarPartidas();
-                } else {
-                    mostrarMensagem('Erro: ' + (result.error || 'Falha na atualização'), 'error');
-                }
-            } catch (error) {
-                console.error('Erro ao salvar edição:', error);
-                mostrarMensagem('Erro ao salvar alterações', 'error');
-            }
-        }
-        
-        // Confirmar exclusão
-        function confirmarExclusao(partidaId) {
-            const partida = partidas.find(p => p._id === partidaId);
-            if (!partida) return;
-            
-            const confirmacao = confirm(`Tem certeza que deseja excluir esta batalha?\n\nData: ${formatarData(partida.data)}\nVencedor: ${partida.vencedor}\n\n⚠️ Esta ação não pode ser desfeita e afetará as estatísticas dos jogadores!`);
-            
-            if (confirmacao) {
-                excluirPartida(partidaId);
-            }
-        }
-        
-        // Excluir partida
-        async function excluirPartida(partidaId) {
-            try {
-                const response = await fetch(`/api/partidas/${partidaId}`, {
-                    method: 'DELETE'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    mostrarMensagem('✅ Partida excluída com sucesso!', 'success');
-                    carregarPartidas();
-                } else {
-                    mostrarMensagem('Erro: ' + (result.error || 'Falha na exclusão'), 'error');
-                }
-            } catch (error) {
-                console.error('Erro ao excluir partida:', error);
-                mostrarMensagem('Erro ao excluir partida', 'error');
-            }
-        }
-        
-        // Exportar para CSV
-        function exportarCSV() {
-            if (partidas.length === 0) {
-                mostrarMensagem('Nenhuma partida para exportar', 'error');
-                return;
+                participantesDiv.innerHTML = html || 'Nenhum participante';
             }
             
-            // Cabeçalho
-            let csv = 'Data,Tipo,Vencedor,Participantes,Observações,Pontos\n';
-            
-            // Dados
-            partidas.forEach(partida => {
-                const participantes = Array.isArray(partida.participantes) ? 
-                    partida.participantes.join('; ') : partida.participantes;
-                
-                csv += `"${formatarData(partida.data)}",`;
-                csv += `"${partida.tipo || 'global'}",`;
-                csv += `"${partida.vencedor}",`;
-                csv += `"${participantes}",`;
-                csv += `"${partida.observacoes || ''}",`;
-                csv += `"${partida.pontos || 100}"\n`;
-            });
-            
-            // Criar e baixar arquivo
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `batalhas_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            mostrarMensagem('✅ CSV exportado com sucesso!', 'success');
+            // Mostrar modal
+            document.getElementById('modal-edicao').style.display = 'block';
+        } else {
+            throw new Error(data.error || 'Erro desconhecido na API');
         }
+    } catch (error) {
+        console.error('❌ Erro ao abrir edição:', error);
+        mostrarMensagem('Erro ao carregar partida para edição: ' + error.message, 'error');
+    }
+}
+
+// Salvar edição - VERSÃO CORRIGIDA
+async function salvarEdicao(e) {
+    e.preventDefault();
+    
+    const partidaId = document.getElementById('partida-id').value;
+    const dados = {
+        data: document.getElementById('editar-data').value,
+        tipo: document.getElementById('editar-tipo').value,
+        vencedor: document.getElementById('editar-vencedor').value,
+        observacoes: document.getElementById('editar-observacoes').value
+        // Removido pontos - será calculado automaticamente pelo backend
+    };
+    
+    console.log('💾 Salvando edição da partida:', partidaId, dados);
+    
+    try {
+        const response = await fetch(`/api/partidas/${partidaId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        const result = await response.json();
+        console.log('Resposta do servidor (edição):', result);
+        
+        if (result.success) {
+            mostrarMensagem('✅ Partida atualizada com sucesso!', 'success');
+            fecharModal();
+            carregarPartidas(); // Recarregar a lista
+        } else {
+            mostrarMensagem('Erro: ' + (result.error || 'Falha na atualização'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao salvar edição:', error);
+        mostrarMensagem('Erro ao salvar alterações: ' + error.message, 'error');
+    }
+}
+
+// Excluir partida - VERSÃO CORRIGIDA
+async function excluirPartida(partidaId) {
+    try {
+        console.log('🗑️ Excluindo partida:', partidaId);
+        
+        const response = await fetch(`/api/partidas/${partidaId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        console.log('Resposta do servidor (exclusão):', result);
+        
+        if (result.success) {
+            mostrarMensagem('✅ Partida excluída com sucesso!', 'success');
+            carregarPartidas(); // Recarregar a lista
+        } else {
+            mostrarMensagem('Erro: ' + (result.error || 'Falha na exclusão'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao excluir partida:', error);
+        mostrarMensagem('Erro ao excluir partida: ' + error.message, 'error');
+    }
+}
+
+// Exportar para CSV - VERSÃO CORRIGIDA (sem pontos)
+function exportarCSV() {
+    if (partidas.length === 0) {
+        mostrarMensagem('Nenhuma partida para exportar', 'error');
+        return;
+    }
+    
+    // Cabeçalho simplificado (sem pontos)
+    let csv = 'Data,Tipo,Vencedor,Participantes,Observações\n';
+    
+    // Dados
+    partidas.forEach(partida => {
+        const dataFormatada = formatarDataParaCSV(partida.data);
+        const tipo = partida.tipo || 'global';
+        const vencedor = partida.vencedor || '';
+        
+        // Formatar participantes
+        let participantes = '';
+        if (Array.isArray(partida.participantes)) {
+            participantes = partida.participantes.join('; ');
+        } else if (typeof partida.participantes === 'string') {
+            participantes = partida.participantes;
+        }
+        
+        // Escapar aspas para CSV
+        const observacoes = (partida.observacoes || '').replace(/"/g, '""');
+        
+        // Linha CSV
+        csv += `"${dataFormatada}","${tipo}","${vencedor}","${participantes}","${observacoes}"\n`;
+    });
+    
+    // Criar e baixar arquivo
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `batalhas_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    mostrarMensagem('✅ CSV exportado com sucesso!', 'success');
+}
+
+// Função auxiliar para formatar data para CSV
+function formatarDataParaCSV(dataString) {
+    if (!dataString) return '';
+    try {
+        const data = new Date(dataString);
+        return data.toLocaleDateString('pt-BR') + ' ' + 
+               data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return dataString;
+    }
+}
         
         // Funções auxiliares
         function formatarData(dataString) {
