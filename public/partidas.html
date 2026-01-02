@@ -191,11 +191,6 @@
             border: 1px solid rgba(40, 167, 69, 0.3);
             color: #28a745;
         }
-        .message-info {
-            background: rgba(23, 162, 184, 0.1);
-            border: 1px solid rgba(23, 162, 184, 0.3);
-            color: #17a2b8;
-        }
         .form-section-title {
             color: #b8860b;
             font-size: 16px;
@@ -227,12 +222,157 @@
             color: #888;
             margin-top: 5px;
         }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: #b8860b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        .table th {
+            background: rgba(184, 134, 11, 0.1);
+            color: #b8860b;
+            font-weight: bold;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: #888;
+            font-size: 12px;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        .col-md-6 {
+            flex: 0 0 50%;
+            padding: 0 10px;
+        }
     </style>
 </head>
 <body>
-    <!-- Restante do código igual ao seu... -->
-    <!-- Navbar, container principal, tabela, etc. -->
-    <!-- Manter tudo igual até a parte do modal -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">🎮</div>
+                <h1>BATALHAS <span class="nav-subtitle">WAR Board</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
+                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
+                <a href="partidas.html" class="nav-link active"><i class="fas fa-flag"></i> Batalhas</a>
+                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="nova-partida-funcional.html" class="nav-btn"><i class="fas fa-plus"></i> Nova Batalha</a>
+            </div>
+            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h2 class="section-title">HISTÓRICO DE BATALHAS</h2>
+        
+        <div class="text-right" style="margin-bottom: 20px;">
+            <button class="btn btn-secondary" id="btn-recarregar">
+                <i class="fas fa-sync-alt"></i> Recarregar
+            </button>
+            <button class="btn btn-warning" id="btn-exportar" style="margin-left: 10px;">
+                <i class="fas fa-download"></i> Exportar CSV
+            </button>
+        </div>
+        
+        <div id="status-message"></div>
+        
+        <div id="loading" class="loading" style="text-align: center; padding: 40px;">
+            <div class="spinner"></div>
+            <p>Carregando batalhas...</p>
+        </div>
+        
+        <div class="table-responsive" id="tabela-container" style="display: none;">
+            <table class="table" id="tabela-partidas">
+                <thead>
+                    <tr>
+                        <th>DATA</th>
+                        <th>TIPO</th>
+                        <th>VENCEDOR</th>
+                        <th>PARTICIPANTES</th>
+                        <th>OBSERVAÇÕES</th>
+                        <th class="acoes-cell">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-partidas">
+                    <!-- Carregado via JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="sem-dados" style="display: none; text-align: center; padding: 40px;">
+            <p>Nenhuma batalha registrada ainda.</p>
+            <a href="nova-partida-funcional.html" class="btn btn-primary">
+                <i class="fas fa-plus"></i> REGISTRAR PRIMEIRA BATALHA
+            </a>
+        </div>
+        
+        <div class="text-center" style="margin-top: 40px;">
+            <a href="nova-partida-funcional.html" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> REGISTRAR NOVA BATALHA
+            </a>
+        </div>
+    </main>
 
     <!-- Modal para Edição Aprimorado -->
     <div class="modal" id="modal-edicao">
@@ -338,6 +478,14 @@
         </div>
     </div>
 
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 WAR Board GameRank - Registro de Batalhas</p>
+            </div>
+        </div>
+    </footer>
+
     <script>
         // Variáveis globais
         let partidas = [];
@@ -346,16 +494,61 @@
         
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
-            // ... resto do seu código de inicialização ...
+            // Menu mobile
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
             
-            // Event Listeners adicionais para os novos botões
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                });
+            }
+            
+            // Carregar dados
+            carregarJogadores();
+            carregarPartidas();
+            
+            // Event Listeners dos botões
+            document.getElementById('btn-recarregar').addEventListener('click', carregarPartidas);
+            document.getElementById('btn-exportar').addEventListener('click', exportarCSV);
+            document.getElementById('form-editar').addEventListener('submit', salvarEdicao);
+            document.getElementById('btn-fechar-modal').addEventListener('click', fecharModal);
+            document.getElementById('btn-cancelar').addEventListener('click', fecharModal);
+            
+            // Novos botões
             document.getElementById('btn-selecionar-todos').addEventListener('click', selecionarTodosJogadores);
             document.getElementById('btn-limpar-selecao').addEventListener('click', limparSelecaoJogadores);
             
-            // Delegar eventos para os checkboxes de jogadores (carregados dinamicamente)
-            document.getElementById('jogadores-grid').addEventListener('change', atualizarContadorJogadores);
+            // Delegar eventos para os botões dinâmicos da tabela
+            document.getElementById('lista-partidas').addEventListener('click', function(e) {
+                const target = e.target;
+                let btn = null;
+                
+                // Encontrar o botão clicado
+                if (target.classList.contains('btn-editar')) {
+                    btn = target;
+                } else if (target.closest('.btn-editar')) {
+                    btn = target.closest('.btn-editar');
+                } else if (target.classList.contains('btn-excluir')) {
+                    btn = target;
+                } else if (target.closest('.btn-excluir')) {
+                    btn = target.closest('.btn-excluir');
+                }
+                
+                if (btn) {
+                    const partidaId = btn.getAttribute('data-id');
+                    if (partidaId) {
+                        if (btn.classList.contains('btn-editar')) {
+                            abrirEdicao(partidaId);
+                        } else if (btn.classList.contains('btn-excluir')) {
+                            confirmarExclusao(partidaId);
+                        }
+                    }
+                }
+            });
             
-            // Delegar eventos para os radios de vencedor
+            // Delegar eventos para checkboxes e radios dinâmicos
+            document.getElementById('jogadores-grid').addEventListener('change', atualizarContadorJogadores);
             document.getElementById('vencedor-options').addEventListener('change', function(e) {
                 if (e.target.type === 'radio') {
                     atualizarVencedorSelecionado(e.target.value);
@@ -363,7 +556,110 @@
             });
         });
         
-        // Função para abrir edição - MODIFICADA
+        // Carregar jogadores
+        async function carregarJogadores() {
+            try {
+                const response = await fetch('/api/jogadores');
+                const data = await response.json();
+                
+                if (data.success && data.jogadores) {
+                    todosJogadores = data.jogadores.filter(j => j.ativo !== false);
+                    console.log(`✅ ${todosJogadores.length} jogadores carregados`);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar jogadores:', error);
+            }
+        }
+        
+        // Carregar partidas
+        async function carregarPartidas() {
+            try {
+                console.log('🔄 Iniciando carregamento de partidas...');
+                mostrarCarregando(true);
+                esconderMensagem();
+                
+                const response = await fetch('/api/partidas');
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    partidas = data.partidas || [];
+                    console.log(`🎯 ${partidas.length} partidas carregadas`);
+                    renderizarPartidas(partidas);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido na API');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar partidas:', error);
+                mostrarMensagem('Erro ao carregar batalhas: ' + error.message, 'error');
+                mostrarCarregando(false);
+            }
+        }
+        
+        // Renderizar partidas na tabela
+        function renderizarPartidas(partidasLista) {
+            const loading = document.getElementById('loading');
+            const tabelaContainer = document.getElementById('tabela-container');
+            const semDados = document.getElementById('sem-dados');
+            const tbody = document.getElementById('lista-partidas');
+            
+            if (loading) loading.style.display = 'none';
+            
+            if (!partidasLista || partidasLista.length === 0) {
+                if (semDados) semDados.style.display = 'block';
+                if (tabelaContainer) tabelaContainer.style.display = 'none';
+                return;
+            }
+            
+            if (semDados) semDados.style.display = 'none';
+            if (tabelaContainer) tabelaContainer.style.display = 'block';
+            
+            if (tbody) {
+                tbody.innerHTML = '';
+                
+                // Ordenar por data (mais recente primeiro)
+                partidasLista.sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                partidasLista.forEach(partida => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatarData(partida.data)}</td>
+                        <td>
+                            <span class="badge ${getBadgeClass(partida.tipo)}">
+                                ${partida.tipo || 'global'}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color: #10b981;">
+                                ${partida.vencedor}
+                            </strong>
+                        </td>
+                        <td>${formatarParticipantes(partida.participantes)}</td>
+                        <td>${partida.observacoes || '-'}</td>
+                        <td class="acoes-cell">
+                            <div class="btn-group-sm">
+                                <button class="btn btn-warning btn-editar" data-id="${partida._id}" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-danger btn-excluir" data-id="${partida._id}" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            mostrarCarregando(false);
+        }
+        
+        // Abrir modal de edição
         async function abrirEdicao(partidaId) {
             try {
                 console.log('📝 Abrindo edição da partida:', partidaId);
@@ -620,82 +916,4 @@
         }
         
         // Atualizar vencedor selecionado
-        function atualizarVencedorSelecionado(vencedor) {
-            document.getElementById('editar-vencedor').value = vencedor;
-            
-            // Atualizar visual das opções
-            document.querySelectorAll('.vencedor-option').forEach(opt => {
-                opt.classList.remove('selected');
-                const radio = opt.querySelector('input[type="radio"]');
-                if (radio && radio.value === vencedor) {
-                    opt.classList.add('selected');
-                }
-            });
-        }
-        
-        // Função para salvar edição - MODIFICADA
-        async function salvarEdicao(e) {
-            e.preventDefault();
-            
-            const partidaId = document.getElementById('partida-id').value;
-            
-            // Obter vencedor selecionado
-            const vencedorSelecionado = document.getElementById('editar-vencedor').value;
-            if (!vencedorSelecionado) {
-                mostrarMensagem('⚠️ Selecione um vencedor para a partida!', 'error');
-                return;
-            }
-            
-            // Obter jogadores selecionados (para possível uso futuro)
-            const jogadoresSelecionados = Array.from(
-                document.querySelectorAll('#jogadores-grid input[type="checkbox"]:checked:not(:disabled)')
-            ).map(cb => cb.value);
-            
-            const dados = {
-                data: document.getElementById('editar-data').value,
-                tipo: document.getElementById('editar-tipo').value,
-                vencedor: vencedorSelecionado,
-                observacoes: document.getElementById('editar-observacoes').value,
-                // Nota: Não estamos alterando participantes, apenas o vencedor
-                // Para alterar participantes, seria necessário uma lógica mais complexa
-                // envolvendo recalcular estatísticas
-            };
-            
-            console.log('💾 Salvando edição da partida:', partidaId, dados);
-            console.log('🎮 Jogadores selecionados:', jogadoresSelecionados);
-            
-            try {
-                const response = await fetch(`/api/partidas/${partidaId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(dados)
-                });
-                
-                const result = await response.json();
-                console.log('Resposta do servidor (edição):', result);
-                
-                if (result.success) {
-                    mostrarMensagem('✅ Partida atualizada com sucesso! O ranking foi recalculado.', 'success');
-                    fecharModal();
-                    carregarPartidas(); // Recarregar lista
-                    
-                    // Atualizar dashboard se estiver aberto
-                    if (typeof atualizarDashboard === 'function') {
-                        atualizarDashboard();
-                    }
-                } else {
-                    mostrarMensagem('Erro: ' + (result.error || 'Falha na atualização'), 'error');
-                }
-            } catch (error) {
-                console.error('❌ Erro ao salvar edição:', error);
-                mostrarMensagem('Erro ao salvar alterações: ' + error.message, 'error');
-            }
-        }
-        
-        // Resto das funções permanecem iguais...
-        // (carregarPartidas, confirmarExclusao, exportarCSV, formatação, etc.)
-    </script>
-</body>
-</html>
+        function atualizarVencedorSele
