@@ -3,96 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>➕ Cadastro - WAR Board GameRank</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Cadastrar Jogador - WAR Board</title>
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card { max-width: 600px; margin: 0 auto; }
+        .patente-fixa {
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            text-align: center;
+            border: 2px solid rgba(255,255,255,0.1);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { background: #5a6268; }
+    </style>
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <div class="nav-logo">➕</div>
-                <h1>ALISTAMENTO <span class="nav-subtitle">WAR Board</span></h1>
-            </div>
+        <div class="container">
+            <a href="/" class="logo">🎮 WAR Board</a>
             <div class="nav-menu">
-                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
-                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
-                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
-                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
-                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
-                <a href="cadastro.html" class="nav-link active"><i class="fas fa-user-plus"></i> Alistar</a>
+                <a href="/" class="nav-link"><i class="fas fa-home"></i> Home</a>
+                <a href="/dashboard" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="/partidas" class="nav-link"><i class="fas fa-gamepad"></i> Partidas</a>
+                <a href="/ranking" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
+                <a href="/jogadores" class="nav-link active"><i class="fas fa-users"></i> Jogadores</a>
+                <a href="/nova-partida" class="nav-link"><i class="fas fa-plus-circle"></i> Nova Partida</a>
             </div>
-            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
+            <button class="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </nav>
 
     <main class="container">
-        <div class="form-container">
-            <h2 class="section-title">ALISTAR NOVA TROPA</h2>
+        <a href="/jogadores" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Voltar para Jogadores
+        </a>
+
+        <div class="card">
+            <h1 class="card-title">
+                <i class="fas fa-user-plus"></i> Cadastrar Novo Jogador
+            </h1>
             
             <form id="form-cadastro">
                 <div class="form-group">
-                    <label class="form-label">Nome Completo:</label>
-                    <input type="text" class="form-control" id="nome" placeholder="Ex: Comandante Silva" required>
+                    <label for="nome" class="form-label">
+                        <i class="fas fa-user"></i> Nome Completo *
+                    </label>
+                    <input type="text" id="nome" class="form-control" 
+                           placeholder="Ex: João da Silva" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Apelido de Guerra:</label>
-                    <input type="text" class="form-control" id="apelido" placeholder="Ex: Silva" required>
+                    <label for="apelido" class="form-label">
+                        <i class="fas fa-at"></i> Apelido no Jogo *
+                    </label>
+                    <input type="text" id="apelido" class="form-control" 
+                           placeholder="Ex: João_WAR" required>
+                    <small class="form-text">
+                        Este apelido será usado no ranking e partidas
+                    </small>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">E-mail:</label>
-                    <input type="email" class="form-control" id="email" placeholder="exemplo@email.com">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i> E-mail (opcional)
+                    </label>
+                    <input type="email" id="email" class="form-control" 
+                           placeholder="exemplo@email.com">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Patente Inicial:</label>
+                    <label class="form-label">
+                        <i class="fas fa-ranks"></i> Patente Inicial
+                    </label>
                     <div class="patente-fixa">
-                        <span class="patente-badge patente-cabo">Cabo 🪖</span>
-                        <small style="color: rgba(255, 255, 255, 0.7); display: block; margin-top: 10px;">
-                            Todos os novos comandantes começam como Cabo. A patente evolui com suas vitórias!
-                        </small>
+                        🪖 <strong>Cabo</strong> (Todos iniciam aqui)
                     </div>
+                    <small class="form-text">
+                        A patente evolui automaticamente conforme as vitórias
+                    </small>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Observações:</label>
-                    <textarea class="form-control" id="observacoes" rows="3" placeholder="Informações adicionais..."></textarea>
+                    <label for="observacoes" class="form-label">
+                        <i class="fas fa-sticky-note"></i> Observações (opcional)
+                    </label>
+                    <textarea id="observacoes" class="form-control" 
+                              rows="3" placeholder="Ex: Joga principalmente à noite..."></textarea>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-user-plus"></i> ALISTAR TROPA
-                    </button>
-                    <a href="jogadores.html" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> VOLTAR
-                    </a>
-                </div>
-                
-                <div id="mensagem" class="message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i> Cadastrar Jogador
+                </button>
             </form>
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 WAR Board GameRank - Sistema de Cadastro</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="js/main.js"></script>
     <script>
-        // Menu mobile apenas
         document.addEventListener('DOMContentLoaded', function() {
-            const navToggle = document.querySelector('.nav-toggle');
-            const navMenu = document.querySelector('.nav-menu');
+            // Configurar data atual
+            const dataInput = document.getElementById('data-cadastro');
+            if (dataInput) {
+                const hoje = new Date().toISOString().split('T')[0];
+                dataInput.value = hoje;
+            }
             
-            if (navToggle && navMenu) {
-                navToggle.addEventListener('click', function() {
-                    navMenu.classList.toggle('active');
+            // Configurar formulário
+            const form = document.getElementById('form-cadastro');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const jogador = {
+                        nome: document.getElementById('nome').value.trim(),
+                        apelido: document.getElementById('apelido').value.trim(),
+                        email: document.getElementById('email').value.trim() || '',
+                        patente: 'Cabo 🪖',
+                        observacoes: document.getElementById('observacoes').value.trim() || ''
+                    };
+                    
+                    if (!jogador.nome || !jogador.apelido) {
+                        alert('Nome e apelido são obrigatórios!');
+                        return;
+                    }
+                    
+                    const btn = this.querySelector('button[type="submit"]');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cadastrando...';
+                    btn.disabled = true;
+                    
+                    try {
+                        const response = await fetch('/api/jogadores', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(jogador)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert('✅ Jogador cadastrado com sucesso!');
+                            this.reset();
+                            setTimeout(() => {
+                                window.location.href = '/jogadores';
+                            }, 1000);
+                        } else {
+                            alert('❌ Erro: ' + (result.error || 'Falha no cadastro'));
+                        }
+                    } catch (error) {
+                        console.error('Erro:', error);
+                        alert('❌ Erro de conexão');
+                    } finally {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
                 });
             }
         });
