@@ -353,6 +353,8 @@ app.post('/api/partidas', async (req, res) => {
   }
 });
 
+// ... (código anterior mantido igual até as rotas de ranking)
+
 // ============================================
 // ROTAS DE RANKING
 // ============================================
@@ -360,6 +362,8 @@ app.post('/api/partidas', async (req, res) => {
 // GET ranking global - TODOS OS TEMPOS
 app.get('/api/ranking/global', async (req, res) => {
   try {
+    console.log('📊 Gerando ranking GLOBAL...');
+    
     const jogadores = await Jogador.find({ ativo: true })
       .select('apelido patente vitorias partidas data_cadastro')
       .lean();
@@ -377,6 +381,13 @@ app.get('/api/ranking/global', async (req, res) => {
       tipo: 'global'
     }));
     
+    console.log('✅ Ranking global gerado com', resultado.length, 'jogadores');
+    
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(resultado);
     
   } catch (error) {
@@ -385,15 +396,26 @@ app.get('/api/ranking/global', async (req, res) => {
   }
 });
 
-// GET ranking mensal - MÊS ATUAL
-app.get('/api/ranking/mensal', async (req, res) => {
+// GET ranking mensal - COM PARÂMETROS ANO/MÊS
+app.get('/api/ranking/mensal/:ano?/:mes?', async (req, res) => {
   try {
-    // Obter início e fim do mês atual
-    const agora = new Date();
-    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
+    const ano = parseInt(req.params.ano) || new Date().getFullYear();
+    const mes = parseInt(req.params.mes) || new Date().getMonth() + 1;
+    
+    // Validar parâmetros
+    if (ano < 2000 || ano > 2100 || mes < 1 || mes > 12) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Ano ou mês inválido. Use ano entre 2000-2100 e mês 1-12' 
+      });
+    }
+    
+    // Obter início e fim do mês especificado
+    const inicioMes = new Date(ano, mes - 1, 1);
+    const fimMes = new Date(ano, mes, 0, 23, 59, 59);
     
     const mesNome = inicioMes.toLocaleDateString('pt-BR', { month: 'long' });
+    console.log(`📅 Ranking MENSAL: ${mesNome} ${ano}`);
     
     // Buscar TODOS jogadores ativos
     const todosJogadores = await Jogador.find({ ativo: true })
@@ -404,6 +426,8 @@ app.get('/api/ranking/mensal', async (req, res) => {
     const partidasMes = await Partida.find({
       data: { $gte: inicioMes, $lte: fimMes }
     }).lean();
+    
+    console.log(`🎮 ${partidasMes.length} partidas encontradas no mês`);
     
     // Calcular estatísticas APENAS das partidas do mês
     const estatisticasMes = {};
@@ -423,11 +447,13 @@ app.get('/api/ranking/mensal', async (req, res) => {
         estatisticasMes[partida.vencedor].vitorias_mes += 1;
       }
       
-      partida.participantes.forEach(participante => {
-        if (estatisticasMes[participante]) {
-          estatisticasMes[participante].partidas_mes += 1;
-        }
-      });
+      if (partida.participantes && Array.isArray(partida.participantes)) {
+        partida.participantes.forEach(participante => {
+          if (estatisticasMes[participante]) {
+            estatisticasMes[participante].partidas_mes += 1;
+          }
+        });
+      }
     });
     
     // Converter para array e calcular pontuação do mês
@@ -436,13 +462,28 @@ app.get('/api/ranking/mensal', async (req, res) => {
       .map(item => {
         const dados = calcularDadosJogador(item.jogador);
         
+        // Calcular performance do mês
+        const performanceMes = item.partidas_mes > 0 ? 
+          ((item.vitorias_mes / item.partidas_mes) * 100) : 0;
+        
+        // Classificação baseada no performance do mês
+        const getClassificacaoMes = (percentual) => {
+          if (percentual >= 80) return 'IMPARÁVEL';
+          if (percentual >= 60) return 'GUERREIRO'; 
+          if (percentual >= 40) return 'SOBREVIVENTE';
+          if (percentual >= 20) return 'RECRUTA';
+          return 'INICIANTE';
+        };
+        
         return {
-          ...dados,
+          apelido: item.jogador.apelido,
+          patente: item.jogador.patente || 'Cabo 🪖',
           vitorias: item.vitorias_mes,
           partidas: item.partidas_mes,
           pontuacao: (item.vitorias_mes * 10) + (item.partidas_mes * 2),
-          performance: item.partidas_mes > 0 ? 
-            ((item.vitorias_mes / item.partidas_mes) * 100).toFixed(1) + '%' : '0%'
+          performance: performanceMes.toFixed(1) + '%',
+          classificacao: getClassificacaoMes(performanceMes),
+          tipo: 'mensal'
         };
       });
     
@@ -453,21 +494,42 @@ app.get('/api/ranking/mensal', async (req, res) => {
     const resultado = rankingMensal.map((jogador, index) => ({
       posicao: index + 1,
       ...jogador,
-      tipo: 'mensal',
-      mes: agora.getMonth() + 1,
-      ano: agora.getFullYear(),
-      periodo: `${mesNome} ${agora.getFullYear()}`
+      mes: mes,
+      ano: ano,
+      periodo: `${mesNome} ${ano}`,
+      total_jogadores: rankingMensal.length,
+      total_partidas: partidasMes.length
     }));
     
-    // Se não houver partidas no mês, retornar vazio com mensagem
+    console.log(`🏆 ${resultado.length} jogadores no ranking mensal`);
+    
+    // Se não houver partidas no mês, retornar array vazio
     if (resultado.length === 0) {
-      return res.json([{
-        mensagem: `Nenhuma partida registrada em ${mesNome} ${agora.getFullYear()}`,
-        periodo: `${mesNome} ${agora.getFullYear()}`
-      }]);
+      return res.json([]);
     }
     
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(resultado);
+    
+  } catch (error) {
+    console.error('❌ Erro no ranking mensal:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ROTA ALTERNATIVA para ranking mensal (sem parâmetros - mês atual)
+app.get('/api/ranking/mensal', async (req, res) => {
+  try {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = agora.getMonth() + 1;
+    
+    // Redirecionar para a rota com parâmetros
+    res.redirect(`/api/ranking/mensal/${ano}/${mes}`);
     
   } catch (error) {
     console.error('❌ Erro no ranking mensal:', error);
@@ -478,6 +540,8 @@ app.get('/api/ranking/mensal', async (req, res) => {
 // GET ranking de performance - ORDENADO POR % VITÓRIAS
 app.get('/api/ranking/performance', async (req, res) => {
   try {
+    console.log('📈 Gerando ranking PERFORMANCE...');
+    
     const jogadores = await Jogador.find({ ativo: true })
       .select('apelido patente vitorias partidas data_cadastro')
       .lean();
@@ -510,6 +574,13 @@ app.get('/api/ranking/performance', async (req, res) => {
     
     const resultadoFinal = [...resultado, ...rankingSemPartidas];
     
+    console.log(`✅ Ranking performance: ${resultado.length} com partidas, ${rankingSemPartidas.length} sem partidas`);
+    
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(resultadoFinal);
     
   } catch (error) {
@@ -521,6 +592,8 @@ app.get('/api/ranking/performance', async (req, res) => {
 // GET vencedores históricos mensais
 app.get('/api/ranking/historico-mensal', async (req, res) => {
   try {
+    console.log('📚 Gerando histórico mensal...');
+    
     const partidas = await Partida.find().sort({ data: 1 }).lean();
     
     const historico = {};
@@ -575,6 +648,13 @@ app.get('/api/ranking/historico-mensal', async (req, res) => {
       return b.mes - a.mes;
     });
     
+    console.log(`✅ Histórico com ${resultado.length} meses registrados`);
+    
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(resultado);
     
   } catch (error) {
@@ -584,56 +664,177 @@ app.get('/api/ranking/historico-mensal', async (req, res) => {
 });
 
 // ============================================
-// ROTAS DA API - ESTATÍSTICAS
+// ROTAS DA API - ESTATÍSTICAS (MELHORADA)
 // ============================================
 
 // GET estatísticas gerais
 app.get('/api/estatisticas', async (req, res) => {
   try {
+    console.log('📊 Gerando estatísticas...');
+    
     const totalJogadores = await Jogador.countDocuments({ ativo: true });
     const totalPartidas = await Partida.countDocuments();
     
+    // Jogador com mais vitórias
     const recordVitorias = await Jogador.findOne({ ativo: true })
       .sort({ vitorias: -1 })
-      .select('apelido vitorias partidas');
+      .select('apelido vitorias partidas patente');
     
+    // Calcular pontuação do recordista
     let pontuacaoRecord = 0;
     if (recordVitorias) {
       pontuacaoRecord = (recordVitorias.vitorias * 10) + (recordVitorias.partidas * 2);
     }
     
+    // Últimas partidas
     const ultimasPartidas = await Partida.find()
       .sort({ data: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
     
-    const rankingsInfo = {
-      global: { endpoint: '/api/ranking/global', descricao: 'Ranking histórico geral' },
-      mensal: { endpoint: '/api/ranking/mensal', descricao: 'Ranking do mês atual' },
-      performance: { endpoint: '/api/ranking/performance', descricao: 'Ranking por eficiência' }
-    };
+    // Top 3 jogadores por pontuação
+    const jogadores = await Jogador.find({ ativo: true })
+      .select('apelido vitorias partidas patente')
+      .lean();
     
-    res.json({
+    const jogadoresComPontuacao = jogadores.map(jogador => {
+      const pontuacao = (jogador.vitorias * 10) + (jogador.partidas * 2);
+      return {
+        ...jogador,
+        pontuacao: pontuacao
+      };
+    });
+    
+    jogadoresComPontuacao.sort((a, b) => b.pontuacao - a.pontuacao);
+    const top3Pontuacao = jogadoresComPontuacao.slice(0, 3);
+    
+    // Partidas do mês atual
+    const agora = new Date();
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
+    
+    const partidasMes = await Partida.countDocuments({
+      data: { $gte: inicioMes, $lte: fimMes }
+    });
+    
+    const response = {
       success: true,
       total_jogadores: totalJogadores,
       total_partidas: totalPartidas,
+      partidas_mes_atual: partidasMes,
       record: {
         jogador: recordVitorias ? recordVitorias.apelido : 'N/A',
         vitorias: recordVitorias ? recordVitorias.vitorias : 0,
         pontuacao: pontuacaoRecord,
-        partidas: recordVitorias ? recordVitorias.partidas : 0
+        partidas: recordVitorias ? recordVitorias.partidas : 0,
+        patente: recordVitorias ? recordVitorias.patente : 'N/A'
       },
+      top3_pontuacao: top3Pontuacao.map((j, index) => ({
+        posicao: index + 1,
+        apelido: j.apelido,
+        patente: j.patente,
+        pontuacao: j.pontuacao,
+        vitorias: j.vitorias,
+        partidas: j.partidas
+      })),
       sistema_pontos: {
         vitoria: 10,
         participacao: 2,
         formula: '(vitórias × 10) + (partidas × 2)'
       },
-      rankings: rankingsInfo,
       ultimas_partidas: ultimasPartidas
-    });
+    };
+    
+    console.log('✅ Estatísticas geradas');
+    
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    res.json(response);
+    
   } catch (error) {
+    console.error('❌ Erro nas estatísticas:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// ============================================
+// ROTA ESPECÍFICA PARA DASHBOARD
+// ============================================
+
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    console.log('📊 Gerando dados do dashboard...');
+    
+    const [totalJogadores, totalPartidas] = await Promise.all([
+      Jogador.countDocuments({ ativo: true }),
+      Partida.countDocuments()
+    ]);
+    
+    // Buscar jogadores para calcular pontuação
+    const jogadores = await Jogador.find({ ativo: true })
+      .select('apelido vitorias partidas patente')
+      .lean();
+    
+    // Calcular pontuação para cada jogador
+    const jogadoresComPontuacao = jogadores.map(jogador => {
+      const pontuacao = (jogador.vitorias * 10) + (jogador.partidas * 2);
+      const performance = jogador.partidas > 0 ? 
+        ((jogador.vitorias / jogador.partidas) * 100) : 0;
+      
+      return {
+        ...jogador,
+        pontuacao: pontuacao,
+        performance: performance.toFixed(1) + '%'
+      };
+    });
+    
+    // Ordenar por pontuação
+    jogadoresComPontuacao.sort((a, b) => b.pontuacao - a.pontuacao);
+    const top3 = jogadoresComPontuacao.slice(0, 3);
+    
+    // Últimas partidas
+    const ultimasPartidas = await Partida.find()
+      .sort({ data: -1 })
+      .limit(5)
+      .lean();
+    
+    // Média de partidas por jogador
+    const mediaPartidas = totalJogadores > 0 ? 
+      (totalPartidas / totalJogadores).toFixed(1) : 0;
+    
+    const response = {
+      success: true,
+      total_jogadores: totalJogadores,
+      total_partidas: totalPartidas,
+      media_partidas: mediaPartidas,
+      podium: top3,
+      ultimas_partidas: ultimasPartidas,
+      sistema_pontos: {
+        vitoria: 10,
+        participacao: 2,
+        formula: '(vitórias × 10) + (partidas × 2)'
+      }
+    };
+    
+    console.log('✅ Dados do dashboard gerados');
+    
+    // HEADER para evitar cache
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('❌ Erro no dashboard:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ... (restante do código mantido igual)
 
 // ============================================
 // ROTAS DE TESTE E HEALTH
