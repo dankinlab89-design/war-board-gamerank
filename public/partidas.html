@@ -1,691 +1,424 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Batalhas - WAR Board GameRank</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .acoes-cell {
-            width: 120px;
-            text-align: center;
-        }
-        .btn-group-sm {
-            display: flex;
-            gap: 5px;
-        }
-        .btn-editar, .btn-excluir {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        .modal-content {
-            background: #1a1a1a;
-            margin: 50px auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            border: 1px solid #333;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
-        .modal-title {
-            font-size: 1.5rem;
-            color: #b8860b;
-        }
-        .btn-close {
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        .btn-close:hover {
-            color: white;
-        }
-        .form-control {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #333;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        .form-control:focus {
-            border-color: #b8860b;
-            outline: none;
-        }
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #333;
-        }
-        .jogadores-selecionados {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-        .jogador-tag {
-            display: inline-block;
-            background: rgba(184, 134, 11, 0.2);
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin: 2px;
-            font-size: 12px;
-            border: 1px solid rgba(184, 134, 11, 0.3);
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-primary { background: #007bff; color: white; }
-        .badge-warning { background: #ffc107; color: black; }
-        .badge-info { background: #17a2b8; color: white; }
-        .badge-danger { background: #dc3545; color: white; }
-        .badge-secondary { background: #6c757d; color: white; }
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .message-error {
-            background: rgba(220, 53, 69, 0.1);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: #dc3545;
-        }
-        .message-success {
-            background: rgba(40, 167, 69, 0.1);
-            border: 1px solid rgba(40, 167, 69, 0.3);
-            color: #28a745;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <div class="nav-logo">🎮</div>
-                <h1>BATALHAS <span class="nav-subtitle">WAR Board</span></h1>
-            </div>
-            <div class="nav-menu">
-                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
-                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
-                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
-                <a href="partidas.html" class="nav-link active"><i class="fas fa-flag"></i> Batalhas</a>
-                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
-                <a href="nova-partida-funcional.html" class="nav-btn"><i class="fas fa-plus"></i> Nova Batalha</a>
-            </div>
-            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
-        </div>
-    </nav>
+// Substitua TODO o script no seu HTML por esta versão corrigida:
 
-    <main class="container">
-        <h2 class="section-title">HISTÓRICO DE BATALHAS</h2>
+<script>
+    // Variáveis globais
+    let partidas = [];
+    let todosJogadores = [];
+    
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+        // Menu mobile
+        const navToggle = document.querySelector('.nav-toggle');
+        const navMenu = document.querySelector('.nav-menu');
         
-        <div class="text-right" style="margin-bottom: 20px;">
-            <button class="btn btn-secondary" id="btn-recarregar">
-                <i class="fas fa-sync-alt"></i> Recarregar
-            </button>
-            <button class="btn btn-warning" id="btn-exportar" style="margin-left: 10px;">
-                <i class="fas fa-download"></i> Exportar CSV
-            </button>
-        </div>
+        if (navToggle && navMenu) {
+            navToggle.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+        }
         
-        <div id="status-message"></div>
+        // Carregar dados
+        carregarJogadores();
+        carregarPartidas();
         
-        <div id="loading" class="loading" style="text-align: center; padding: 40px;">
-            <div class="spinner"></div>
-            <p>Carregando batalhas...</p>
-        </div>
+        // Event Listeners
+        document.getElementById('btn-recarregar').addEventListener('click', carregarPartidas);
+        document.getElementById('btn-exportar').addEventListener('click', exportarCSV);
+        document.getElementById('form-editar').addEventListener('submit', salvarEdicao);
         
-        <div class="table-responsive" id="tabela-container" style="display: none;">
-            <table class="table" id="tabela-partidas">
-                <thead>
-                    <tr>
-                        <th>DATA</th>
-                        <th>TIPO</th>
-                        <th>VENCEDOR</th>
-                        <th>PARTICIPANTES</th>
-                        <th>OBSERVAÇÕES</th>
-                        <th class="acoes-cell">AÇÕES</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-partidas">
-                    <!-- Carregado via JS -->
-                </tbody>
-            </table>
-        </div>
-        
-        <div id="sem-dados" style="display: none; text-align: center; padding: 40px;">
-            <p>Nenhuma batalha registrada ainda.</p>
-            <a href="nova-partida-funcional.html" class="btn btn-primary">
-                <i class="fas fa-plus"></i> REGISTRAR PRIMEIRA BATALHA
-            </a>
-        </div>
-        
-        <div class="text-center" style="margin-top: 40px;">
-            <a href="nova-partida-funcional.html" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus"></i> REGISTRAR NOVA BATALHA
-            </a>
-        </div>
-    </main>
-
-    <!-- Modal para Edição -->
-    <div class="modal" id="modal-edicao">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-edit"></i> Editar Batalha</h3>
-                <button class="btn-close" onclick="fecharModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="form-editar">
-                    <input type="hidden" id="partida-id">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label>Data:</label>
-                            <input type="date" id="editar-data" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label>Tipo:</label>
-                            <select id="editar-tipo" class="form-control" required>
-                                <option value="global">Global 🌎</option>
-                                <option value="campeonato">Campeonato 🏆</option>
-                                <option value="amistosa">Amistosa 🤝</option>
-                                <option value="eliminatoria">Eliminatória ⚔️</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-8">
-                            <label>Vencedor:</label>
-                            <input type="text" id="editar-vencedor" class="form-control" required>
-                        </div>
-
-                    <div>
-                        <label>Participantes:</label>
-                        <div id="participantes-info" class="jogadores-selecionados">
-                            <!-- Participantes serão exibidos aqui -->
-                        </div>
-                        <small class="text-muted">Participantes não podem ser editados. Exclua e crie uma nova partida se necessário.</small>
-                    </div>
-                    
-                    <div>
-                        <label>Observações:</label>
-                        <textarea id="editar-observacoes" class="form-control" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="fecharModal()">
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Salvar Alterações
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2025 WAR Board GameRank - Registro de Batalhas</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Variáveis globais
-        let partidas = [];
-        let todosJogadores = [];
-        
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            const navToggle = document.querySelector('.nav-toggle');
-            const navMenu = document.querySelector('.nav-menu');
+        // Delegação de eventos para os botões dinâmicos
+        document.getElementById('lista-partidas').addEventListener('click', function(e) {
+            const target = e.target;
             
-            if (navToggle && navMenu) {
-                navToggle.addEventListener('click', function() {
-                    navMenu.classList.toggle('active');
-                });
+            // Botão de editar
+            if (target.classList.contains('btn-editar') || target.closest('.btn-editar')) {
+                const btn = target.classList.contains('btn-editar') ? target : target.closest('.btn-editar');
+                const partidaId = btn.dataset.id;
+                if (partidaId) {
+                    abrirEdicao(partidaId);
+                }
             }
             
-            // Carregar dados
-            carregarJogadores();
-            carregarPartidas();
-            
-            // Event Listeners
-            document.getElementById('btn-recarregar').addEventListener('click', carregarPartidas);
-            document.getElementById('btn-exportar').addEventListener('click', exportarCSV);
-            document.getElementById('form-editar').addEventListener('submit', salvarEdicao);
+            // Botão de excluir
+            if (target.classList.contains('btn-excluir') || target.closest('.btn-excluir')) {
+                const btn = target.classList.contains('btn-excluir') ? target : target.closest('.btn-excluir');
+                const partidaId = btn.dataset.id;
+                if (partidaId) {
+                    confirmarExclusao(partidaId);
+                }
+            }
         });
-        
-        // Carregar jogadores
-        async function carregarJogadores() {
-            try {
-                const response = await fetch('/api/jogadores');
-                const data = await response.json();
-                
-                if (data.success && data.jogadores) {
-                    todosJogadores = data.jogadores.filter(j => j.ativo !== false);
-                }
-            } catch (error) {
-                console.error('Erro ao carregar jogadores:', error);
-            }
-        }
-        
-        // Carregar partidas
-        // Adicione no início da função carregarPartidas():
-async function carregarPartidas() {
-    try {
-        console.log('🔄 Iniciando carregamento de partidas...');
-        mostrarCarregando(true);
-        esconderMensagem();
-        
-        const response = await fetch('/api/partidas');
-        
-        console.log('📥 Resposta da API (status):', response.status, response.statusText);
-        
-        if (!response.ok) {
-            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 Dados recebidos:', data);
-        
-        if (data.success) {
-            partidas = data.partidas || [];
-            console.log(`🎯 ${partidas.length} partidas carregadas`);
-            renderizarPartidas(partidas);
-        } else {
-            console.error('❌ API retornou success: false', data);
-            throw new Error(data.error || 'Erro desconhecido na API');
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro completo ao carregar partidas:', error);
-        mostrarMensagem('Erro ao carregar batalhas: ' + error.message, 'error');
-        mostrarCarregando(false);
-    }
-}
-        async function carregarPartidas() {
-            try {
-                mostrarCarregando(true);
-                esconderMensagem();
-                
-                const response = await fetch('/api/partidas');
-                
-                if (!response.ok) {
-                    throw new Error(`Erro ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    partidas = data.partidas || [];
-                    renderizarPartidas(partidas);
-                } else {
-                    throw new Error(data.error || 'Erro desconhecido');
-                }
-                
-            } catch (error) {
-                console.error('Erro ao carregar partidas:', error);
-                mostrarMensagem('Erro ao carregar batalhas. Tente recarregar a página.', 'error');
-                mostrarCarregando(false);
-            }
-        }
-        
-        // Renderizar partidas na tabela
-        function renderizarPartidas(partidasLista) {
-            const loading = document.getElementById('loading');
-            const tabelaContainer = document.getElementById('tabela-container');
-            const semDados = document.getElementById('sem-dados');
-            const tbody = document.getElementById('lista-partidas');
-            
-            if (loading) loading.style.display = 'none';
-            
-            if (!partidasLista || partidasLista.length === 0) {
-                if (semDados) semDados.style.display = 'block';
-                if (tabelaContainer) tabelaContainer.style.display = 'none';
-                return;
-            }
-            
-            if (semDados) semDados.style.display = 'none';
-            if (tabelaContainer) tabelaContainer.style.display = 'block';
-            
-            if (tbody) {
-                tbody.innerHTML = '';
-                
-                // Ordenar por data (mais recente primeiro)
-                partidasLista.sort((a, b) => new Date(b.data) - new Date(a.data));
-                
-                partidasLista.forEach(partida => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${formatarData(partida.data)}</td>
-                        <td>
-                            <span class="badge ${getBadgeClass(partida.tipo)}">
-                                ${partida.tipo || 'global'}
-                            </span>
-                        </td>
-                        <td>
-                            <strong style="color: #10b981;">
-                                ${partida.vencedor}
-                            </strong>
-                        </td>
-                        <td>${formatarParticipantes(partida.participantes)}</td>
-                        <td>${partida.observacoes || '-'}</td>
-                        <td class="acoes-cell">
-                            <div class="btn-group-sm">
-                                <button class="btn btn-warning btn-editar" onclick="abrirEdicao('${partida._id}')" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-danger btn-excluir" onclick="confirmarExclusao('${partida._id}')" title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
-            
-            mostrarCarregando(false);
-        }
-        
-// Substitua as funções problemáticas por estas versões corrigidas:
-
-// Abrir modal de edição - VERSÃO CORRIGIDA
-async function abrirEdicao(partidaId) {
-    try {
-        console.log('📝 Abrindo edição da partida:', partidaId);
-        
-        const response = await fetch(`/api/partidas/${partidaId}`);
-        
-        if (!response.ok) {
-            throw new Error(`Erro HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Resposta da API (edição):', data);
-        
-        if (data.success) {
-            const partida = data.partida;
-            
-            // Preencher formulário
-            document.getElementById('partida-id').value = partida._id;
-            
-            // Formatar data para input (YYYY-MM-DD)
-            const dataObj = new Date(partida.data);
-            const dataFormatada = dataObj.toISOString().split('T')[0];
-            document.getElementById('editar-data').value = dataFormatada;
-            
-            document.getElementById('editar-tipo').value = partida.tipo || 'global';
-            document.getElementById('editar-vencedor').value = partida.vencedor;
-            document.getElementById('editar-observacoes').value = partida.observacoes || '';
-            
-            // Mostrar participantes
-            const participantesDiv = document.getElementById('participantes-info');
-            if (participantesDiv) {
-                let html = '';
-                if (Array.isArray(partida.participantes)) {
-                    partida.participantes.forEach(participante => {
-                        html += `<span class="jogador-tag">${participante}</span> `;
-                    });
-                } else if (typeof partida.participantes === 'string') {
-                    // Se for string, dividir por vírgula
-                    partida.participantes.split(',').forEach(participante => {
-                        if (participante.trim()) {
-                            html += `<span class="jogador-tag">${participante.trim()}</span> `;
-                        }
-                    });
-                }
-                participantesDiv.innerHTML = html || 'Nenhum participante';
-            }
-            
-            // Mostrar modal
-            document.getElementById('modal-edicao').style.display = 'block';
-        } else {
-            throw new Error(data.error || 'Erro desconhecido na API');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao abrir edição:', error);
-        mostrarMensagem('Erro ao carregar partida para edição: ' + error.message, 'error');
-    }
-}
-
-// Salvar edição - VERSÃO CORRIGIDA
-async function salvarEdicao(e) {
-    e.preventDefault();
-    
-    const partidaId = document.getElementById('partida-id').value;
-    const dados = {
-        data: document.getElementById('editar-data').value,
-        tipo: document.getElementById('editar-tipo').value,
-        vencedor: document.getElementById('editar-vencedor').value,
-        observacoes: document.getElementById('editar-observacoes').value
-        // Removido pontos - será calculado automaticamente pelo backend
-    };
-    
-    console.log('💾 Salvando edição da partida:', partidaId, dados);
-    
-    try {
-        const response = await fetch(`/api/partidas/${partidaId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dados)
-        });
-        
-        const result = await response.json();
-        console.log('Resposta do servidor (edição):', result);
-        
-        if (result.success) {
-            mostrarMensagem('✅ Partida atualizada com sucesso!', 'success');
-            fecharModal();
-            carregarPartidas(); // Recarregar a lista
-        } else {
-            mostrarMensagem('Erro: ' + (result.error || 'Falha na atualização'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao salvar edição:', error);
-        mostrarMensagem('Erro ao salvar alterações: ' + error.message, 'error');
-    }
-}
-
-// Excluir partida - VERSÃO CORRIGIDA
-async function excluirPartida(partidaId) {
-    try {
-        console.log('🗑️ Excluindo partida:', partidaId);
-        
-        const response = await fetch(`/api/partidas/${partidaId}`, {
-            method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        console.log('Resposta do servidor (exclusão):', result);
-        
-        if (result.success) {
-            mostrarMensagem('✅ Partida excluída com sucesso!', 'success');
-            carregarPartidas(); // Recarregar a lista
-        } else {
-            mostrarMensagem('Erro: ' + (result.error || 'Falha na exclusão'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao excluir partida:', error);
-        mostrarMensagem('Erro ao excluir partida: ' + error.message, 'error');
-    }
-}
-
-// Exportar para CSV - VERSÃO CORRIGIDA (sem pontos)
-function exportarCSV() {
-    if (partidas.length === 0) {
-        mostrarMensagem('Nenhuma partida para exportar', 'error');
-        return;
-    }
-    
-    // Cabeçalho simplificado (sem pontos)
-    let csv = 'Data,Tipo,Vencedor,Participantes,Observações\n';
-    
-    // Dados
-    partidas.forEach(partida => {
-        const dataFormatada = formatarDataParaCSV(partida.data);
-        const tipo = partida.tipo || 'global';
-        const vencedor = partida.vencedor || '';
-        
-        // Formatar participantes
-        let participantes = '';
-        if (Array.isArray(partida.participantes)) {
-            participantes = partida.participantes.join('; ');
-        } else if (typeof partida.participantes === 'string') {
-            participantes = partida.participantes;
-        }
-        
-        // Escapar aspas para CSV
-        const observacoes = (partida.observacoes || '').replace(/"/g, '""');
-        
-        // Linha CSV
-        csv += `"${dataFormatada}","${tipo}","${vencedor}","${participantes}","${observacoes}"\n`;
     });
     
-    // Criar e baixar arquivo
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `batalhas_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    mostrarMensagem('✅ CSV exportado com sucesso!', 'success');
-}
-
-// Função auxiliar para formatar data para CSV
-function formatarDataParaCSV(dataString) {
-    if (!dataString) return '';
-    try {
-        const data = new Date(dataString);
-        return data.toLocaleDateString('pt-BR') + ' ' + 
-               data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return dataString;
+    // Carregar jogadores
+    async function carregarJogadores() {
+        try {
+            const response = await fetch('/api/jogadores');
+            const data = await response.json();
+            
+            if (data.success && data.jogadores) {
+                todosJogadores = data.jogadores.filter(j => j.ativo !== false);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar jogadores:', error);
+        }
     }
-}
-        
-        // Funções auxiliares
-        function formatarData(dataString) {
-            if (!dataString) return '-';
-            try {
-                const data = new Date(dataString);
-                return data.toLocaleDateString('pt-BR') + ' ' + 
-                       data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            } catch {
-                return dataString;
+    
+    // Carregar partidas
+    async function carregarPartidas() {
+        try {
+            console.log('🔄 Iniciando carregamento de partidas...');
+            mostrarCarregando(true);
+            esconderMensagem();
+            
+            const response = await fetch('/api/partidas');
+            
+            console.log('📥 Resposta da API (status):', response.status, response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
             }
-        }
-        
-        function formatarDataParaInput(dataString) {
-            if (!dataString) return new Date().toISOString().split('T')[0];
-            try {
-                return new Date(dataString).toISOString().split('T')[0];
-            } catch {
-                return new Date().toISOString().split('T')[0];
+            
+            const data = await response.json();
+            console.log('📊 Dados recebidos:', data);
+            
+            if (data.success) {
+                partidas = data.partidas || [];
+                console.log(`🎯 ${partidas.length} partidas carregadas`);
+                renderizarPartidas(partidas);
+            } else {
+                console.error('❌ API retornou success: false', data);
+                throw new Error(data.error || 'Erro desconhecido na API');
             }
+            
+        } catch (error) {
+            console.error('❌ Erro completo ao carregar partidas:', error);
+            mostrarMensagem('Erro ao carregar batalhas: ' + error.message, 'error');
+            mostrarCarregando(false);
+        }
+    }
+    
+    // Renderizar partidas na tabela
+    function renderizarPartidas(partidasLista) {
+        const loading = document.getElementById('loading');
+        const tabelaContainer = document.getElementById('tabela-container');
+        const semDados = document.getElementById('sem-dados');
+        const tbody = document.getElementById('lista-partidas');
+        
+        if (loading) loading.style.display = 'none';
+        
+        if (!partidasLista || partidasLista.length === 0) {
+            if (semDados) semDados.style.display = 'block';
+            if (tabelaContainer) tabelaContainer.style.display = 'none';
+            return;
         }
         
-        function formatarParticipantes(participantes) {
-            if (!participantes) return '0';
-            if (Array.isArray(participantes)) {
-                return `${participantes.length} jogador(es)`;
-            } else if (typeof participantes === 'string') {
-                return `${participantes.split(',').length} jogador(es)`;
-            }
-            return '1+';
-        }
+        if (semDados) semDados.style.display = 'none';
+        if (tabelaContainer) tabelaContainer.style.display = 'block';
         
-        function getBadgeClass(tipo) {
-            const classes = {
-                'global': 'badge-primary',
-                'campeonato': 'badge-warning',
-                'amistosa': 'badge-info',
-                'eliminatoria': 'badge-danger'
-            };
-            return classes[tipo] || 'badge-secondary';
-        }
-        
-        function mostrarCarregando(mostrar) {
-            const loading = document.getElementById('loading');
-            if (loading) {
-                loading.style.display = mostrar ? 'block' : 'none';
-            }
-        }
-        
-        function mostrarMensagem(texto, tipo = 'info') {
-            const container = document.getElementById('status-message');
-            if (container) {
-                container.innerHTML = `
-                    <div class="message message-${tipo}">
-                        ${texto}
-                    </div>
+        if (tbody) {
+            tbody.innerHTML = '';
+            
+            // Ordenar por data (mais recente primeiro)
+            partidasLista.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            partidasLista.forEach(partida => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatarData(partida.data)}</td>
+                    <td>
+                        <span class="badge ${getBadgeClass(partida.tipo)}">
+                            ${partida.tipo || 'global'}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: #10b981;">
+                            ${partida.vencedor}
+                        </strong>
+                    </td>
+                    <td>${formatarParticipantes(partida.participantes)}</td>
+                    <td>${partida.observacoes || '-'}</td>
+                    <td class="acoes-cell">
+                        <div class="btn-group-sm">
+                            <button class="btn btn-warning btn-editar" data-id="${partida._id}" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-excluir" data-id="${partida._id}" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
                 `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        mostrarCarregando(false);
+    }
+    
+    // Abrir modal de edição
+    async function abrirEdicao(partidaId) {
+        try {
+            console.log('📝 Abrindo edição da partida:', partidaId);
+            
+            const response = await fetch(`/api/partidas/${partidaId}`);
+            
+            if (!response.ok) {
+                throw new Error(`Erro HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Resposta da API (edição):', data);
+            
+            if (data.success) {
+                const partida = data.partida;
                 
-                // Auto-remover após 5 segundos para sucesso
-                if (tipo === 'success') {
-                    setTimeout(() => {
-                        container.innerHTML = '';
-                    }, 5000);
+                // Preencher formulário
+                document.getElementById('partida-id').value = partida._id;
+                
+                // Formatar data para input (YYYY-MM-DD)
+                const dataObj = new Date(partida.data);
+                const dataFormatada = dataObj.toISOString().split('T')[0];
+                document.getElementById('editar-data').value = dataFormatada;
+                
+                document.getElementById('editar-tipo').value = partida.tipo || 'global';
+                document.getElementById('editar-vencedor').value = partida.vencedor;
+                document.getElementById('editar-observacoes').value = partida.observacoes || '';
+                
+                // Mostrar participantes
+                const participantesDiv = document.getElementById('participantes-info');
+                if (participantesDiv) {
+                    let html = '';
+                    if (Array.isArray(partida.participantes)) {
+                        partida.participantes.forEach(participante => {
+                            html += `<span class="jogador-tag">${participante}</span> `;
+                        });
+                    } else if (typeof partida.participantes === 'string') {
+                        partida.participantes.split(',').forEach(participante => {
+                            if (participante.trim()) {
+                                html += `<span class="jogador-tag">${participante.trim()}</span> `;
+                            }
+                        });
+                    }
+                    participantesDiv.innerHTML = html || 'Nenhum participante';
                 }
+                
+                // Mostrar modal
+                document.getElementById('modal-edicao').style.display = 'block';
+            } else {
+                throw new Error(data.error || 'Erro desconhecido na API');
             }
+        } catch (error) {
+            console.error('❌ Erro ao abrir edição:', error);
+            mostrarMensagem('Erro ao carregar partida para edição: ' + error.message, 'error');
         }
+    }
+    
+    // Fechar modal
+    function fecharModal() {
+        document.getElementById('modal-edicao').style.display = 'none';
+    }
+    
+    // Salvar edição
+    async function salvarEdicao(e) {
+        e.preventDefault();
         
-        function esconderMensagem() {
-            const container = document.getElementById('status-message');
-            if (container) {
-                container.innerHTML = '';
-            }
-        }
+        const partidaId = document.getElementById('partida-id').value;
+        const dados = {
+            data: document.getElementById('editar-data').value,
+            tipo: document.getElementById('editar-tipo').value,
+            vencedor: document.getElementById('editar-vencedor').value,
+            observacoes: document.getElementById('editar-observacoes').value
+        };
         
-        // Fechar modal ao clicar fora
-        window.addEventListener('click', function(e) {
-            const modal = document.getElementById('modal-edicao');
-            if (e.target === modal) {
+        console.log('💾 Salvando edição da partida:', partidaId, dados);
+        
+        try {
+            const response = await fetch(`/api/partidas/${partidaId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dados)
+            });
+            
+            const result = await response.json();
+            console.log('Resposta do servidor (edição):', result);
+            
+            if (result.success) {
+                mostrarMensagem('✅ Partida atualizada com sucesso!', 'success');
                 fecharModal();
+                carregarPartidas();
+            } else {
+                mostrarMensagem('Erro: ' + (result.error || 'Falha na atualização'), 'error');
             }
+        } catch (error) {
+            console.error('❌ Erro ao salvar edição:', error);
+            mostrarMensagem('Erro ao salvar alterações: ' + error.message, 'error');
+        }
+    }
+    
+    // Confirmar exclusão
+    function confirmarExclusao(partidaId) {
+        const partida = partidas.find(p => p._id === partidaId);
+        if (!partida) return;
+        
+        const confirmacao = confirm(`Tem certeza que deseja excluir esta batalha?\n\nData: ${formatarData(partida.data)}\nVencedor: ${partida.vencedor}\n\n⚠️ Esta ação não pode ser desfeita e afetará as estatísticas dos jogadores!`);
+        
+        if (confirmacao) {
+            excluirPartida(partidaId);
+        }
+    }
+    
+    // Excluir partida
+    async function excluirPartida(partidaId) {
+        try {
+            console.log('🗑️ Excluindo partida:', partidaId);
+            
+            const response = await fetch(`/api/partidas/${partidaId}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            console.log('Resposta do servidor (exclusão):', result);
+            
+            if (result.success) {
+                mostrarMensagem('✅ Partida excluída com sucesso!', 'success');
+                carregarPartidas();
+            } else {
+                mostrarMensagem('Erro: ' + (result.error || 'Falha na exclusão'), 'error');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao excluir partida:', error);
+            mostrarMensagem('Erro ao excluir partida: ' + error.message, 'error');
+        }
+    }
+    
+    // Exportar para CSV
+    function exportarCSV() {
+        if (partidas.length === 0) {
+            mostrarMensagem('Nenhuma partida para exportar', 'error');
+            return;
+        }
+        
+        // Cabeçalho simplificado
+        let csv = 'Data,Tipo,Vencedor,Participantes,Observações\n';
+        
+        // Dados
+        partidas.forEach(partida => {
+            const dataFormatada = formatarDataParaCSV(partida.data);
+            const tipo = partida.tipo || 'global';
+            const vencedor = partida.vencedor || '';
+            
+            // Formatar participantes
+            let participantes = '';
+            if (Array.isArray(partida.participantes)) {
+                participantes = partida.participantes.join('; ');
+            } else if (typeof partida.participantes === 'string') {
+                participantes = partida.participantes;
+            }
+            
+            // Escapar aspas para CSV
+            const observacoes = (partida.observacoes || '').replace(/"/g, '""');
+            
+            // Linha CSV
+            csv += `"${dataFormatada}","${tipo}","${vencedor}","${participantes}","${observacoes}"\n`;
         });
-    </script>
-</body>
-</html>
+        
+        // Criar e baixar arquivo
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `batalhas_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        mostrarMensagem('✅ CSV exportado com sucesso!', 'success');
+    }
+    
+    // Funções auxiliares
+    function formatarData(dataString) {
+        if (!dataString) return '-';
+        try {
+            const data = new Date(dataString);
+            return data.toLocaleDateString('pt-BR') + ' ' + 
+                   data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return dataString;
+        }
+    }
+    
+    function formatarDataParaCSV(dataString) {
+        if (!dataString) return '';
+        try {
+            const data = new Date(dataString);
+            return data.toLocaleDateString('pt-BR') + ' ' + 
+                   data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return dataString;
+        }
+    }
+    
+    function formatarParticipantes(participantes) {
+        if (!participantes) return '0';
+        if (Array.isArray(participantes)) {
+            return `${participantes.length} jogador(es)`;
+        } else if (typeof participantes === 'string') {
+            return `${participantes.split(',').length} jogador(es)`;
+        }
+        return '1+';
+    }
+    
+    function getBadgeClass(tipo) {
+        const classes = {
+            'global': 'badge-primary',
+            'campeonato': 'badge-warning',
+            'amistosa': 'badge-info',
+            'eliminatoria': 'badge-danger'
+        };
+        return classes[tipo] || 'badge-secondary';
+    }
+    
+    function mostrarCarregando(mostrar) {
+        const loading = document.getElementById('loading');
+        if (loading) {
+            loading.style.display = mostrar ? 'block' : 'none';
+        }
+    }
+    
+    function mostrarMensagem(texto, tipo = 'info') {
+        const container = document.getElementById('status-message');
+        if (container) {
+            container.innerHTML = `
+                <div class="message message-${tipo}">
+                    ${texto}
+                </div>
+            `;
+            
+            // Auto-remover após 5 segundos para sucesso
+            if (tipo === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+    }
+    
+    function esconderMensagem() {
+        const container = document.getElementById('status-message');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
+    
+    // Fechar modal ao clicar fora
+    window.addEventListener('click', function(e) {
+        const modal = document.getElementById('modal-edicao');
+        if (e.target === modal) {
+            fecharModal();
+        }
+    });
+</script>
