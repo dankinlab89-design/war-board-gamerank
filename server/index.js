@@ -329,6 +329,83 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
+// ============================================
+// ROTAS DA API - EDITAR/DESATIVAR JOGADORES
+// ============================================
+
+// GET jogador específico (para edição)
+app.get('/api/jogadores/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, error: 'ID inválido' });
+        }
+        
+        const jogador = await Jogador.findById(req.params.id);
+        
+        if (!jogador) {
+            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
+        }
+        
+        res.json({ success: true, jogador });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// PUT atualizar jogador
+app.put('/api/jogadores/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, error: 'ID inválido' });
+        }
+        
+        const jogador = await Jogador.findByIdAndUpdate(
+            req.params.id,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        );
+        
+        if (!jogador) {
+            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Jogador atualizado com sucesso!',
+            jogador 
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+// DELETE desativar jogador (marcar como inativo)
+app.delete('/api/jogadores/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, error: 'ID inválido' });
+        }
+        
+        const jogador = await Jogador.findByIdAndUpdate(
+            req.params.id,
+            { $set: { ativo: false } },
+            { new: true }
+        );
+        
+        if (!jogador) {
+            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Jogador desativado com sucesso!',
+            jogador 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Rota catch-all para SPA (Single Page Application)
 app.get('*', (req, res) => {
   res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
