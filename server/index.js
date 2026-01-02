@@ -59,7 +59,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/controle_
   });
 
 // ============================================
-// MODELOS MONGODB - Para seu sistema WAR
+// MODELOS MONGODB
 // ============================================
 
 const jogadorSchema = new mongoose.Schema({
@@ -87,6 +87,78 @@ const Jogador = mongoose.model('Jogador', jogadorSchema);
 const Partida = mongoose.model('Partida', partidaSchema);
 
 // ============================================
+// FUNÇÕES AUXILIARES PARA RANKINGS
+// ============================================
+
+// Função para calcular dados de um jogador
+const calcularDadosJogador = (jogador) => {
+  const vitorias = jogador.vitorias || 0;
+  const partidas = jogador.partidas || 0;
+  
+  const pontuacao = (vitorias * 10) + (partidas * 2);
+  
+  const performance = partidas > 0 ? 
+    ((vitorias / partidas) * 100) : 0;
+  
+  const getClassificacao = (percentual) => {
+    if (percentual >= 80) return 'IMPARÁVEL';
+    if (percentual >= 60) return 'GUERREIRO'; 
+    if (percentual >= 40) return 'SOBREVIVENTE';
+    if (percentual >= 20) return 'RECRUTA';
+    return 'INICIANTE';
+  };
+  
+  return {
+    apelido: jogador.apelido,
+    patente: jogador.patente || 'Cabo 🪖',
+    vitorias,
+    partidas,
+    pontuacao,
+    performance: performance.toFixed(1) + '%',
+    classificacao: getClassificacao(performance),
+    data_cadastro: jogador.data_cadastro
+  };
+};
+
+// Função para ordenar RANKING GLOBAL/MENSAL
+const ordenarRankingCompetitivo = (a, b) => {
+  if (b.vitorias !== a.vitorias) {
+    return b.vitorias - a.vitorias;
+  }
+  
+  if (b.pontuacao !== a.pontuacao) {
+    return b.pontuacao - a.pontuacao;
+  }
+  
+  const perfA = parseFloat(a.performance);
+  const perfB = parseFloat(b.performance);
+  if (perfB !== perfA) {
+    return perfB - perfA;
+  }
+  
+  return new Date(a.data_cadastro) - new Date(b.data_cadastro);
+};
+
+// Função para ordenar RANKING PERFORMANCE
+const ordenarRankingPerformance = (a, b) => {
+  const perfA = parseFloat(a.performance);
+  const perfB = parseFloat(b.performance);
+  if (perfB !== perfA) {
+    return perfB - perfA;
+  }
+  
+  if (b.vitorias !== a.vitorias) {
+    return b.vitorias - a.vitorias;
+  }
+  
+  if (b.pontuacao !== a.pontuacao) {
+    return b.pontuacao - a.pontuacao;
+  }
+  
+  return a.apelido.localeCompare(b.apelido);
+};
+
+// ============================================
 // ROTAS DA API - JOGADORES
 // ============================================
 
@@ -97,6 +169,39 @@ app.get('/api/jogadores', async (req, res) => {
     res.json({ success: true, jogadores });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET jogador específico
+app.get('/api/jogadores/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    const jogador = await Jogador.findById(req.params.id);
+    
+    if (!jogador) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Jogador não encontrado' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      jogador 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar jogador:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -115,52 +220,9 @@ app.post('/api/jogadores', async (req, res) => {
   }
 });
 
-// ============================================
-// ROTAS DA API - EDITAR/DESATIVAR JOGADORES
-// ============================================
-
-// GET jogador específico
-app.get('/api/jogadores/:id', async (req, res) => {
-  try {
-    console.log('🔍 Buscando jogador ID:', req.params.id);
-    
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'ID inválido' 
-      });
-    }
-    
-    const jogador = await Jogador.findById(req.params.id);
-    
-    if (!jogador) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Jogador não encontrado' 
-      });
-    }
-    
-    console.log('✅ Jogador encontrado:', jogador.apelido);
-    res.json({ 
-      success: true, 
-      jogador 
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro ao buscar jogador:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
 // PUT atualizar jogador
 app.put('/api/jogadores/:id', async (req, res) => {
   try {
-    console.log('📝 Atualizando jogador ID:', req.params.id);
-    console.log('📦 Dados recebidos:', req.body);
-    
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ 
         success: false, 
@@ -168,7 +230,6 @@ app.put('/api/jogadores/:id', async (req, res) => {
       });
     }
     
-    // Verificar se jogador existe
     const jogadorExistente = await Jogador.findById(req.params.id);
     if (!jogadorExistente) {
       return res.status(404).json({ 
@@ -177,17 +238,15 @@ app.put('/api/jogadores/:id', async (req, res) => {
       });
     }
     
-    // Atualizar jogador
     const jogador = await Jogador.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
       { 
-        new: true,           // Retorna o documento atualizado
-        runValidators: true  // Valida os dados
+        new: true,
+        runValidators: true
       }
     );
     
-    console.log('✅ Jogador atualizado:', jogador.apelido);
     res.json({ 
       success: true, 
       message: 'Jogador atualizado com sucesso!',
@@ -203,11 +262,9 @@ app.put('/api/jogadores/:id', async (req, res) => {
   }
 });
 
-// DELETE desativar jogador (marcar como inativo)
+// DELETE desativar jogador
 app.delete('/api/jogadores/:id', async (req, res) => {
   try {
-    console.log('🗑️ Desativando jogador ID:', req.params.id);
-    
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ 
         success: false, 
@@ -228,7 +285,6 @@ app.delete('/api/jogadores/:id', async (req, res) => {
       });
     }
     
-    console.log('✅ Jogador desativado:', jogador.apelido);
     res.json({ 
       success: true, 
       message: 'Jogador desativado com sucesso!',
@@ -274,7 +330,6 @@ app.post('/api/partidas', async (req, res) => {
     
     // Atualizar estatísticas dos participantes (apenas partidas, não vitórias)
     if (req.body.participantes && Array.isArray(req.body.participantes)) {
-      // Remover o vencedor da lista para não contar duas vezes
       const outrosParticipantes = req.body.participantes.filter(p => p !== req.body.vencedor);
       
       if (outrosParticipantes.length > 0) {
@@ -299,188 +354,15 @@ app.post('/api/partidas', async (req, res) => {
 });
 
 // ============================================
-// ROTAS DA API - ESTATÍSTICAS
-// ============================================
-
-// GET estatísticas gerais
-app.get('/api/estatisticas', async (req, res) => {
-  try {
-    const totalJogadores = await Jogador.countDocuments({ ativo: true });
-    const totalPartidas = await Partida.countDocuments();
-    
-    // Jogador com mais vitórias
-    const recordVitorias = await Jogador.findOne({ ativo: true })
-      .sort({ vitorias: -1 })
-      .select('apelido vitorias');
-    
-    // Últimas partidas
-    const ultimasPartidas = await Partida.find()
-      .sort({ data: -1 })
-      .limit(5);
-    
-    res.json({
-      success: true,
-      total_jogadores: totalJogadores,
-      total_partidas: totalPartidas,
-      record_vitorias: recordVitorias ? recordVitorias.vitorias : 0,
-      record_holder: recordVitorias ? recordVitorias.apelido : 'N/A',
-      ultimas_partidas: ultimasPartidas
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// ROTAS DA API - RANKING
-// ============================================
-
-// GET ranking global
-app.get('/api/ranking/global', async (req, res) => {
-  try {
-    const jogadores = await Jogador.find({ ativo: true })
-      .sort({ vitorias: -1, partidas: 1 })
-      .select('apelido patente vitorias partidas')
-      .limit(20);
-    
-    // Calcular percentual de vitórias
-    const ranking = jogadores.map(jogador => ({
-      apelido: jogador.apelido,
-      patente: jogador.patente,
-      vitorias: jogador.vitorias,
-      partidas: jogador.partidas,
-      percentual: jogador.partidas > 0 ? 
-        ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0
-    }));
-    
-    res.json(ranking);
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// ROTAS DA API - DASHBOARD
-// ============================================
-
-// GET dados para dashboard
-app.get('/api/dashboard', async (req, res) => {
-  try {
-    const totalJogadores = await Jogador.countDocuments({ ativo: true });
-    const totalPartidas = await Partida.countDocuments();
-    const ranking = await Jogador.find({ ativo: true })
-      .sort({ vitorias: -1 })
-      .limit(3)
-      .select('apelido vitorias');
-    
-    res.json({
-      success: true,
-      total_jogadores: totalJogadores,
-      total_partidas: totalPartidas,
-      podium: ranking
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ============================================
-// FUNÇÕES AUXILIARES PARA RANKINGS
-// ============================================
-
-// Função para calcular dados de um jogador
-const calcularDadosJogador = (jogador) => {
-  const vitorias = jogador.vitorias || 0;
-  const partidas = jogador.partidas || 0;
-  
-  // Pontuação: (vitórias × 10) + (partidas × 2)
-  const pontuacao = (vitorias * 10) + (partidas * 2);
-  
-  // Performance (% de vitórias)
-  const performance = partidas > 0 ? 
-    ((vitorias / partidas) * 100) : 0;
-  
-  // Classificação de performance
-  const getClassificacao = (percentual) => {
-    if (percentual >= 80) return 'IMPARÁVEL';
-    if (percentual >= 60) return 'GUERREIRO'; 
-    if (percentual >= 40) return 'SOBREVIVENTE';
-    if (percentual >= 20) return 'RECRUTA';
-    return 'INICIANTE';
-  };
-  
-  return {
-    apelido: jogador.apelido,
-    patente: jogador.patente || 'Cabo 🪖',
-    vitorias,
-    partidas,
-    pontuacao,
-    performance: performance.toFixed(1) + '%',
-    classificacao: getClassificacao(performance),
-    data_cadastro: jogador.data_cadastro
-  };
-};
-
-// Função para ordenar RANKING GLOBAL/MENSAL
-const ordenarRankingCompetitivo = (a, b) => {
-  // 1º CRITÉRIO: Vitórias (maior)
-  if (b.vitorias !== a.vitorias) {
-    return b.vitorias - a.vitorias;
-  }
-  
-  // 2º CRITÉRIO: Pontuação (maior)
-  if (b.pontuacao !== a.pontuacao) {
-    return b.pontuacao - a.pontuacao;
-  }
-  
-  // 3º CRITÉRIO: Performance (maior)
-  const perfA = parseFloat(a.performance);
-  const perfB = parseFloat(b.performance);
-  if (perfB !== perfA) {
-    return perfB - perfA;
-  }
-  
-  // 4º CRITÉRIO: Data de cadastro (mais antigo primeiro)
-  return new Date(a.data_cadastro) - new Date(b.data_cadastro);
-};
-
-// Função para ordenar RANKING PERFORMANCE
-const ordenarRankingPerformance = (a, b) => {
-  // 1º CRITÉRIO: Performance % (maior)
-  const perfA = parseFloat(a.performance);
-  const perfB = parseFloat(b.performance);
-  if (perfB !== perfA) {
-    return perfB - perfA;
-  }
-  
-  // 2º CRITÉRIO: Vitórias (maior)
-  if (b.vitorias !== a.vitorias) {
-    return b.vitorias - a.vitorias;
-  }
-  
-  // 3º CRITÉRIO: Pontuação (maior)
-  if (b.pontuacao !== a.pontuacao) {
-    return b.pontuacao - a.pontuacao;
-  }
-  
-  // 4º CRITÉRIO: Ordem alfabética (A-Z)
-  return a.apelido.localeCompare(b.apelido);
-};
-
-// ============================================
 // ROTAS DE RANKING
 // ============================================
 
 // GET ranking global - TODOS OS TEMPOS
 app.get('/api/ranking/global', async (req, res) => {
   try {
-    console.log('📊 Gerando ranking GLOBAL...');
-    
     const jogadores = await Jogador.find({ ativo: true })
       .select('apelido patente vitorias partidas data_cadastro')
       .lean();
-    
-    console.log(`👥 ${jogadores.length} jogadores ativos encontrados`);
     
     // Calcular dados para cada jogador
     const ranking = jogadores.map(calcularDadosJogador);
@@ -494,8 +376,6 @@ app.get('/api/ranking/global', async (req, res) => {
       ...jogador,
       tipo: 'global'
     }));
-    
-    console.log('✅ Ranking global gerado com', resultado.length, 'jogadores');
     
     res.json(resultado);
     
@@ -514,7 +394,6 @@ app.get('/api/ranking/mensal', async (req, res) => {
     const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
     
     const mesNome = inicioMes.toLocaleDateString('pt-BR', { month: 'long' });
-    console.log(`📅 Ranking MENSAL: ${mesNome} ${agora.getFullYear()}`);
     
     // Buscar TODOS jogadores ativos
     const todosJogadores = await Jogador.find({ ativo: true })
@@ -526,8 +405,6 @@ app.get('/api/ranking/mensal', async (req, res) => {
       data: { $gte: inicioMes, $lte: fimMes }
     }).lean();
     
-    console.log(`🎮 ${partidasMes.length} partidas encontradas no mês`);
-    
     // Calcular estatísticas APENAS das partidas do mês
     const estatisticasMes = {};
     
@@ -536,18 +413,16 @@ app.get('/api/ranking/mensal', async (req, res) => {
       estatisticasMes[jogador.apelido] = {
         vitorias_mes: 0,
         partidas_mes: 0,
-        jogador // Referência ao original
+        jogador
       };
     });
     
     // Contar vitórias e partidas do mês
     partidasMes.forEach(partida => {
-      // Vitória do mês
       if (estatisticasMes[partida.vencedor]) {
         estatisticasMes[partida.vencedor].vitorias_mes += 1;
       }
       
-      // Partidas do mês (todos participantes)
       partida.participantes.forEach(participante => {
         if (estatisticasMes[participante]) {
           estatisticasMes[participante].partidas_mes += 1;
@@ -557,11 +432,10 @@ app.get('/api/ranking/mensal', async (req, res) => {
     
     // Converter para array e calcular pontuação do mês
     const rankingMensal = Object.values(estatisticasMes)
-      .filter(item => item.partidas_mes > 0) // Só quem jogou no mês
+      .filter(item => item.partidas_mes > 0)
       .map(item => {
         const dados = calcularDadosJogador(item.jogador);
         
-        // Sobrescrever com dados do MÊS
         return {
           ...dados,
           vitorias: item.vitorias_mes,
@@ -585,8 +459,6 @@ app.get('/api/ranking/mensal', async (req, res) => {
       periodo: `${mesNome} ${agora.getFullYear()}`
     }));
     
-    console.log(`🏆 ${resultado.length} jogadores no ranking mensal`);
-    
     // Se não houver partidas no mês, retornar vazio com mensagem
     if (resultado.length === 0) {
       return res.json([{
@@ -606,8 +478,6 @@ app.get('/api/ranking/mensal', async (req, res) => {
 // GET ranking de performance - ORDENADO POR % VITÓRIAS
 app.get('/api/ranking/performance', async (req, res) => {
   try {
-    console.log('📈 Gerando ranking PERFORMANCE...');
-    
     const jogadores = await Jogador.find({ ativo: true })
       .select('apelido patente vitorias partidas data_cadastro')
       .lean();
@@ -640,8 +510,6 @@ app.get('/api/ranking/performance', async (req, res) => {
     
     const resultadoFinal = [...resultado, ...rankingSemPartidas];
     
-    console.log(`✅ Ranking performance: ${resultado.length} com partidas, ${rankingSemPartidas.length} sem partidas`);
-    
     res.json(resultadoFinal);
     
   } catch (error) {
@@ -650,68 +518,11 @@ app.get('/api/ranking/performance', async (req, res) => {
   }
 });
 
-// GET todos os rankings (resumo)
-app.get('/api/ranking/todos', async (req, res) => {
-  try {
-    console.log('🔄 Gerando resumo de todos rankings...');
-    
-    // URLs internas
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    
-    const [global, mensal, performance] = await Promise.all([
-      fetch(`${baseUrl}/api/ranking/global`).then(r => r.json()),
-      fetch(`${baseUrl}/api/ranking/mensal`).then(r => r.json()),
-      fetch(`${baseUrl}/api/ranking/performance`).then(r => r.json())
-    ]);
-    
-    const resposta = {
-      sucesso: true,
-      rankings: {
-        global: {
-          total: global.length,
-          top3: global.slice(0, 3).map(j => ({ apelido: j.apelido, vitorias: j.vitorias, pontuacao: j.pontuacao })),
-          endpoint: '/api/ranking/global',
-          descricao: 'Ranking histórico geral'
-        },
-        mensal: {
-          total: Array.isArray(mensal) ? mensal.length : 0,
-          top3: Array.isArray(mensal) ? mensal.slice(0, 3).map(j => ({ apelido: j.apelido, vitorias: j.vitorias, pontuacao: j.pontuacao })) : [],
-          endpoint: '/api/ranking/mensal',
-          descricao: 'Ranking do mês atual'
-        },
-        performance: {
-          total: performance.length,
-          top3: performance.slice(0, 3).map(j => ({ apelido: j.apelido, performance: j.performance, classificacao: j.classificacao })),
-          endpoint: '/api/ranking/performance',
-          descricao: 'Ranking por eficiência (% vitórias)'
-        }
-      },
-      sistema_pontos: {
-        vitoria: 10,
-        participacao: 2,
-        formula: '(vitórias × 10) + (partidas × 2)'
-      }
-    };
-    
-    console.log('✅ Resumo de rankings gerado');
-    
-    res.json(resposta);
-    
-  } catch (error) {
-    console.error('❌ Erro em /api/ranking/todos:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // GET vencedores históricos mensais
 app.get('/api/ranking/historico-mensal', async (req, res) => {
   try {
-    console.log('📚 Gerando histórico mensal...');
-    
-    // Buscar todas partidas ordenadas por data
     const partidas = await Partida.find().sort({ data: 1 }).lean();
     
-    // Agrupar por mês/ano
     const historico = {};
     
     partidas.forEach(partida => {
@@ -731,16 +542,13 @@ app.get('/api/ranking/historico-mensal', async (req, res) => {
       
       historico[chave].partidas.push(partida._id);
       
-      // Contar vitórias por jogador neste mês
       if (!historico[chave].vitorias[partida.vencedor]) {
         historico[chave].vitorias[partida.vencedor] = 0;
       }
       historico[chave].vitorias[partida.vencedor]++;
     });
     
-    // Calcular vencedor de cada mês
     const resultado = Object.entries(historico).map(([chave, dados]) => {
-      // Encontrar jogador com mais vitórias no mês
       let vencedor = '';
       let maxVitorias = 0;
       
@@ -762,13 +570,10 @@ app.get('/api/ranking/historico-mensal', async (req, res) => {
       };
     });
     
-    // Ordenar do mais recente para o mais antigo
     resultado.sort((a, b) => {
       if (b.ano !== a.ano) return b.ano - a.ano;
       return b.mes - a.mes;
     });
-    
-    console.log(`✅ Histórico com ${resultado.length} meses registrados`);
     
     res.json(resultado);
     
@@ -779,32 +584,28 @@ app.get('/api/ranking/historico-mensal', async (req, res) => {
 });
 
 // ============================================
-// ROTAS DA API - ESTATÍSTICAS (ATUALIZADA)
+// ROTAS DA API - ESTATÍSTICAS
 // ============================================
 
-// GET estatísticas gerais (AGORA COM INFO DOS 3 RANKINGS)
+// GET estatísticas gerais
 app.get('/api/estatisticas', async (req, res) => {
   try {
     const totalJogadores = await Jogador.countDocuments({ ativo: true });
     const totalPartidas = await Partida.countDocuments();
     
-    // Jogador com mais vitórias
     const recordVitorias = await Jogador.findOne({ ativo: true })
       .sort({ vitorias: -1 })
       .select('apelido vitorias partidas');
     
-    // Calcular pontuação do recordista
     let pontuacaoRecord = 0;
     if (recordVitorias) {
       pontuacaoRecord = (recordVitorias.vitorias * 10) + (recordVitorias.partidas * 2);
     }
     
-    // Últimas partidas
     const ultimasPartidas = await Partida.find()
       .sort({ data: -1 })
       .limit(5);
     
-    // Informações dos rankings
     const rankingsInfo = {
       global: { endpoint: '/api/ranking/global', descricao: 'Ranking histórico geral' },
       mensal: { endpoint: '/api/ranking/mensal', descricao: 'Ranking do mês atual' },
@@ -875,7 +676,6 @@ app.get('/api/test', async (req, res) => {
 // ROTAS PARA PÁGINAS HTML
 // ============================================
 
-// Rota principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
@@ -908,84 +708,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
-// ============================================
-// ROTAS DA API - EDITAR/DESATIVAR JOGADORES
-// ============================================
-
-// GET jogador específico (para edição)
-app.get('/api/jogadores/:id', async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ success: false, error: 'ID inválido' });
-        }
-        
-        const jogador = await Jogador.findById(req.params.id);
-        
-        if (!jogador) {
-            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
-        }
-        
-        res.json({ success: true, jogador });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// PUT atualizar jogador
-app.put('/api/jogadores/:id', async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ success: false, error: 'ID inválido' });
-        }
-        
-        const jogador = await Jogador.findByIdAndUpdate(
-            req.params.id,
-            { $set: req.body },
-            { new: true, runValidators: true }
-        );
-        
-        if (!jogador) {
-            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Jogador atualizado com sucesso!',
-            jogador 
-        });
-    } catch (error) {
-        res.status(400).json({ success: false, error: error.message });
-    }
-});
-
-// DELETE desativar jogador (marcar como inativo)
-app.delete('/api/jogadores/:id', async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ success: false, error: 'ID inválido' });
-        }
-        
-        const jogador = await Jogador.findByIdAndUpdate(
-            req.params.id,
-            { $set: { ativo: false } },
-            { new: true }
-        );
-        
-        if (!jogador) {
-            return res.status(404).json({ success: false, error: 'Jogador não encontrado' });
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Jogador desativado com sucesso!',
-            jogador 
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Rota catch-all para SPA (Single Page Application)
+// Rota catch-all para SPA
 app.get('*', (req, res) => {
   res.status(404).sendFile(path.join(__dirname, '../public/404.html'));
 });
