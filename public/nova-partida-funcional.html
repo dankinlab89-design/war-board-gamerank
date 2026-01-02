@@ -156,39 +156,53 @@
     </footer>
 
     <script>
-        // Menu mobile
-        document.querySelector('.nav-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
-        });
+        // Substitua TODO o script no final do HTML por esta versão corrigida:
+
+<script>
+    // Menu mobile
+    document.querySelector('.nav-toggle').addEventListener('click', function() {
+        document.querySelector('.nav-menu').classList.toggle('active');
+    });
+    
+    // Variáveis
+    let jogadores = [];
+    let selecionados = new Set(); // Usar Set para evitar duplicatas
+    
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data atual
+        const hoje = new Date();
+        const dataFormatada = hoje.toISOString().split('T')[0];
+        document.getElementById('data').value = dataFormatada;
         
-        // Variáveis
-        let jogadores = [];
-        let selecionados = [];
-        
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            // Data atual
-            document.getElementById('data').value = new Date().toISOString().split('T')[0];
+        // Carregar jogadores
+        carregarJogadores();
+    });
+    
+    // Carregar jogadores do banco - VERSÃO CORRIGIDA
+    async function carregarJogadores() {
+        try {
+            mostrarStatus('Carregando jogadores...', 'warning');
             
-            // Substitua a função carregarJogadores() no final do HTML por esta versão corrigida:
-// Carregar jogadores do banco
-async function carregarJogadores() {
-    try {
-        mostrarStatus('Carregando jogadores...', 'warning');
-        
-        const response = await fetch('/api/jogadores');
-        
-        if (!response.ok) {
-            throw new Error('Erro na API: ' + response.status);
-        }
-        
-        const data = await response.json();
-        
-        console.log('Resposta da API jogadores:', data); // Para debug
-        
-        // A API retorna { success: true, jogadores: [...] }
-        if (data.success && data.jogadores) {
-            jogadores = data.jogadores.filter(j => j.ativo !== false);
+            const response = await fetch('/api/jogadores');
+            
+            if (!response.ok) {
+                throw new Error('Erro na API: ' + response.status);
+            }
+            
+            const data = await response.json();
+            console.log('Resposta da API jogadores:', data);
+            
+            // Verificar diferentes formatos de resposta
+            if (data.jogadores && Array.isArray(data.jogadores)) {
+                jogadores = data.jogadores.filter(j => j.ativo !== false);
+            } else if (Array.isArray(data)) {
+                jogadores = data.filter(j => j.ativo !== false);
+            } else if (data.success && Array.isArray(data.jogadores)) {
+                jogadores = data.jogadores.filter(j => j.ativo !== false);
+            } else {
+                throw new Error('Formato de resposta inválido');
+            }
             
             if (jogadores.length === 0) {
                 mostrarStatus('Nenhum jogador cadastrado. Cadastre jogadores primeiro.', 'error');
@@ -203,15 +217,16 @@ async function carregarJogadores() {
             // Adicionar jogadores à lista
             lista.innerHTML = '';
             jogadores.forEach(jogador => {
+                const jogadorId = jogador._id || jogador.id;
                 const div = document.createElement('div');
                 div.className = 'jogador-item';
                 div.innerHTML = `
                     <div class="jogador-info">
                         <input type="checkbox" 
                                class="jogador-check" 
-                               value="${jogador._id || jogador.id}"
-                               id="jogador-${jogador._id || jogador.id}"
-                               onchange="atualizarSelecionados()">
+                               value="${jogadorId}"
+                               id="jogador-${jogadorId}"
+                               onchange="atualizarSelecionados('${jogadorId}', '${jogador.apelido}')">
                         <div>
                             <div class="jogador-nome">${jogador.apelido}</div>
                             <div class="jogador-patente">${jogador.patente || 'Cabo 🪖'}</div>
@@ -223,142 +238,223 @@ async function carregarJogadores() {
             
             mostrarStatus(`${jogadores.length} jogadores carregados`, 'ok');
             
+        } catch (error) {
+            console.error('Erro:', error);
+            mostrarStatus('Erro ao carregar jogadores: ' + error.message, 'error');
+        }
+    }
+    
+    // Atualizar lista de selecionados - VERSÃO CORRIGIDA
+    function atualizarSelecionados(jogadorId, jogadorApelido) {
+        const checkbox = document.getElementById(`jogador-${jogadorId}`);
+        
+        if (checkbox.checked) {
+            selecionados.add({ id: jogadorId, apelido: jogadorApelido });
         } else {
-            mostrarStatus('Erro: formato de resposta inválido da API', 'error');
+            // Remover jogador do Set
+            selecionados.forEach(item => {
+                if (item.id === jogadorId) {
+                    selecionados.delete(item);
+                }
+            });
         }
         
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarStatus('Erro ao carregar jogadores: ' + error.message, 'error');
-    }
-}
+        // Atualizar contador
+        const contador = document.getElementById('contador');
+        contador.textContent = `${selecionados.size} jogadores selecionados`;
         
-        // Atualizar lista de selecionados
-        function atualizarSelecionados() {
-            const checkboxes = document.querySelectorAll('.jogador-check:checked');
-            selecionados = Array.from(checkboxes).map(cb => parseInt(cb.value));
-            
-            // Atualizar contador
-            const contador = document.getElementById('contador');
-            contador.textContent = `${selecionados.length} jogadores selecionados`;
-            
-            if (selecionados.length < 3) {
-                contador.className = 'status-error status-box';
-                document.getElementById('vencedor').disabled = true;
-                document.getElementById('btn-submit').disabled = true;
-            } else {
-                contador.className = 'status-ok status-box';
-                atualizarVencedores();
-                document.getElementById('vencedor').disabled = false;
-                document.getElementById('btn-submit').disabled = false;
-            }
-        }
-        
-        // Atualizar lista de vencedores
-function atualizarVencedores() {
-    const select = document.getElementById('vencedor');
-    select.innerHTML = '<option value="">Selecione o vencedor</option>';
-    
-    selecionados.forEach(jogadorId => {
-        const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
-        if (jogador) {
-            const option = document.createElement('option');
-            option.value = jogador.apelido; // Usar APELIDO, não ID
-            option.textContent = `${jogador.apelido} (${jogador.patente || 'Cabo 🪖'})`;
-            select.appendChild(option);
-        }
-    });
-}
-        
-       // Enviar formulário
-document.getElementById('form-partida').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (selecionados.length < 3) {
-        mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
-        return;
-    }
-    
-    const vencedorApelido = document.getElementById('vencedor').value;
-    if (!vencedorApelido) {
-        mostrarStatus('Selecione um vencedor!', 'error');
-        return;
-    }
-    
-    // Obter apelidos dos jogadores selecionados
-    const participantesApelidos = selecionados.map(jogadorId => {
-        const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
-        return jogador.apelido;
-    });
-    
-    // Verificar se o vencedor está entre os participantes
-    if (!participantesApelidos.includes(vencedorApelido)) {
-        mostrarStatus('O vencedor deve estar entre os participantes selecionados!', 'error');
-        return;
-    }
-    
-    const partida = {
-        data: document.getElementById('data').value,
-        tipo: document.getElementById('tipo').value,
-        vencedor: vencedorApelido, // Usar apelido diretamente
-        participantes: participantesApelidos, // Array de apelidos
-        observacoes: document.getElementById('observacoes').value || ''
-    };
-    
-    try {
-        mostrarStatus('Registrando partida...', 'warning');
-        
-        const response = await fetch('/api/partidas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(partida)
-        });
-        
-        const result = await response.json();
-        
-        console.log('Resposta do servidor:', result); // Para debug
-        
-        if (response.ok && result.success) {
-            mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
-            
-            // Limpar formulário
-            document.querySelectorAll('.jogador-check:checked').forEach(cb => cb.checked = false);
-            document.getElementById('observacoes').value = '';
-            document.getElementById('vencedor').innerHTML = '<option value="">Primeiro selecione 3+ participantes</option>';
+        if (selecionados.size < 3) {
+            contador.className = 'status-error status-box';
             document.getElementById('vencedor').disabled = true;
             document.getElementById('btn-submit').disabled = true;
-            selecionados = [];
-            document.getElementById('contador').textContent = '0 jogadores selecionados';
-            document.getElementById('contador').className = 'status-warning status-box';
-            
-            // Redirecionar após 2 segundos
-            setTimeout(() => {
-                window.location.href = 'partidas.html';
-            }, 2000);
-            
+            document.getElementById('vencedor').innerHTML = '<option value="">Selecione 3+ participantes primeiro</option>';
         } else {
-            mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
+            contador.className = 'status-ok status-box';
+            atualizarVencedores();
+            document.getElementById('vencedor').disabled = false;
+            document.getElementById('btn-submit').disabled = false;
         }
-        
-    } catch (error) {
-        console.error('Erro:', error);
-        mostrarStatus('Erro de conexão: ' + error.message, 'error');
     }
-});
+    
+    // Atualizar lista de vencedores - VERSÃO CORRIGIDA
+    function atualizarVencedores() {
+        const select = document.getElementById('vencedor');
+        select.innerHTML = '<option value="">Selecione o vencedor</option>';
         
-        // Função para mostrar status
-        function mostrarStatus(mensagem, tipo) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = mensagem;
-            statusDiv.className = `status-box status-${tipo}`;
-            statusDiv.style.display = 'block';
+        // Ordenar jogadores por apelido
+        const jogadoresSelecionados = Array.from(selecionados).sort((a, b) => 
+            a.apelido.localeCompare(b.apelido)
+        );
+        
+        jogadoresSelecionados.forEach(jogador => {
+            const option = document.createElement('option');
+            option.value = jogador.apelido;
             
-            if (tipo === 'ok') {
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 3000);
-            }
+            // Encontrar jogador completo para mostrar patente
+            const jogadorCompleto = jogadores.find(j => 
+                (j._id || j.id) === jogador.id
+            );
+            
+            const patente = jogadorCompleto ? (jogadorCompleto.patente || 'Cabo 🪖') : '';
+            option.textContent = `${jogador.apelido} ${patente ? `(${patente})` : ''}`;
+            select.appendChild(option);
+        });
+    }
+    
+    // Enviar formulário - VERSÃO CORRIGIDA
+    document.getElementById('form-partida').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (selecionados.size < 3) {
+            mostrarStatus('Selecione pelo menos 3 participantes!', 'error');
+            return;
         }
-    </script>
+        
+        const vencedorApelido = document.getElementById('vencedor').value;
+        if (!vencedorApelido) {
+            mostrarStatus('Selecione um vencedor!', 'error');
+            return;
+        }
+        
+        // Converter Set para array de apelidos
+        const participantesApelidos = Array.from(selecionados).map(j => j.apelido);
+        
+        // Verificar se o vencedor está entre os participantes
+        if (!participantesApelidos.includes(vencedorApelido)) {
+            mostrarStatus('O vencedor deve estar entre os participantes selecionados!', 'error');
+            return;
+        }
+        
+        const partida = {
+            data: document.getElementById('data').value,
+            tipo: document.getElementById('tipo').value,
+            vencedor: vencedorApelido,
+            participantes: participantesApelidos,
+            observacoes: document.getElementById('observacoes').value || '',
+            pontos: 100 // Valor padrão
+        };
+        
+        console.log('Enviando partida:', partida);
+        
+        try {
+            mostrarStatus('Registrando partida...', 'warning');
+            
+            const response = await fetch('/api/partidas', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(partida)
+            });
+            
+            const result = await response.json();
+            
+            console.log('Resposta do servidor:', result);
+            
+            if (response.ok && result.success) {
+                mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
+                
+                // Limpar formulário
+                limparFormulario();
+                
+                // Redirecionar após 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'partidas.html';
+                }, 2000);
+                
+            } else {
+                mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
+            }
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            mostrarStatus('Erro de conexão: ' + error.message, 'error');
+        }
+    });
+    
+    // Função para limpar formulário
+    function limparFormulario() {
+        // Desmarcar todos checkboxes
+        document.querySelectorAll('.jogador-check:checked').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Limpar selecionados
+        selecionados.clear();
+        
+        // Resetar controles
+        document.getElementById('observacoes').value = '';
+        document.getElementById('vencedor').innerHTML = '<option value="">Selecione 3+ participantes primeiro</option>';
+        document.getElementById('vencedor').disabled = true;
+        document.getElementById('btn-submit').disabled = true;
+        
+        // Atualizar contador
+        document.getElementById('contador').textContent = '0 jogadores selecionados';
+        document.getElementById('contador').className = 'status-warning status-box';
+    }
+    
+    // Função para mostrar status
+    function mostrarStatus(mensagem, tipo) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = mensagem;
+        statusDiv.className = `status-box status-${tipo}`;
+        statusDiv.style.display = 'block';
+        
+        if (tipo === 'ok') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+    }
+    
+    // Adicionar botão de selecionar todos (opcional)
+    function adicionarBotaoSelecionarTodos() {
+        const lista = document.getElementById('jogadores-lista');
+        if (!lista) return;
+        
+        const botaoDiv = document.createElement('div');
+        botaoDiv.style.marginBottom = '10px';
+        botaoDiv.innerHTML = `
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="selecionarTodos()">
+                <i class="fas fa-check-double"></i> Selecionar Todos
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselecionarTodos()" style="margin-left: 10px;">
+                <i class="fas fa-times"></i> Desmarcar Todos
+            </button>
+        `;
+        
+        lista.parentNode.insertBefore(botaoDiv, lista);
+    }
+    
+    // Funções para selecionar/deselecionar todos
+    function selecionarTodos() {
+        const checkboxes = document.querySelectorAll('.jogador-check');
+        checkboxes.forEach(cb => {
+            if (!cb.checked) {
+                cb.checked = true;
+                const jogadorId = cb.value;
+                const jogadorApelido = jogadores.find(j => (j._id || j.id) === jogadorId)?.apelido;
+                if (jogadorApelido) {
+                    atualizarSelecionados(jogadorId, jogadorApelido);
+                }
+            }
+        });
+    }
+    
+    function deselecionarTodos() {
+        const checkboxes = document.querySelectorAll('.jogador-check:checked');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            const jogadorId = cb.value;
+            const jogadorApelido = jogadores.find(j => (j._id || j.id) === jogadorId)?.apelido;
+            if (jogadorApelido) {
+                atualizarSelecionados(jogadorId, jogadorApelido);
+            }
+        });
+    }
+    
+    // Adicionar botão de selecionar todos após carregar jogadores
+    setTimeout(adicionarBotaoSelecionarTodos, 100);
+</script>
 </body>
 </html>
