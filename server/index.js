@@ -353,6 +353,162 @@ app.post('/api/partidas', async (req, res) => {
   }
 });
 
+// GET partida específica
+app.get('/api/partidas/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    const partida = await Partida.findById(req.params.id);
+    
+    if (!partida) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Partida não encontrada' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      partida 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar partida:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// PUT atualizar partida
+app.put('/api/partidas/:id', async (req, res) => {
+  try {
+    console.log('📝 Atualizando partida ID:', req.params.id);
+    
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    // Verificar se partida existe
+    const partidaExistente = await Partida.findById(req.params.id);
+    if (!partidaExistente) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Partida não encontrada' 
+      });
+    }
+    
+    // IMPORTANTE: Se mudou o vencedor, precisamos ajustar estatísticas
+    if (req.body.vencedor && req.body.vencedor !== partidaExistente.vencedor) {
+      // Remover vitória do vencedor antigo
+      await Jogador.findOneAndUpdate(
+        { apelido: partidaExistente.vencedor },
+        { $inc: { vitorias: -1 } }
+      );
+      
+      // Adicionar vitória ao novo vencedor
+      await Jogador.findOneAndUpdate(
+        { apelido: req.body.vencedor },
+        { $inc: { vitorias: 1 } }
+      );
+    }
+    
+    // Atualizar partida
+    const partida = await Partida.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { 
+        new: true,           // Retorna o documento atualizado
+        runValidators: true  // Valida os dados
+      }
+    );
+    
+    console.log('✅ Partida atualizada:', partida._id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Partida atualizada com sucesso!',
+      partida 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na atualização da partida:', error.message);
+    res.status(400).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// DELETE excluir partida
+app.delete('/api/partidas/:id', async (req, res) => {
+  try {
+    console.log('🗑️ Excluindo partida ID:', req.params.id);
+    
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    const partida = await Partida.findById(req.params.id);
+    
+    if (!partida) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Partida não encontrada' 
+      });
+    }
+    
+    // IMPORTANTE: Reverter estatísticas dos jogadores
+    // Remover vitória do vencedor
+    await Jogador.findOneAndUpdate(
+      { apelido: partida.vencedor },
+      { $inc: { vitorias: -1, partidas: -1 } }
+    );
+    
+    // Remover partidas dos outros participantes
+    if (partida.participantes && Array.isArray(partida.participantes)) {
+      const outrosParticipantes = partida.participantes.filter(p => p !== partida.vencedor);
+      
+      if (outrosParticipantes.length > 0) {
+        await Jogador.updateMany(
+          { apelido: { $in: outrosParticipantes } },
+          { $inc: { partidas: -1 } }
+        );
+      }
+    }
+    
+    // Excluir partida
+    await Partida.findByIdAndDelete(req.params.id);
+    
+    console.log('✅ Partida excluída:', partida._id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Partida excluída com sucesso!',
+      partida 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao excluir partida:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ... (código anterior mantido igual até as rotas de ranking)
 
 // ============================================
