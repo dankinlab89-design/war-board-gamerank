@@ -255,20 +255,20 @@ async function carregarJogadores() {
         }
         
         // Atualizar lista de vencedores
-        function atualizarVencedores() {
-            const select = document.getElementById('vencedor');
-            select.innerHTML = '<option value="">Selecione o vencedor</option>';
-            
-            selecionados.forEach(id => {
-                const jogador = jogadores.find(j => j.id === id);
-                if (jogador) {
-                    const option = document.createElement('option');
-                    option.value = jogador.id;
-                    option.textContent = `${jogador.apelido} (${jogador.patente})`;
-                    select.appendChild(option);
-                }
-            });
+function atualizarVencedores() {
+    const select = document.getElementById('vencedor');
+    select.innerHTML = '<option value="">Selecione o vencedor</option>';
+    
+    selecionados.forEach(jogadorId => {
+        const jogador = jogadores.find(j => (j._id || j.id) === jogadorId);
+        if (jogador) {
+            const option = document.createElement('option');
+            option.value = jogador.apelido; // Usar APELIDO, não ID
+            option.textContent = `${jogador.apelido} (${jogador.patente || 'Cabo 🪖'})`;
+            select.appendChild(option);
         }
+    });
+}
         
         // Enviar formulário
         document.getElementById('form-partida').addEventListener('submit', async function(e) {
