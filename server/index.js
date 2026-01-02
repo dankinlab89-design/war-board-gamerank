@@ -116,6 +116,135 @@ app.post('/api/jogadores', async (req, res) => {
 });
 
 // ============================================
+// ROTAS DA API - EDITAR/DESATIVAR JOGADORES
+// ============================================
+
+// GET jogador específico
+app.get('/api/jogadores/:id', async (req, res) => {
+  try {
+    console.log('🔍 Buscando jogador ID:', req.params.id);
+    
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    const jogador = await Jogador.findById(req.params.id);
+    
+    if (!jogador) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Jogador não encontrado' 
+      });
+    }
+    
+    console.log('✅ Jogador encontrado:', jogador.apelido);
+    res.json({ 
+      success: true, 
+      jogador 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar jogador:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// PUT atualizar jogador
+app.put('/api/jogadores/:id', async (req, res) => {
+  try {
+    console.log('📝 Atualizando jogador ID:', req.params.id);
+    console.log('📦 Dados recebidos:', req.body);
+    
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    // Verificar se jogador existe
+    const jogadorExistente = await Jogador.findById(req.params.id);
+    if (!jogadorExistente) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Jogador não encontrado' 
+      });
+    }
+    
+    // Atualizar jogador
+    const jogador = await Jogador.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { 
+        new: true,           // Retorna o documento atualizado
+        runValidators: true  // Valida os dados
+      }
+    );
+    
+    console.log('✅ Jogador atualizado:', jogador.apelido);
+    res.json({ 
+      success: true, 
+      message: 'Jogador atualizado com sucesso!',
+      jogador 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na atualização:', error.message);
+    res.status(400).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// DELETE desativar jogador (marcar como inativo)
+app.delete('/api/jogadores/:id', async (req, res) => {
+  try {
+    console.log('🗑️ Desativando jogador ID:', req.params.id);
+    
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID inválido' 
+      });
+    }
+    
+    const jogador = await Jogador.findByIdAndUpdate(
+      req.params.id,
+      { $set: { ativo: false } },
+      { new: true }
+    );
+    
+    if (!jogador) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Jogador não encontrado' 
+      });
+    }
+    
+    console.log('✅ Jogador desativado:', jogador.apelido);
+    res.json({ 
+      success: true, 
+      message: 'Jogador desativado com sucesso!',
+      jogador 
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao desativar:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ============================================
 // ROTAS DA API - PARTIDAS
 // ============================================
 
