@@ -1640,3 +1640,116 @@ h1, h2, h3, h4 {
         padding-bottom: 30px !important;
     }
 }
+
+/* =============================================
+   BOTÕES DE EXPORTAÇÃO MILITARES
+============================================= */
+
+.military-btn {
+  background: linear-gradient(135deg, #1a472a 0%, #0d2d1c 100%);
+  color: #ffd700 !important;
+  border: 2px solid #b8860b;
+  border-radius: 6px;
+  padding: 12px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.military-btn:hover {
+  background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  border-color: #ffd700;
+}
+
+.military-btn:active {
+  transform: translateY(0);
+}
+
+.military-icon {
+  color: #ffd700;
+  font-size: 1.2rem;
+}
+
+.export-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+/* Cores específicas para cada tipo de exportação */
+.export-btn.csv {
+  background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+  border-color: #28a745;
+}
+
+.export-btn.csv .military-icon {
+  color: #28a745;
+}
+
+.export-btn.json {
+  background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+  border-color: #8b0000;
+}
+
+.export-btn.json .military-icon {
+  color: #8b0000;
+}
+
+/* =============================================
+   CORREÇÕES DE ESPAÇAMENTO - DASHBOARD
+============================================= */
+
+/* Espaçamento MAIOR entre Pódio e Gráficos */
+.charts-section {
+  margin-top: 80px !important;
+  clear: both;
+}
+
+/* Espaçamento entre seções de ranking */
+.rankings-section {
+  margin-bottom: 80px !important;
+}
+
+/* Espaçamento específico para o título "VENCEDORES MENSAIS" */
+.vencedores-section {
+  margin-top: 100px !important;
+  padding-top: 40px !important;
+  border-top: 1px solid rgba(184, 134, 11, 0.3) !important;
+}
+
+/* Ajuste para os containers dos pódios */
+.rankings-section .container {
+  margin-bottom: 70px !important;
+}
+
+/* Garantir que não haja sobreposição */
+.section-title {
+  margin-bottom: 40px !important;
+  padding-bottom: 20px !important;
+}
+
+/* Animação para a notificação */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
