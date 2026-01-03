@@ -8,146 +8,178 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Adicione este CSS no head do dashboard.html -->
-<style>
-/* Estilos para os novos elementos do dashboard */
-.year-selector {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    margin: 20px 0;
-}
-
-.vencedores-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    margin-top: 30px;
-}
-
-.mes-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-}
-
-.mes-card:hover {
-    border-color: var(--secondary);
-    transform: translateY(-5px);
-}
-
-.mes-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mes-header h4 {
-    color: white;
-    margin: 0;
-}
-
-.mes-badge {
-    display: inline-flex;
-    width: 30px;
-    height: 30px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: 0.9rem;
-}
-
-.mes-badge.vencedor {
-    background: linear-gradient(135deg, #ffd700, #ffc400);
-    color: #000;
-}
-
-.mes-badge.sem-dados {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.vencedor-nome {
-    color: #ffd700;
-    font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-}
-
-.vencedor-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.vitorias {
-    color: #10b981;
-    font-weight: 600;
-}
-
-.sem-vencedor {
-    color: rgba(255, 255, 255, 0.5);
-    text-align: center;
-    padding: 20px 0;
-    font-style: italic;
-}
-
-/* Estilos para estatísticas de tendência */
-.stat-trend {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 5px;
-}
-
-.trend-positive {
-    color: #10b981;
-}
-
-.trend-negative {
-    color: #dc3545;
-}
-
-/* Botões de exportação */
-.export-buttons {
-    display: flex;
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.export-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: rgba(40, 167, 69, 0.2);
-    border: 1px solid rgba(40, 167, 69, 0.3);
-    color: #28a745;
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.export-btn:hover {
-    background: rgba(40, 167, 69, 0.3);
-    transform: translateY(-2px);
-}
-
-.export-btn.csv {
-    background: rgba(23, 162, 184, 0.2);
-    border-color: rgba(23, 162, 184, 0.3);
-    color: #17a2b8;
-}
-
-.export-btn.csv:hover {
-    background: rgba(23, 162, 184, 0.3);
-}
-</style>
+    <style>
+        /* ============ CORREÇÕES E AJUSTES ============ */
+        
+        /* Estatísticas Rápidas - REMOVER MÉDIA/BATALHA */
+        .dashboard-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+        
+        /* Ajustar altura dos cards de pódio */
+        .podium-container {
+            min-height: 220px !important;
+            margin-top: 10px !important;
+            padding: 10px !important;
+        }
+        
+        .podium-item.gold { height: 160px !important; }
+        .podium-item.silver { height: 140px !important; }
+        .podium-item.bronze { height: 130px !important; }
+        
+        .player-name {
+            font-size: 1rem !important;
+            color: #000 !important;
+            font-weight: 800 !important;
+        }
+        
+        /* Corrigir sobreposição de gráficos */
+        .charts-section {
+            margin-top: 40px !important;
+            clear: both !important;
+        }
+        
+        .charts-section .dashboard-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 20px !important;
+        }
+        
+        .charts-section .dashboard-card {
+            height: 100% !important;
+            min-height: 300px !important;
+        }
+        
+        .charts-section .card-body {
+            height: 240px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .charts-section canvas {
+            max-height: 220px !important;
+            width: 100% !important;
+        }
+        
+        /* Corrigir seletor de ano */
+        .year-selector {
+            display: flex !important;
+            align-items: center !important;
+            gap: 15px !important;
+            margin: 15px 0 25px 0 !important;
+            width: 100% !important;
+        }
+        
+        .year-selector select {
+            width: 150px !important;
+            height: 40px !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-size: 1rem !important;
+        }
+        
+        .selector-info {
+            color: rgba(255, 255, 255, 0.6) !important;
+            font-size: 0.9rem !important;
+            font-style: italic !important;
+        }
+        
+        /* Vencedores - fonte mais clara */
+        .vencedor-nome {
+            color: #ffed4a !important; /* Amarelo mais claro */
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+        }
+        
+        .nome {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Ranking 2025 - fonte mais clara */
+        .ranking-item.gold .nome {
+            color: #ffd700 !important;
+            font-weight: 700 !important;
+        }
+        
+        .ranking-item.silver .nome {
+            color: #c0c0c0 !important;
+            font-weight: 700 !important;
+        }
+        
+        .ranking-item.bronze .nome {
+            color: #cd7f32 !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Tabs melhoradas */
+        .tabs {
+            margin-bottom: 15px !important;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Espaçamento entre seções */
+        .rankings-section {
+            margin-bottom: 40px !important;
+        }
+        
+        .vencedores-section {
+            margin-top: 40px !important;
+        }
+        
+        /* Mensagens de erro mais visíveis */
+        .no-data-message {
+            padding: 40px 20px !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+            font-size: 1rem !important;
+        }
+        
+        /* RESPONSIVIDADE */
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .charts-section .dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .podium-dashboard {
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 15px !important;
+            }
+            
+            .podium-item {
+                width: 100% !important;
+                max-width: 250px !important;
+                height: auto !important;
+                min-height: 120px !important;
+                order: 0 !important;
+            }
+            
+            .year-selector {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navegação -->
@@ -173,7 +205,7 @@
     
     <!-- Dashboard Container -->
     <main class="container">
-        <!-- Estatísticas Rápidas -->
+        <!-- ============ ESTATÍSTICAS RÁPIDAS ============ -->
         <section class="quick-stats">
             <div class="dashboard-grid">
                 <div class="dashboard-card">
@@ -183,7 +215,7 @@
                     </div>
                     <div class="card-body">
                         <div class="stat-number" id="stat-jogadores">0</div>
-                        <div class="stat-trend" id="trend-jogadores">+0% este mês</div>
+                        <div class="stat-trend" id="trend-jogadores">100% ativos</div>
                     </div>
                 </div>
                 
@@ -194,114 +226,51 @@
                     </div>
                     <div class="card-body">
                         <div class="stat-number" id="stat-partidas">0</div>
-                        <div class="stat-trend" id="trend-partidas">+0% este mês</div>
+                        <div class="stat-trend" id="trend-partidas">0% este mês</div>
                     </div>
                 </div>
                 
                 <div class="dashboard-card">
                     <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-trophy"></i> RECORDE</h3>
-                        <div class="card-icon">⭐</div>
+                        <h3 class="card-title"><i class="fas fa-fire"></i> RECORDE CONSECUTIVAS</h3>
+                        <div class="card-icon">🔥</div>
                     </div>
                     <div class="card-body">
                         <div class="stat-number" id="stat-record">0</div>
                         <div class="stat-label" id="record-holder">-</div>
                     </div>
                 </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-chart-line"></i> MÉDIA/BATALHA</h3>
-                        <div class="card-icon">📊</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="stat-number" id="stat-media">0.0</div>
-                        <div class="stat-trend">por jogador</div>
-                    </div>
-                </div>
             </div>
         </section>
 
-        <!-- Rankings -->
+        <!-- ============ PÓDIOS DE BATALHA ============ -->
         <section class="rankings-section">
-            <h2 class="section-title">RANKINGS DE BATALHA</h2>
-            
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('global')">
-                    <i class="fas fa-globe"></i> Global
-                </button>
-                <button class="tab-btn" onclick="switchTab('mensal')">
-                    <i class="fas fa-calendar-alt"></i> Mensal
-                </button>
-                <button class="tab-btn" onclick="switchTab('performance')">
-                    <i class="fas fa-bolt"></i> Performance
-                </button>
-            </div>
-            
-            <div class="tab-content active" id="tab-global">
-                <div class="table-responsive">
-                    <table class="table" id="ranking-global">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>COMANDANTE</th>
-                                <th>PATENTE</th>
-                                <th>VITÓRIAS</th>
-                                <th>BATALHAS</th>
-                                <th>% VITÓRIAS</th>
-                                <th>PONTOS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Dados carregados via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-mensal">
-                <div class="table-responsive">
-                    <table class="table" id="ranking-mensal">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>COMANDANTE</th>
-                                <th>PATENTE</th>
-                                <th>VITÓRIAS</th>
-                                <th>BATALHAS</th>
-                                <th>% VITÓRIAS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Dados carregados via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-performance">
-                <div class="table-responsive">
-                    <table class="table" id="ranking-performance">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>COMANDANTE</th>
-                                <th>PATENTE</th>
-                                <th>VITÓRIAS</th>
-                                <th>BATALHAS</th>
-                                <th>PERFORMANCE</th>
-                                <th>NÍVEL</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Dados carregados via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+    <!-- Pódio Global -->
+    <div class="container" style="margin-bottom: 60px;">
+        <h2 class="section-title"><i class="fas fa-globe" style="margin-right: 10px;"></i>PÓDIO GLOBAL</h2>
+        <div class="podium" id="podium-global">
+            <div class="no-data-message">Carregando pódio global...</div>
+        </div>
+    </div>
 
-        <!-- Gráficos -->
+    <!-- Pódio Mensal -->
+    <div class="container" style="margin-bottom: 60px;">
+        <h2 class="section-title"><i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>PÓDIO MENSAL</h2>
+        <div class="podium" id="podium-mensal">
+            <div class="no-data-message">Carregando pódio mensal...</div>
+        </div>
+    </div>
+
+    <!-- Pódio de Performance -->
+    <div class="container">
+        <h2 class="section-title"><i class="fas fa-bolt" style="margin-right: 10px;"></i>PÓDIO DE PERFORMANCE</h2>
+        <div class="podium" id="podium-performance">
+            <div class="no-data-message">Carregando pódio de performance...</div>
+        </div>
+    </div>
+</section>
+
+        <!-- ============ GRÁFICOS ============ -->
         <section class="charts-section">
             <div class="dashboard-grid">
                 <div class="dashboard-card">
@@ -324,25 +293,26 @@
             </div>
         </section>
 
-        <!-- Vencedores Mensais -->
+        <!-- ============ VENCEDORES MENSAIS ============ -->
         <section class="vencedores-section">
             <h2 class="section-title">VENCEDORES MENSAIS</h2>
             
-            <div class="year-selector">
+            <div class="year-selector-container">
                 <select id="select-ano" class="form-control">
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
                 </select>
+                <span class="selector-info">Selecione o ano</span>
             </div>
             
             <div class="vencedores-grid" id="vencedores-grid">
-                <!-- Vencedores carregados via JavaScript -->
+                <div class="no-data-message">Carregando vencedores...</div>
             </div>
         </section>
 
-        <!-- Últimas Partidas -->
+        <!-- ============ ÚLTIMAS PARTIDAS ============ -->
         <section class="partidas-section">
-            <h2 class="section-title">ÚLTIMAS BATALHAS</h2>
+            <h2 class="section-title">ÚLTIMAS 5 BATALHAS</h2>
             
             <div class="table-responsive">
                 <table class="table" id="ultimas-partidas">
@@ -356,7 +326,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados carregados via JavaScript -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">
+                                Carregando batalhas...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -370,7 +344,7 @@
                 <div class="footer-brand">
                     <div class="footer-logo">📊</div>
                     <h3>Dashboard WAR</h3>
-                    <p>Sistema de análise e estatísticas em tempo real</p>
+                    <p>Sistema de análise em tempo real</p>
                 </div>
                 
                 <div class="footer-links">
@@ -378,225 +352,808 @@
                     <a href="dashboard.html">Dashboard</a>
                     <a href="ranking.html">Rankings</a>
                     <a href="estatisticas.html">Estatísticas</a>
-                    <a href="relatorios.html">Relatórios</a>
+                </div>
+                
+                <div class="footer-export">
+                    <h4>EXPORTAR DADOS</h4>
+                    <div class="export-buttons">
+                        <button id="export-jogadores" class="export-btn">
+                            <i class="fas fa-file-excel"></i> Jogadores
+                        </button>
+                        <button id="export-partidas" class="export-btn csv">
+                            <i class="fas fa-file-excel"></i> Batalhas
+                        </button>
+                        <button id="export-estatisticas" class="export-btn json">
+                            <i class="fas fa-chart-bar"></i> Estatísticas
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="footer-info">
                     <h4>ATUALIZAÇÃO</h4>
                     <div class="status-indicator online">
                         <span class="status-dot"></span>
-                        Dados em Tempo Real
+                        Sistema Online
                     </div>
-                    <p>Atualizado automaticamente</p>
+                    <p>Última atualização: <span id="last-update">Agora</span></p>
                 </div>
             </div>
-
-            <!-- Adicionar no footer do dashboard.html -->
-<footer class="footer">
-    <div class="container">
-        <!-- Seção de exportação no footer -->
-        <div class="footer-export">
-            <h4>EXPORTAR DADOS</h4>
-            <div class="export-buttons">
-                <button id="export-jogadores" class="export-btn">
-                    <i class="fas fa-file-excel"></i> Jogadores (CSV)
-                </button>
-                <button id="export-partidas" class="export-btn csv">
-                    <i class="fas fa-file-excel"></i> Batalhas (CSV)
-                </button>
-                <button id="export-estatisticas" class="export-btn">
-                    <i class="fas fa-chart-bar"></i> Estatísticas (JSON)
-                </button>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 WAR Board GameRank</p>
             </div>
         </div>
-        
-        <div class="footer-bottom">
-            <p>&copy; 2025 WAR Board GameRank. Dashboard atualizado: <span id="last-update">Agora</span></p>
-        </div>
-    </div>
-</footer>
+    </footer>
 
-    <script src="js/dashboard.js"></script>
+    <!-- ============ JAVASCRIPT CORRIGIDO ============ -->
     <script>
-        // Toggle do menu mobile
-        document.querySelector('.nav-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
+        // ============ CONFIGURAÇÃO ============
+        const API_BASE = window.location.origin + '/api';
+        let charts = {};
+        let dadosJogadores = [];
+        let dadosPartidas = [];
+        
+        // ============ INICIALIZAÇÃO ============
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard inicializando...');
+            
+            // Menu mobile
+            document.querySelector('.nav-toggle').addEventListener('click', function() {
+                document.querySelector('.nav-menu').classList.toggle('active');
+            });
+            
+            // Popular anos
+            popularSeletorAnos();
+            
+            // Carregar dados
+            carregarTodosDados();
+            
+            // Auto-refresh
+            setInterval(carregarDadosPrincipais, 30000);
+            
+            // Atualizar timestamp
+            atualizarTimestamp();
+            setInterval(atualizarTimestamp, 60000);
         });
-
-        // Sistema de tabs
-        function switchTab(tabName) {
+        
+        // ============ FUNÇÕES PRINCIPAIS ============
+        async function carregarTodosDados() {
+            try {
+                // Carregar dados básicos primeiro
+                await carregarDadosBasicos();
+                
+                // Depois carregar o resto
+                await Promise.all([
+                    carregarPodios(),
+                    carregarVencedoresMensais(),
+                    carregarUltimasPartidas()
+                ]);
+                
+                // Finalmente os gráficos
+                await carregarGraficos();
+                
+                console.log('✅ Todos os dados carregados');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                mostrarNotificacao('Erro ao carregar dados do dashboard', 'error');
+            }
+        }
+        
+        async function carregarDadosBasicos() {
+            try {
+                const [jogadoresRes, partidasRes] = await Promise.all([
+                    fetch(`${API_BASE}/jogadores`),
+                    fetch(`${API_BASE}/partidas`)
+                ]);
+                
+                const jogadoresData = await jogadoresRes.json();
+                const partidasData = await partidasRes.json();
+                
+                // Guardar dados para uso posterior
+                dadosJogadores = jogadoresData.jogadores || jogadoresData || [];
+                dadosPartidas = partidasData.partidas || partidasData || [];
+                
+                // Atualizar estatísticas
+                atualizarEstatisticas();
+                
+            } catch (error) {
+                console.error('Erro dados básicos:', error);
+            }
+        }
+        
+        function carregarDadosPrincipais() {
+            carregarDadosBasicos();
+            carregarUltimasPartidas();
+            atualizarTimestamp();
+        }
+        
+        // ============ ESTATÍSTICAS CORRIGIDAS ============
+        function atualizarEstatisticas() {
+            const totalJogadores = dadosJogadores.length;
+            const totalPartidas = dadosPartidas.length;
+            
+            // Total de jogadores
+            document.getElementById('stat-jogadores').textContent = totalJogadores;
+            document.getElementById('trend-jogadores').textContent = '100% ativos';
+            
+            // Total de partidas
+            document.getElementById('stat-partidas').textContent = totalPartidas;
+            
+            // Calcular % do mês atual
+            const hoje = new Date();
+            const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const partidasEsteMes = dadosPartidas.filter(p => {
+                const dataPartida = new Date(p.data);
+                return dataPartida >= primeiroDiaMes;
+            }).length;
+            
+            const percentualMes = totalPartidas > 0 ? 
+                Math.round((partidasEsteMes / totalPartidas) * 100) : 0;
+            document.getElementById('trend-partidas').textContent = `${percentualMes}% este mês`;
+            
+            // RECORDE CONSECUTIVAS - CALCULAR CORRETAMENTE
+            const recordeConsecutivo = calcularRecordeConsecutivo();
+            document.getElementById('stat-record').textContent = recordeConsecutivo.max;
+            document.getElementById('record-holder').textContent = recordeConsecutivo.jogador;
+        }
+        
+        // ============ CALCULAR RECORDE CONSECUTIVO ============
+        function calcularRecordeConsecutivo() {
+            let maxGeral = 0;
+            let jogadorRecorde = '-';
+            
+            // Para cada jogador, calcular maior sequência de vitórias
+            dadosJogadores.forEach(jogador => {
+                // Filtrar partidas deste jogador
+                const partidasJogador = dadosPartidas.filter(p => 
+                    p.participantes && p.participantes.includes(jogador.apelido)
+                ).sort((a, b) => new Date(a.data) - new Date(b.data));
+                
+                let sequenciaAtual = 0;
+                let maxJogador = 0;
+                
+                // Verificar sequência de vitórias
+                for (const partida of partidasJogador) {
+                    if (partida.vencedor === jogador.apelido) {
+                        sequenciaAtual++;
+                        maxJogador = Math.max(maxJogador, sequenciaAtual);
+                    } else {
+                        sequenciaAtual = 0;
+                    }
+                }
+                
+                // Atualizar recorde geral
+                if (maxJogador > maxGeral) {
+                    maxGeral = maxJogador;
+                    jogadorRecorde = jogador.apelido;
+                }
+            });
+            
+            return { max: maxGeral, jogador: jogadorRecorde };
+        }
+        
+        // ============ PÓDIOS CORRIGIDOS ============
+        async function carregarPodios() {
+            await Promise.all([
+                carregarPodioGlobal(),
+                carregarPodioMensal(),
+                carregarPodioPerformance()
+            ]);
+        }
+        
+        function carregarPodioGlobal() {
+            const container = document.getElementById('podium-global');
+            if (!container || dadosJogadores.length === 0) {
+                if (container) container.innerHTML = '<div class="no-data-message">Sem dados para pódio global</div>';
+                return;
+            }
+            
+            // Ordenar por vitórias
+            const rankingGlobal = [...dadosJogadores]
+                .filter(j => j.ativo !== false)
+                .sort((a, b) => (b.vitorias || 0) - (a.vitorias || 0))
+                .slice(0, 3);
+            
+            renderizarPodio(rankingGlobal, 'podium-global', 'vitórias');
+        }
+        
+        function carregarPodioMensal() {
+            const container = document.getElementById('podium-mensal');
+            if (!container) return;
+            
+            const hoje = new Date();
+            const mesAtual = hoje.getMonth() + 1;
+            const anoAtual = hoje.getFullYear();
+            
+            // Filtrar partidas do mês atual
+            const partidasMes = dadosPartidas.filter(p => {
+                const data = new Date(p.data);
+                return data.getMonth() + 1 === mesAtual && data.getFullYear() === anoAtual;
+            });
+            
+            if (partidasMes.length === 0) {
+                const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long' });
+                container.innerHTML = `<div class="no-data-message">Nenhuma partida em ${mesNome}</div>`;
+                return;
+            }
+            
+            // Calcular vitórias por jogador no mês
+            const vitoriasPorJogador = {};
+            
+            partidasMes.forEach(partida => {
+                if (partida.vencedor) {
+                    vitoriasPorJogador[partida.vencedor] = (vitoriasPorJogador[partida.vencedor] || 0) + 1;
+                }
+            });
+            
+            // Converter para array e ordenar
+            const rankingMensal = Object.entries(vitoriasPorJogador)
+                .map(([apelido, vitorias]) => {
+                    const jogador = dadosJogadores.find(j => j.apelido === apelido) || { apelido, patente: 'Cabo 🪖' };
+                    return { ...jogador, vitorias };
+                })
+                .sort((a, b) => b.vitorias - a.vitorias)
+                .slice(0, 3);
+            
+            renderizarPodio(rankingMensal, 'podium-mensal', 'vitórias');
+        }
+        
+        function carregarPodioPerformance() {
+            const container = document.getElementById('podium-performance');
+            if (!container || dadosJogadores.length === 0) {
+                if (container) container.innerHTML = '<div class="no-data-message">Sem dados de performance</div>';
+                return;
+            }
+            
+            // Calcular performance (mínimo 3 partidas)
+            const jogadoresComPerformance = dadosJogadores
+                .filter(j => (j.partidas || 0) >= 3)
+                .map(j => {
+                    const vitorias = j.vitorias || 0;
+                    const partidas = j.partidas || 0;
+                    const performance = partidas > 0 ? (vitorias / partidas * 100).toFixed(1) : 0;
+                    return { ...j, performance };
+                })
+                .sort((a, b) => parseFloat(b.performance) - parseFloat(a.performance))
+                .slice(0, 3);
+            
+            if (jogadoresComPerformance.length === 0) {
+                container.innerHTML = '<div class="no-data-message">Mínimo 3 partidas para performance</div>';
+                return;
+            }
+            
+            renderizarPodioPerformance(jogadoresComPerformance);
+        }
+        
+        function renderizarPodio(podio, containerId, tipo = 'vitórias') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const podioCompleto = [
+                podio[0] || null,
+                podio[1] || null,
+                podio[2] || null
+            ];
+            
+            container.innerHTML = `
+                <div class="podium-dashboard">
+                    <div class="podium-item silver">
+                        <div class="podium-rank">🥈</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[1]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[1]?.vitorias || 0}</span> ${tipo}
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[1]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-item gold">
+                        <div class="podium-rank">🥇</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[0]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[0]?.vitorias || 0}</span> ${tipo}
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[0]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-item bronze">
+                        <div class="podium-rank">🥉</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[2]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[2]?.vitorias || 0}</span> ${tipo}
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[2]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderizarPodioPerformance(podio) {
+            const container = document.getElementById('podium-performance');
+            if (!container) return;
+            
+            const podioCompleto = [
+                podio[0] || null,
+                podio[1] || null,
+                podio[2] || null
+            ];
+            
+            container.innerHTML = `
+                <div class="podium-dashboard">
+                    <div class="podium-item silver">
+                        <div class="podium-rank">🥈</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[1]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[1]?.performance || 0}%</span>
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[1]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-item gold">
+                        <div class="podium-rank">🥇</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[0]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[0]?.performance || 0}%</span>
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[0]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-item bronze">
+                        <div class="podium-rank">🥉</div>
+                        <div class="podium-player">
+                            <div class="player-name">${podioCompleto[2]?.apelido || '-'}</div>
+                            <div class="player-stats">
+                                <span>${podioCompleto[2]?.performance || 0}%</span>
+                            </div>
+                            <div class="player-patente">
+                                ${podioCompleto[2]?.patente || 'Cabo 🪖'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ============ VENCEDORES MENSAIS ============
+        async function carregarVencedoresMensais() {
+            const anoSelecionado = document.getElementById('select-ano')?.value || new Date().getFullYear();
+            
+            if (parseInt(anoSelecionado) === 2025) {
+                mostrarRankingAnual2025();
+                return;
+            }
+            
+            renderizarVencedoresVazios(anoSelecionado);
+        }
+        
+        function mostrarRankingAnual2025() {
+            const grid = document.getElementById('vencedores-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = `
+                <div class="ranking-anual-2025">
+                    <div class="ano-card">
+                        <div class="ano-header">
+                            <h4>🏆 2025 - PRIMEIRO ANO 🏆</h4>
+                        </div>
+                        <div class="ano-content">
+                            <div class="ranking-item gold">
+                                <span class="rank">🥇</span>
+                                <span class="nome">NEY2002</span>
+                                <span class="vitorias">30 vitórias</span>
+                            </div>
+                            <div class="ranking-item silver">
+                                <span class="rank">🥈</span>
+                                <div class="empate-container">
+                                    <div class="empate">
+                                        <span class="nome">PetroIdeal</span>
+                                        <span class="vitorias">22 vitórias</span>
+                                    </div>
+                                    <div class="empate">
+                                        <span class="nome">Daniel$80</span>
+                                        <span class="vitorias">22 vitórias</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ranking-item bronze">
+                                <span class="rank">🥉</span>
+                                <span class="nome">TucaRei</span>
+                                <span class="vitorias">21 vitórias</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderizarVencedoresVazios(ano) {
+            const grid = document.getElementById('vencedores-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            
+            meses.forEach((mes, index) => {
+                const mesNumero = index + 1;
+                const card = document.createElement('div');
+                card.className = 'mes-card';
+                
+                if (parseInt(ano) === 2025 && mesNumero <= new Date().getMonth() + 1) {
+                    card.innerHTML = `
+                        <div class="mes-header">
+                            <h4>${mes.toUpperCase()}</h4>
+                            <span class="mes-badge sem-dados">?</span>
+                        </div>
+                        <div class="mes-content">
+                            <div class="sem-vencedor">Dados não registrados</div>
+                        </div>
+                    `;
+                } else if (parseInt(ano) < new Date().getFullYear() || 
+                          (parseInt(ano) === new Date().getFullYear() && mesNumero <= new Date().getMonth() + 1)) {
+                    card.innerHTML = `
+                        <div class="mes-header">
+                            <h4>${mes.toUpperCase()}</h4>
+                            <span class="mes-badge sem-dados">?</span>
+                        </div>
+                        <div class="mes-content">
+                            <div class="sem-vencedor">Dados não disponíveis</div>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="mes-header">
+                            <h4>${mes.toUpperCase()}</h4>
+                            <span class="mes-badge futuro">➡️</span>
+                        </div>
+                        <div class="mes-content">
+                            <div class="sem-vencedor">Aguardando...</div>
+                        </div>
+                    `;
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        // ============ ÚLTIMAS PARTIDAS ============
+        async function carregarUltimasPartidas() {
+            const tbody = document.querySelector('#ultimas-partidas tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (dadosPartidas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px; color: rgba(255,255,255,0.5);">
+                            Nenhuma partida registrada
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Últimas 5 partidas
+            const ultimas = [...dadosPartidas]
+                .sort((a, b) => new Date(b.data) - new Date(a.data))
+                .slice(0, 5);
+            
+            ultimas.forEach(partida => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatarData(partida.data)}</td>
+                    <td><strong style="color: #10b981;">${partida.vencedor}</strong></td>
+                    <td><span class="badge ${getBadgeClass(partida.tipo)}">${partida.tipo || 'global'}</span></td>
+                    <td>${partida.participantes?.length || 0}</td>
+                    <td>${partida.observacoes || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // ============ GRÁFICOS ============
+        async function carregarGraficos() {
+            try {
+                await Promise.all([
+                    carregarGraficoPatentes(),
+                    carregarGraficoAssiduidade()
+                ]);
+            } catch (error) {
+                console.error('Erro gráficos:', error);
+            }
+        }
+        
+        function carregarGraficoPatentes() {
+            const ctx = document.getElementById('chart-patentes');
+            if (!ctx) return;
+            
+            // Destruir gráfico anterior
+            if (charts.patentes) {
+                charts.patentes.destroy();
+            }
+            
+            if (dadosJogadores.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de patentes</div>';
+                return;
+            }
+            
+            // Contar patentes
+            const contagem = {};
+            dadosJogadores.forEach(j => {
+                const patente = j.patente || 'Cabo 🪖';
+                contagem[patente] = (contagem[patente] || 0) + 1;
+            });
+            
+            const labels = Object.keys(contagem);
+            const valores = Object.values(contagem);
+            
+            if (labels.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de patentes</div>';
+                return;
+            }
+            
+            charts.patentes = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: getCoresPatentes(labels),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                color: 'white', 
+                                font: { size: 11 } 
+                            } 
+                        },
+                        tooltip: { 
+                            callbacks: { 
+                                label: ctx => `${ctx.label}: ${ctx.raw} jogadores` 
+                            } 
+                        }
+                    }
+                }
+            });
+        }
+        
+        function carregarGraficoAssiduidade() {
+            const ctx = document.getElementById('chart-assiduidade');
+            if (!ctx) return;
+            
+            // Destruir gráfico anterior
+            if (charts.assiduidade) {
+                charts.assiduidade.destroy();
+            }
+            
+            if (dadosJogadores.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de participação</div>';
+                return;
+            }
+            
+            // Top 8 por partidas
+            const topJogadores = [...dadosJogadores]
+                .sort((a, b) => (b.partidas || 0) - (a.partidas || 0))
+                .slice(0, 8);
+            
+            const labels = topJogadores.map(j => j.apelido);
+            const valores = topJogadores.map(j => j.partidas || 0);
+            
+            if (labels.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de participação</div>';
+                return;
+            }
+            
+            charts.assiduidade = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Participações',
+                        data: valores,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: 'rgba(255,255,255,0.7)' }, 
+                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                        },
+                        x: { 
+                            ticks: { 
+                                color: 'rgba(255,255,255,0.7)', 
+                                maxRotation: 45,
+                                font: { size: 11 }
+                            }, 
+                            grid: { color: 'rgba(255,255,255,0.1)' } 
+                        }
+                    },
+                    plugins: { 
+                        legend: { 
+                            labels: { 
+                                color: 'white',
+                                font: { size: 12 }
+                            } 
+                        } 
+                    }
+                }
+            });
+        }
+        
+        // ============ FUNÇÕES AUXILIARES ============
+        function getCoresPatentes(patentes) {
+            const cores = [
+                '#9ca3af', '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b',
+                '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#fbbf24',
+                '#dc2626', '#ea580c', '#ca8a04', '#65a30d', '#16a34a'
+            ];
+            return patentes.map((_, i) => cores[i % cores.length]);
+        }
+        
+        function formatarData(dataString) {
+            try {
+                const data = new Date(dataString);
+                return data.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return dataString;
+            }
+        }
+        
+        function getBadgeClass(tipo) {
+            if (!tipo) return 'badge-secondary';
+            
+            const tipoLower = tipo.toLowerCase();
+            if (tipoLower.includes('global')) return 'badge-primary';
+            if (tipoLower.includes('campeonato')) return 'badge-warning';
+            if (tipoLower.includes('amistosa')) return 'badge-info';
+            if (tipoLower.includes('eliminatoria')) return 'badge-danger';
+            return 'badge-secondary';
+        }
+        
+        function popularSeletorAnos() {
+            const select = document.getElementById('select-ano');
+            if (!select) return;
+            
+            select.innerHTML = '';
+            const anoAtual = new Date().getFullYear();
+            
+            // Adicionar anos de 2025 até atual + 1
+            for (let ano = 2025; ano <= anoAtual + 1; ano++) {
+                const option = document.createElement('option');
+                option.value = ano;
+                option.textContent = ano;
+                select.appendChild(option);
+            }
+            
+            select.value = anoAtual;
+            
+            // Adicionar listener
+            select.addEventListener('change', carregarVencedoresMensais);
+        }
+        
+        function atualizarTimestamp() {
+            const elemento = document.getElementById('last-update');
+            if (elemento) {
+                elemento.textContent = new Date().toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+        }
+        
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            // Implementação simples de notificação
+            console.log(`${tipo === 'error' ? '❌' : '✅'} ${mensagem}`);
+        }
+        
+        // ============ EXPORTAÇÃO ============
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.export-btn')) {
+                const btn = e.target.closest('.export-btn');
+                const tipo = btn.id.replace('export-', '');
+                
+                try {
+                    let data, filename;
+                    
+                    switch(tipo) {
+                        case 'jogadores':
+                            data = { jogadores: dadosJogadores };
+                            filename = `jogadores-war-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        case 'partidas':
+                            data = { partidas: dadosPartidas };
+                            filename = `partidas-war-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        case 'estatisticas':
+                            data = {
+                                estatisticas: {
+                                    total_jogadores: dadosJogadores.length,
+                                    total_partidas: dadosPartidas.length,
+                                    record_consecutivo: calcularRecordeConsecutivo().max,
+                                    record_holder: calcularRecordeConsecutivo().jogador
+                                }
+                            };
+                            filename = `estatisticas-war-${new Date().toISOString().split('T')[0]}.json`;
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    mostrarNotificacao(`Dados exportados como ${filename}`);
+                    
+                } catch (error) {
+                    console.error('Erro exportação:', error);
+                    mostrarNotificacao('Erro ao exportar dados', 'error');
+                }
+            }
+        });
+        
+        // ============ FUNÇÕES DO TEMPLATE ============
+        //window.switchTab = function(tabName) {
             // Remove active de todas as tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
+            //document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            //document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
             // Adiciona active na tab selecionada
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-        }
-
-        // Atualizar timestamp
-        document.getElementById('last-update').textContent = 
-            new Date().toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-    </script>
-<script>
-// Carregar estatísticas do dashboard
-async function loadDashboardStats() {
-    try {
-        // Carregar estatísticas
-        const statsResponse = await fetch('/api/estatisticas');
-        const stats = await statsResponse.json();
-        
-        // Atualizar cards
-        document.getElementById('stat-jogadores').textContent = stats.total_jogadores || 0;
-        document.getElementById('stat-partidas').textContent = stats.total_partidas || 0;
-        document.getElementById('stat-record').textContent = stats.record_vitorias || 0;
-        
-        // Carregar ranking para record holder
-        const rankingResponse = await fetch('/api/ranking/global');
-        const ranking = await rankingResponse.json();
-        
-        if (ranking.length > 0) {
-            document.getElementById('record-holder').textContent = ranking[0].apelido;
-        }
-        
-        // Calcular média
-        const media = stats.total_jogadores > 0 ? 
-            (stats.total_partidas / stats.total_jogadores).toFixed(1) : 0;
-        document.getElementById('stat-media').textContent = media;
-        
-    } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
-    }
-}
-
-// Carregar ranking global
-async function loadRankingGlobal() {
-    try {
-        const response = await fetch('/api/ranking/global');
-        const ranking = await response.json();
-        
-        const tbody = document.querySelector('#ranking-global tbody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        ranking.forEach((jogador, index) => {
-            const percentual = jogador.partidas > 0 ? 
-                ((jogador.vitorias / jogador.partidas) * 100).toFixed(1) : 0;
+            //const tabBtn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            //const tabContent = document.getElementById(`tab-${tabName}`);
             
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <div class="rank-position ${index < 3 ? `rank-${index + 1}` : ''}">
-                        ${index + 1}
-                    </div>
-                </td>
-                <td><strong>${jogador.apelido}</strong></td>
-                <td>
-                    <span class="patente-badge ${getPatenteClass(jogador.patente)}">
-                        ${jogador.patente}
-                    </span>
-                </td>
-                <td style="color: #10b981; font-weight: bold;">${jogador.vitorias || 0}</td>
-                <td>${jogador.partidas || 0}</td>
-                <td>
-                    <div class="performance-bar-container">
-                        <div class="performance-bar-fill" style="width: ${percentual > 100 ? 100 : percentual}%"></div>
-                        <span class="performance-bar-text">${percentual}%</span>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
+            //if (tabBtn) tabBtn.classList.add('active');
+            //if (tabContent) tabContent.classList.add('active');
+        //};
         
-    } catch (error) {
-        console.error('Erro ao carregar ranking:', error);
-    }
-}
-
-// Carregar últimas partidas
-async function loadUltimasPartidas() {
-    try {
-        const response = await fetch('/api/partidas');
-        const partidas = await response.json();
-        
-        const tbody = document.querySelector('#ultimas-partidas tbody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        partidas.slice(0, 10).forEach(partida => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td>
-                <td><strong style="color: #10b981;">${partida.vencedor_nome}</strong></td>
-                <td>
-                    <span class="badge ${getBadgeClass(partida.tipo)}">
-                        ${partida.tipo}
-                    </span>
-                </td>
-                <td>${partida.participantes ? partida.participantes.split(',').length : 0}</td>
-                <td>${partida.observacoes || '-'}</td>
-            `;
-            tbody.appendChild(row);
-        });
-        
-    } catch (error) {
-        console.error('Erro ao carregar partidas:', error);
-    }
-}
-
-// Funções auxiliares
-function getPatenteClass(patente) {
-    if (!patente) return 'patente-cabo';
-    if (patente.includes('Marechal')) return 'patente-marechal';
-    if (patente.includes('General')) return 'patente-general';
-    if (patente.includes('Coronel')) return 'patente-coronel';
-    if (patente.includes('Major')) return 'patente-major';
-    if (patente.includes('Capitão')) return 'patente-capitao';
-    if (patente.includes('Tenente')) return 'patente-tenente';
-    if (patente.includes('Soldado')) return 'patente-soldado';
-    return 'patente-cabo';
-}
-
-function getBadgeClass(tipo) {
-    const classes = {
-        'global': 'badge-primary',
-        'campeonato': 'badge-warning',
-        'amistosa': 'badge-info',
-        'eliminatoria': 'badge-danger'
-    };
-    return classes[tipo] || 'badge-secondary';
-}
-
-// Carregar tudo quando a página abrir
-document.addEventListener('DOMContentLoaded', function() {
-    loadDashboardStats();
-    loadRankingGlobal();
-    loadUltimasPartidas();
-    
-    // Atualizar a cada 30 segundos
-    setInterval(() => {
-        loadDashboardStats();
-        loadUltimasPartidas();
-    }, 30000);
-});
-</script>
-    
+        console.log('✅ Dashboard corrigido e pronto!');
+    </script>
 </body>
-
 </html>
-
-
-
-
-
-
 
