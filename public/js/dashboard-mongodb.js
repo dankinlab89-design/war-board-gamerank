@@ -11,6 +11,7 @@ class DashboardMongoDB {
         console.log('🚀 Iniciando Dashboard MongoDB...');
         await this.loadAllData();
         this.setupEventListeners();
+        this.setupExportButtons(); // ← ADICIONE ESTA LINHA
         this.startAutoRefresh();
         this.updateTimestamp();
     }
@@ -90,26 +91,47 @@ class DashboardMongoDB {
     }
 
     async loadPodioMensal() {
-        try {
-            const response = await fetch(`${this.apiBase}/podios/mensal`);
-            const data = await response.json();
-            
-            const container = document.getElementById('podium-mensal');
-            
-            if (data.success && data.podio.length > 0) {
-                this.renderizarPodio(data.podio, 'podium-mensal');
-            } else {
-                container.innerHTML = `
-                    <div class="no-data-message">
-                        Nenhuma partida este mês
-                    </div>
-                `;
-            }
-            
-        } catch (error) {
-            console.error('Erro ao carregar pódio mensal:', error);
-        }
+  try {
+    console.log('📅 Carregando pódio mensal CORRIGIDO...');
+    
+    // USAR A NOVA ROTA CORRIGIDA
+    const response = await fetch(`${this.apiBase}/podios/mensal-corrigido`);
+    const data = await response.json();
+    
+    const container = document.getElementById('podium-mensal');
+    
+    if (data.success) {
+      if (data.podio && data.podio.length > 0) {
+        // Usar a mesma função de renderização
+        this.renderizarPodio(data.podio, 'podium-mensal');
+      } else {
+        container.innerHTML = `
+          <div class="no-data-message">
+            <i class="fas fa-calendar-times"></i>
+            ${data.mensagem || 'Nenhuma partida este mês'}
+          </div>
+        `;
+      }
+    } else {
+      container.innerHTML = `
+        <div class="no-data-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          Erro ao carregar pódio mensal
+        </div>
+      `;
     }
+    
+  } catch (error) {
+    console.error('❌ Erro ao carregar pódio mensal:', error);
+    const container = document.getElementById('podium-mensal');
+    container.innerHTML = `
+      <div class="no-data-message" style="color: #ff6b6b;">
+        <i class="fas fa-exclamation-circle"></i>
+        Falha na conexão
+      </div>
+    `;
+  }
+}
 
     async loadPodioPerformance() {
         try {
@@ -645,67 +667,182 @@ class DashboardMongoDB {
         console.error('Erro no dashboard:', mensagem);
     }
 
-    async exportarDados(tipo) {
-        try {
-            let url, filename;
-            
-            switch(tipo) {
-                case 'jogadores':
-                    url = `${this.apiBase}/jogadores`;
-                    filename = `jogadores-war-${new Date().toISOString().split('T')[0]}.csv`;
-                    break;
-                case 'partidas':
-                    url = `${this.apiBase}/partidas`;
-                    filename = `partidas-war-${new Date().toISOString().split('T')[0]}.csv`;
-                    break;
-                case 'estatisticas':
-                    url = `${this.apiBase}/estatisticas/dashboard`;
-                    filename = `estatisticas-war-${new Date().toISOString().split('T')[0]}.json`;
-                    break;
-                default:
-                    return;
-            }
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (tipo === 'estatisticas') {
-                // Exportar como JSON
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-            } else {
-                // Exportar como CSV (simplificado)
-                const items = tipo === 'jogadores' ? data.jogadores : data.partidas;
-                const csv = this.converterParaCSV(items);
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-            }
-            
-            console.log(`✅ Dados exportados: ${filename}`);
-            
-        } catch (error) {
-            console.error('❌ Erro ao exportar dados:', error);
-        }
-    }
+// ============ SISTEMA DE EXPORTAÇÃO CSV ============
 
-    converterParaCSV(items) {
-        if (!items || items.length === 0) return '';
-        
-        const headers = Object.keys(items[0]).join(',');
-        const rows = items.map(item => 
-            Object.values(item).map(val => 
-                typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-            ).join(',')
-        );
-        
-        return [headers, ...rows].join('\n');
+setupExportButtons() {
+  // Exportar Jogadores
+  document.getElementById('export-jogadores')?.addEventListener('click', () => {
+    this.exportarJogadoresCSV();
+  });
+  
+  // Exportar Partidas
+  document.getElementById('export-partidas')?.addEventListener('click', () => {
+    this.exportarPartidasCSV();
+  });
+  
+  // Exportar Estatísticas
+  document.getElementById('export-estatisticas')?.addEventListener('click', () => {
+    this.exportarEstatisticasCSV();
+  });
+}
+
+async exportarJogadoresCSV() {
+  try {
+    const response = await fetch(`${this.apiBase}/jogadores`);
+    const data = await response.json();
+    
+    if (!data.success || !data.jogadores) {
+      throw new Error('Dados não encontrados');
     }
+    
+    // Cabeçalhos do CSV
+    let csv = 'Nome,Apelido,Email,Patente,Vitórias,Partidas,Status,Data Cadastro\n';
+    
+    // Dados
+    data.jogadores.forEach(jogador => {
+      const linha = [
+        `"${jogador.nome || ''}"`,
+        `"${jogador.apelido || ''}"`,
+        `"${jogador.email || ''}"`,
+        `"${jogador.patente || 'Cabo 🪖'}"`,
+        jogador.vitorias || 0,
+        jogador.partidas || 0,
+        jogador.ativo ? 'ATIVO' : 'INATIVO',
+        `"${new Date(jogador.data_cadastro).toLocaleDateString('pt-BR')}"`
+      ].join(',');
+      
+      csv += linha + '\n';
+    });
+    
+    // Baixar arquivo
+    this.downloadCSV(csv, 'jogadores_war.csv');
+    this.showNotification('✅ Jogadores exportados como CSV!', 'success');
+    
+  } catch (error) {
+    console.error('Erro exportar jogadores:', error);
+    this.showNotification('❌ Erro ao exportar jogadores', 'error');
+  }
+}
+
+async exportarPartidasCSV() {
+  try {
+    const response = await fetch(`${this.apiBase}/partidas`);
+    const data = await response.json();
+    
+    if (!data.success || !data.partidas) {
+      throw new Error('Dados não encontrados');
+    }
+    
+    let csv = 'Data,Vencedor,Tipo,Participantes,Pontos,Observações\n';
+    
+    data.partidas.forEach(partida => {
+      const participantes = Array.isArray(partida.participantes) 
+        ? partida.participantes.join('; ') 
+        : partida.participantes || '';
+      
+      const linha = [
+        `"${new Date(partida.data).toLocaleDateString('pt-BR')}"`,
+        `"${partida.vencedor || ''}"`,
+        `"${partida.tipo || 'global'}"`,
+        `"${participantes}"`,
+        partida.pontos || 100,
+        `"${partida.observacoes || ''}"`
+      ].join(',');
+      
+      csv += linha + '\n';
+    });
+    
+    this.downloadCSV(csv, 'batalhas_war.csv');
+    this.showNotification('✅ Batalhas exportadas como CSV!', 'success');
+    
+  } catch (error) {
+    console.error('Erro exportar partidas:', error);
+    this.showNotification('❌ Erro ao exportar batalhas', 'error');
+  }
+}
+
+async exportarEstatisticasCSV() {
+  try {
+    const response = await fetch(`${this.apiBase}/estatisticas/dashboard`);
+    const data = await response.json();
+    
+    if (!data.success || !data.estatisticas) {
+      throw new Error('Dados não encontrados');
+    }
+    
+    const stats = data.estatisticas;
+    let csv = 'Estatística,Valor,Detalhes\n';
+    
+    // Adicionar estatísticas
+    csv += `Total de Jogadores,${stats.total_jogadores || 0},Tropas Ativas\n`;
+    csv += `Total de Partidas,${stats.total_partidas || 0},Batalhas Registradas\n`;
+    csv += `Recorde Consecutivo,${stats.record_consecutivo || 0},Vitórias seguidas\n`;
+    csv += `Detentor do Recorde,"${stats.record_holder_consecutivo || '-'}",\n`;
+    csv += `Percentual Este Mês,${stats.percentual_mes || 0}%,Crescimento mensal\n`;
+    csv += `Média de Vitórias,${stats.media_vitorias || 0},Por jogador\n`;
+    csv += `Data da Análise,"${new Date().toLocaleDateString('pt-BR')}",\n`;
+    
+    this.downloadCSV(csv, 'estatisticas_war.csv');
+    this.showNotification('✅ Estatísticas exportadas como CSV!', 'success');
+    
+  } catch (error) {
+    console.error('Erro exportar estatísticas:', error);
+    this.showNotification('❌ Erro ao exportar estatísticas', 'error');
+  }
+}
+
+downloadCSV(csvContent, fileName) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  
+  if (navigator.msSaveBlob) { // Para IE
+    navigator.msSaveBlob(blob, fileName);
+  } else {
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+showNotification(mensagem, tipo = 'info') {
+  // Criar notificação temporária
+  const notification = document.createElement('div');
+  notification.className = `notification ${tipo}`;
+  notification.innerHTML = `
+    <span>${mensagem}</span>
+    <button onclick="this.parentElement.remove()">&times;</button>
+  `;
+  
+  // Estilos inline para a notificação
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${tipo === 'success' ? '#1a472a' : '#8b0000'};
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 5px solid ${tipo === 'success' ? '#28a745' : '#dc3545'};
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-family: 'Montserrat', sans-serif;
+    animation: slideIn 0.3s ease;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remover após 5 segundos
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 5000);
 }
 
 // Inicializar quando a página carregar
