@@ -245,38 +245,30 @@
 
         <!-- ============ PÓDIOS DE BATALHA ============ -->
         <section class="rankings-section">
-            <h2 class="section-title">PÓDIOS DE BATALHA</h2>
-            
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('global')">
-                    <i class="fas fa-globe"></i> Global
-                </button>
-                <button class="tab-btn" onclick="switchTab('mensal')">
-                    <i class="fas fa-calendar-alt"></i> Mensal
-                </button>
-                <button class="tab-btn" onclick="switchTab('performance')">
-                    <i class="fas fa-bolt"></i> Performance
-                </button>
-            </div>
-            
-            <div class="tab-content active" id="tab-global">
-                <div class="podium-container" id="podium-global">
-                    <div class="no-data-message">Carregando pódio global...</div>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-mensal">
-                <div class="podium-container" id="podium-mensal">
-                    <div class="no-data-message">Carregando pódio mensal...</div>
-                </div>
-            </div>
-            
-            <div class="tab-content" id="tab-performance">
-                <div class="podium-container" id="podium-performance">
-                    <div class="no-data-message">Carregando pódio performance...</div>
-                </div>
-            </div>
-        </section>
+    <!-- Pódio Global -->
+    <div class="container" style="margin-bottom: 60px;">
+        <h2 class="section-title"><i class="fas fa-globe" style="margin-right: 10px;"></i>PÓDIO GLOBAL</h2>
+        <div class="podium" id="podium-global">
+            <div class="no-data-message">Carregando pódio global...</div>
+        </div>
+    </div>
+
+    <!-- Pódio Mensal -->
+    <div class="container" style="margin-bottom: 60px;">
+        <h2 class="section-title"><i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>PÓDIO MENSAL</h2>
+        <div class="podium" id="podium-mensal">
+            <div class="no-data-message">Carregando pódio mensal...</div>
+        </div>
+    </div>
+
+    <!-- Pódio de Performance -->
+    <div class="container">
+        <h2 class="section-title"><i class="fas fa-bolt" style="margin-right: 10px;"></i>PÓDIO DE PERFORMANCE</h2>
+        <div class="podium" id="podium-performance">
+            <div class="no-data-message">Carregando pódio de performance...</div>
+        </div>
+    </div>
+</section>
 
         <!-- ============ GRÁFICOS ============ -->
         <section class="charts-section">
@@ -305,7 +297,7 @@
         <section class="vencedores-section">
             <h2 class="section-title">VENCEDORES MENSAIS</h2>
             
-            <div class="year-selector">
+            <div class="year-selector-container">
                 <select id="select-ano" class="form-control">
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
@@ -1147,20 +1139,21 @@
         });
         
         // ============ FUNÇÕES DO TEMPLATE ============
-        window.switchTab = function(tabName) {
+        //window.switchTab = function(tabName) {
             // Remove active de todas as tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            //document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            //document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
             // Adiciona active na tab selecionada
-            const tabBtn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
-            const tabContent = document.getElementById(`tab-${tabName}`);
+            //const tabBtn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            //const tabContent = document.getElementById(`tab-${tabName}`);
             
-            if (tabBtn) tabBtn.classList.add('active');
-            if (tabContent) tabContent.classList.add('active');
-        };
+            //if (tabBtn) tabBtn.classList.add('active');
+            //if (tabContent) tabContent.classList.add('active');
+        //};
         
         console.log('✅ Dashboard corrigido e pronto!');
     </script>
 </body>
 </html>
+
