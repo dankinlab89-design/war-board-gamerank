@@ -693,7 +693,7 @@
             mostrarCarregando(false);
         }
         
-        // Abrir modal de edição
+        // Abrir modal de edição - CORRIGIDA para lidar com data/hora local
         async function abrirEdicao(partidaId) {
             try {
                 console.log('📝 Abrindo edição da partida:', partidaId);
@@ -713,25 +713,20 @@
                     // Preencher formulário básico
                     document.getElementById('partida-id').value = partidaAtual._id;
                     
-                    // CORREÇÃO: Separar data e hora
+                    // CORREÇÃO: Usar data/hora LOCAL (exatamente como foi gravada)
                     if (partidaAtual.data) {
                         const dataObj = new Date(partidaAtual.data);
                         
-                        // Data no formato YYYY-MM-DD
-                        const ano = dataObj.getFullYear();
-                        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                        const dia = String(dataObj.getDate()).padStart(2, '0');
-                        const dataFormatada = `${ano}-${mes}-${dia}`;
-                        
-                        // Hora no formato HH:MM
-                        const horas = String(dataObj.getHours()).padStart(2, '0');
-                        const minutos = String(dataObj.getMinutes()).padStart(2, '0');
-                        const horaFormatada = `${horas}:${minutos}`;
+                        // Formatar para inputs de data e hora (fuso horário local)
+                        const dataFormatada = dataObj.toISOString().split('T')[0];
+                        const horaFormatada = dataObj.toTimeString().split(' ')[0].substring(0, 5);
                         
                         document.getElementById('editar-data').value = dataFormatada;
                         document.getElementById('editar-hora').value = horaFormatada;
                         
-                        console.log('📅 Data/hora separadas:', dataFormatada, horaFormatada);
+                        console.log('📅 Data/hora do banco:', partidaAtual.data);
+                        console.log('📅 Data formatada:', dataFormatada);
+                        console.log('🕐 Hora formatada:', horaFormatada);
                     }
                     
                     document.getElementById('editar-tipo').value = partidaAtual.tipo || 'global';
@@ -964,7 +959,7 @@
             });
         }
         
-        // Função para salvar edição - CORRIGIDA para data/hora
+        // Função para salvar edição - SIMPLIFICADA (usa data/hora local)
         async function salvarEdicao(e) {
             e.preventDefault();
             
@@ -986,13 +981,9 @@
                 return;
             }
             
-            // Combinar data e hora no formato ISO
-            const [horas, minutos] = horaInput.split(':');
-            const dataObj = new Date(dataInput);
-            dataObj.setHours(parseInt(horas), parseInt(minutos), 0, 0);
-            
-            const dataFinal = dataObj.toISOString();
-            console.log('📅 Data/hora combinadas:', dataFinal);
+            // SIMPLIFICADO: Combinar data e hora (assume fuso horário local)
+            const dataFinal = `${dataInput}T${horaInput}:00.000Z`;
+            console.log('📅 Data/hora para salvar:', dataFinal);
             
             const dados = {
                 data: dataFinal,
@@ -1114,14 +1105,18 @@
             mostrarMensagem('✅ CSV exportado com sucesso!', 'success');
         }
         
-        // ========== FUNÇÕES AUXILIARES ==========
+        // ========== FUNÇÕES AUXILIARES CORRIGIDAS ==========
         
         function formatarDataHora(dataString) {
             if (!dataString) return '-';
             try {
                 const data = new Date(dataString);
+                // Exibir data/hora local (mesmo fuso horário do usuário)
                 return data.toLocaleDateString('pt-BR') + ' ' + 
-                       data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                       data.toLocaleTimeString('pt-BR', { 
+                           hour: '2-digit', 
+                           minute: '2-digit'
+                       });
             } catch {
                 return dataString;
             }
@@ -1132,7 +1127,10 @@
             try {
                 const data = new Date(dataString);
                 return data.toLocaleDateString('pt-BR') + ' ' + 
-                       data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                       data.toLocaleTimeString('pt-BR', { 
+                           hour: '2-digit', 
+                           minute: '2-digit'
+                       });
             } catch {
                 return dataString;
             }
@@ -1197,6 +1195,43 @@
             const container = document.getElementById('status-message');
             if (container) {
                 container.innerHTML = '';
+            }
+        }
+        
+        // Função para corrigir datas existentes (opcional - rodar uma vez)
+        async function corrigirDatasExistentes() {
+            try {
+                console.log('🔄 Corrigindo datas existentes para horário correto...');
+                
+                for (const partida of partidas) {
+                    if (partida.data && partida.data.includes('T00:00:00.000Z')) {
+                        // Criar nova data com horário padrão (ex: 20:00)
+                        const dataObj = new Date(partida.data);
+                        const novaData = new Date(
+                            dataObj.getFullYear(),
+                            dataObj.getMonth(),
+                            dataObj.getDate(),
+                            20, 0, 0, 0
+                        ).toISOString();
+                        
+                        const response = await fetch(`/api/partidas/${partida._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data: novaData })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            console.log(`✅ Data corrigida para partida ${partida._id}`);
+                        }
+                    }
+                }
+                
+                carregarPartidas();
+                mostrarMensagem('✅ Datas corrigidas com sucesso!', 'success');
+            } catch (error) {
+                console.error('Erro ao corrigir datas:', error);
+                mostrarMensagem('Erro ao corrigir datas', 'error');
             }
         }
     </script>
