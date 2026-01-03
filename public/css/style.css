@@ -1432,3 +1432,211 @@ h1, h2, h3, h4 {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
 }
+
+/* =============================================
+   CORREÇÕES DASHBOARD - FONTES E MOLDURAS
+============================================= */
+
+/* CORREÇÃO: Todas as fontes pretas para branco */
+.podium-player,
+.player-name,
+.player-stats,
+.player-patente,
+.podium-item.gold .player-name,
+.podium-item.silver .player-name,
+.podium-item.bronze .player-name {
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Texto dentro das medalhas (mantém contraste) */
+.podium-item.gold .player-stats,
+.podium-item.silver .player-stats,
+.podium-item.bronze .player-stats {
+    color: var(--dark) !important;
+    font-weight: 700;
+}
+
+/* Molduras e cards dos meses */
+.mes-card {
+    background: linear-gradient(135deg, 
+        rgba(26, 71, 42, 0.7) 0%, 
+        rgba(10, 25, 41, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    padding: 20px 15px;
+    border: 2px solid rgba(184, 134, 11, 0.3);
+    transition: all 0.3s ease;
+    text-align: center;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: var(--shadow);
+}
+
+.mes-card:hover {
+    border-color: var(--secondary);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Cores específicas para diferentes estados */
+.mes-card[data-status="vencedor"] {
+    border-color: var(--secondary);
+    background: linear-gradient(135deg, 
+        rgba(184, 134, 11, 0.2) 0%, 
+        rgba(26, 71, 42, 0.8) 100%);
+}
+
+.mes-card[data-status="futuro"] {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 0.7;
+}
+
+.mes-card[data-status="sem-dados"] {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-style: dashed;
+}
+
+/* Texto dentro dos cards */
+.mes-header h4 {
+    color: white !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.vencedor-nome {
+    color: var(--secondary) !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.sem-vencedor {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Badges dos meses */
+.mes-badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white !important;
+}
+
+.mes-badge.vencedor {
+    background: var(--secondary);
+    color: var(--primary-dark) !important;
+    font-weight: bold;
+}
+
+/* =============================================
+   CORREÇÃO DE ESPAÇAMENTO ENTRE SEÇÕES
+============================================= */
+
+/* Espaçamento entre todas as seções principais */
+.quick-stats {
+    margin-bottom: 60px !important;
+}
+
+.rankings-section {
+    margin: 60px 0 !important;
+    padding: 40px 0 !important;
+    border-top: 1px solid rgba(184, 134, 11, 0.2);
+    border-bottom: 1px solid rgba(184, 134, 11, 0.2);
+    background: linear-gradient(180deg, 
+        rgba(10, 25, 41, 0.3) 0%, 
+        transparent 100%);
+}
+
+/* Cada pódio individual com espaçamento */
+.rankings-section .container {
+    margin-bottom: 50px !important;
+    padding-bottom: 40px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rankings-section .container:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none;
+}
+
+/* Gráficos com separação clara */
+.charts-section {
+    margin: 60px 0 !important;
+    padding: 50px 0 !important;
+    background: linear-gradient(180deg, 
+        rgba(26, 71, 42, 0.1) 0%, 
+        transparent 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.charts-section .dashboard-grid {
+    margin-top: 40px !important;
+}
+
+/* Vencedores Mensais com espaçamento */
+.vencedores-section {
+    margin: 60px 0 40px 0 !important;
+    padding: 50px 0 !important;
+    border-top: 1px solid rgba(184, 134, 11, 0.3);
+    background: linear-gradient(180deg, 
+        transparent 0%, 
+        rgba(10, 25, 41, 0.4) 100%);
+}
+
+/* Últimas Partidas */
+.partidas-section {
+    margin: 50px 0 !important;
+    padding: 40px 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Títulos das seções com destaque */
+.section-title {
+    margin-bottom: 40px !important;
+    padding-bottom: 20px;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--secondary) 50%, 
+        transparent 100%);
+    border-radius: 3px;
+}
+
+/* Container principal com padding */
+.container {
+    padding: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .quick-stats,
+    .rankings-section,
+    .charts-section,
+    .vencedores-section,
+    .partidas-section {
+        margin: 40px 0 !important;
+        padding: 30px 0 !important;
+    }
+    
+    .rankings-section .container {
+        margin-bottom: 40px !important;
+        padding-bottom: 30px !important;
+    }
+}
