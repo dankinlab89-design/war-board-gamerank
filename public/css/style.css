@@ -1385,3 +1385,50 @@ h1, h2, h3, h4 {
     border: 1px solid #dc3545;
 }
 
+/* =============================================
+   DASHBOARD - CORREÇÕES ESPECÍFICAS
+============================================= */
+
+/* Container para o seletor de ano - Alinhado à esquerda */
+.year-selector-container {
+    display: flex;
+    justify-content: flex-start; /* Alinha à esquerda */
+    align-items: center;
+    gap: 15px;
+    margin: 25px 0 35px 0;
+    width: 100%;
+}
+
+/* Estilo do seletor para combinar com .form-control */
+.year-selector-container select {
+    width: 150px; /* Largura fixa para combinar com a grade */
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.year-selector-container select:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.2);
+}
+
+.selector-info {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+}
+
+/* Garantir que a grade de vencedores ocupe a largura total */
+.vencedores-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
