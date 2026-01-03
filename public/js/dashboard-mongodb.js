@@ -92,31 +92,66 @@ class DashboardMongoDB {
 
     async loadPodioMensal() {
   try {
-    console.log('📅 Carregando pódio mensal CORRIGIDO...');
+    console.log('📅 Carregando pódio mensal (com correção local)...');
     
-    // USAR A NOVA ROTA CORRIGIDA
-    const response = await fetch(`${this.apiBase}/podios/mensal-corrigido`);
+    // USAR O ENDPOINT ORIGINAL que existe no servidor
+    const response = await fetch(`${this.apiBase}/podios/mensal`);
     const data = await response.json();
     
     const container = document.getElementById('podium-mensal');
     
-    if (data.success) {
-      if (data.podio && data.podio.length > 0) {
-        // Usar a mesma função de renderização
-        this.renderizarPodio(data.podio, 'podium-mensal');
-      } else {
-        container.innerHTML = `
-          <div class="no-data-message">
-            <i class="fas fa-calendar-times"></i>
-            ${data.mensagem || 'Nenhuma partida este mês'}
-          </div>
-        `;
+    if (data.success && data.podio && data.podio.length > 0) {
+      // ✅ CORREÇÃO LOCAL: Ordenar no frontend se necessário
+      const podioOrdenado = [...data.podio];
+      
+      // Verificar se precisa reordenar (critério: vitórias > partidas)
+      let precisaReordenar = false;
+      if (podioOrdenado.length > 1) {
+        // Verificar se a ordem atual está incorreta
+        for (let i = 0; i < podioOrdenado.length - 1; i++) {
+          const atual = podioOrdenado[i];
+          const proximo = podioOrdenado[i + 1];
+          
+          // Se o próximo tem mais vitórias que o atual, precisa reordenar
+          if (proximo.vitorias > atual.vitorias) {
+            precisaReordenar = true;
+            break;
+          }
+          // Se vitórias iguais, verificar partidas
+          if (proximo.vitorias === atual.vitorias && proximo.partidas > atual.partidas) {
+            precisaReordenar = true;
+            break;
+          }
+        }
       }
+      
+      // Aplicar ordenação se necessário
+      if (precisaReordenar) {
+        console.log('🔄 Reordenando pódio localmente...');
+        podioOrdenado.sort((a, b) => {
+          // 1º Critério: Mais vitórias
+          if (b.vitorias !== a.vitorias) {
+            return b.vitorias - a.vitorias;
+          }
+          // 2º Critério (desempate): Mais partidas
+          return b.partidas - a.partidas;
+        });
+      }
+      
+      console.log('✅ Pódio final:', podioOrdenado.map(p => ({
+        jogador: p.apelido,
+        vitorias: p.vitorias,
+        partidas: p.partidas
+      })));
+      
+      // Renderizar com os dados corrigidos
+      this.renderizarPodio(podioOrdenado, 'podium-mensal');
+      
     } else {
       container.innerHTML = `
         <div class="no-data-message">
-          <i class="fas fa-exclamation-triangle"></i>
-          Erro ao carregar pódio mensal
+          <i class="fas fa-calendar-times"></i>
+          ${data.mensagem || 'Nenhuma partida este mês'}
         </div>
       `;
     }
@@ -127,7 +162,7 @@ class DashboardMongoDB {
     container.innerHTML = `
       <div class="no-data-message" style="color: #ff6b6b;">
         <i class="fas fa-exclamation-circle"></i>
-        Falha na conexão
+        Erro ao carregar dados
       </div>
     `;
   }
@@ -845,6 +880,117 @@ showNotification(mensagem, tipo = 'info') {
   }, 5000);
 }
 
+    // ============ PATCH DE EMERGÊNCIA - FORÇAR PÓDIO CORRETO ============
+
+// Sobrescrever a função original após a classe ser carregada
+setTimeout(() => {
+  if (window.dashboard && window.dashboard instanceof DashboardMongoDB) {
+    console.log('🔧 Aplicando patch de correção do pódio...');
+    
+    // Salvar função original
+    const originalLoadPodioMensal = window.dashboard.loadPodioMensal;
+    
+    // Nova versão corrigida
+    window.dashboard.loadPodioMensal = async function() {
+      try {
+        console.log('🎯 PATCH: Carregando pódio com correção');
+        
+        // Usar endpoint que existe
+        const response = await fetch(`${this.apiBase}/podios/mensal`);
+        const data = await response.json();
+        
+        if (!data.success || !data.podio) {
+          throw new Error('Dados inválidos');
+        }
+        
+        // SEMPRE ordenar localmente (garantido)
+        const podioCorrigido = [...data.podio].sort((a, b) => {
+          // Critério PRINCIPAL: Mais vitórias
+          const diffVitorias = (b.vitorias || 0) - (a.vitorias || 0);
+          if (diffVitorias !== 0) return diffVitorias;
+          
+          // Critério SECUNDÁRIO: Mais partidas (desempate)
+          return (b.partidas || 0) - (a.partidas || 0);
+        });
+        
+        console.log('✅ Pódio corrigido:', podioCorrigido);
+        
+        // Renderizar
+        const container = document.getElementById('podium-mensal');
+        if (podioCorrigido.length > 0) {
+          // Criar HTML manualmente para garantir
+          container.innerHTML = `
+            <div class="criterio-notice">
+              <i class="fas fa-info-circle"></i> Ordenado por: 1º Vitórias | 2º Participações
+            </div>
+            <div class="podium-dashboard">
+              ${this.gerarHTMLPodiumCorrigido(podioCorrigido)}
+            </div>
+          `;
+        } else {
+          container.innerHTML = '<div class="no-data">Sem dados este mês</div>';
+        }
+        
+      } catch (error) {
+        console.error('❌ PATCH Error:', error);
+        // Fallback para função original
+        if (originalLoadPodioMensal) {
+          return originalLoadPodioMensal.call(this);
+        }
+      }
+    };
+    
+    // Adicionar função auxiliar
+    window.dashboard.gerarHTMLPodiumCorrigido = function(podio) {
+      const positions = [
+        { class: 'silver', medal: '🥈', index: 1 },
+        { class: 'gold', medal: '🥇', index: 0 },
+        { class: 'bronze', medal: '🥉', index: 2 }
+      ];
+      
+      return positions.map(pos => {
+        const jogador = podio[pos.index];
+        if (!jogador) {
+          return `
+            <div class="podium-item ${pos.class} empty">
+              <div class="podium-rank">${pos.medal}</div>
+              <div class="podium-player">
+                <div class="player-name">-</div>
+                <div class="player-stats">Sem dados</div>
+              </div>
+            </div>
+          `;
+        }
+        
+        return `
+          <div class="podium-item ${pos.class}">
+            <div class="podium-rank">${pos.medal}</div>
+            <div class="podium-player">
+              <div class="player-name">${jogador.apelido || '-'}</div>
+              <div class="player-stats">
+                <div class="stat-line">
+                  <span class="stat-label">Vitórias:</span>
+                  <span class="stat-value win">${jogador.vitorias || 0}</span>
+                </div>
+                <div class="stat-line">
+                  <span class="stat-label">Partidas:</span>
+                  <span class="stat-value match">${jogador.partidas || 0}</span>
+                </div>
+              </div>
+              <div class="player-patente">${jogador.patente || 'Cabo 🪖'}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+    
+    // Recarregar o pódio imediatamente
+    setTimeout(() => {
+      window.dashboard.loadPodioMensal();
+    }, 500);
+  }
+}, 1000);
+    
 // Inicializar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
     new DashboardMongoDB();
