@@ -1154,7 +1154,18 @@
         
         console.log('✅ Dashboard corrigido e pronto!');
     </script>
+<!-- Scripts do Dashboard -->
+<script src="js/dashboard-mongodb.js"></script>
+<script src="js/ranking.js"></script>
+<script>
+    // Inicializar dashboard quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Inicializando Dashboard...');
+        window.dashboard = new DashboardMongoDB();
+    });
+</script>
 </body>
 </html>
+
 
 
