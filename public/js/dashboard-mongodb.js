@@ -144,28 +144,105 @@ class DashboardMongoDB {
         partidas: p.partidas
       })));
       
-      // Renderizar com os dados corrigidos
-      this.renderizarPodio(podioOrdenado, 'podium-mensal');
-      
-    } else {
-      container.innerHTML = `
-        <div class="no-data-message">
-          <i class="fas fa-calendar-times"></i>
-          ${data.mensagem || 'Nenhuma partida este mês'}
+      renderizarPodio(podio, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  // Garantir 3 posições
+  const podioCompleto = [
+    podio[0] || null,
+    podio[1] || null,
+    podio[2] || null
+  ];
+  
+  // Adicionar badge informativo se for pódio mensal
+  const isMensal = containerId === 'podium-mensal';
+  const infoBadge = isMensal ? `
+    <div class="criterio-badge">
+      <i class="fas fa-info-circle"></i>
+      <span>Critério: 1º Vitórias | 2º Partidas</span>
+    </div>
+  ` : '';
+  
+  container.innerHTML = `
+    ${infoBadge}
+    <div class="podium-dashboard">
+      <!-- 2º LUGAR (PRATA) -->
+      <div class="podium-item silver">
+        <div class="podium-rank">🥈</div>
+        <div class="podium-player">
+          <div class="player-name">${podioCompleto[1]?.apelido || '-'}</div>
+          <div class="player-stats">
+            <div class="stat-row">
+              <span class="stat-label">Vitórias:</span>
+              <span class="stat-value" style="color: #10b981; font-weight: bold;">
+                ${podioCompleto[1]?.vitorias || 0}
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Partidas:</span>
+              <span class="stat-value" style="color: #3b82f6;">
+                ${podioCompleto[1]?.partidas || 0}
+              </span>
+            </div>
+          </div>
+          <div class="player-patente">
+            ${podioCompleto[1]?.patente || 'Cabo 🪖'}
+          </div>
         </div>
-      `;
-    }
-    
-  } catch (error) {
-    console.error('❌ Erro ao carregar pódio mensal:', error);
-    const container = document.getElementById('podium-mensal');
-    container.innerHTML = `
-      <div class="no-data-message" style="color: #ff6b6b;">
-        <i class="fas fa-exclamation-circle"></i>
-        Erro ao carregar dados
       </div>
-    `;
-  }
+      
+      <!-- 1º LUGAR (OURO) -->
+      <div class="podium-item gold">
+        <div class="podium-rank">🥇</div>
+        <div class="podium-player">
+          <div class="player-name">${podioCompleto[0]?.apelido || '-'}</div>
+          <div class="player-stats">
+            <div class="stat-row">
+              <span class="stat-label">Vitórias:</span>
+              <span class="stat-value" style="color: #10b981; font-weight: bold;">
+                ${podioCompleto[0]?.vitorias || 0}
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Partidas:</span>
+              <span class="stat-value" style="color: #3b82f6;">
+                ${podioCompleto[0]?.partidas || 0}
+              </span>
+            </div>
+          </div>
+          <div class="player-patente">
+            ${podioCompleto[0]?.patente || 'Cabo 🪖'}
+          </div>
+        </div>
+      </div>
+      
+      <!-- 3º LUGAR (BRONZE) -->
+      <div class="podium-item bronze">
+        <div class="podium-rank">🥉</div>
+        <div class="podium-player">
+          <div class="player-name">${podioCompleto[2]?.apelido || '-'}</div>
+          <div class="player-stats">
+            <div class="stat-row">
+              <span class="stat-label">Vitórias:</span>
+              <span class="stat-value" style="color: #10b981; font-weight: bold;">
+                ${podioCompleto[2]?.vitorias || 0}
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Partidas:</span>
+              <span class="stat-value" style="color: #3b82f6;">
+                ${podioCompleto[2]?.partidas || 0}
+              </span>
+            </div>
+          </div>
+          <div class="player-patente">
+            ${podioCompleto[2]?.patente || 'Cabo 🪖'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
     async loadPodioPerformance() {
