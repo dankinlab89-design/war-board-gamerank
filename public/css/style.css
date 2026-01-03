@@ -1798,3 +1798,67 @@ h1, h2, h3, h4 {
   border-width: 3px;
   box-shadow: 0 6px 12px rgba(0,0,0,0.4);
 }
+
+/* =============================================
+   BADGE DE CRITÉRIO DO PÓDIO
+============================================= */
+
+.criterio-badge {
+  background: linear-gradient(135deg, rgba(26, 71, 42, 0.9), rgba(13, 45, 28, 0.9));
+  border: 2px solid #b8860b;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  color: #ffd700;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.criterio-badge i {
+  font-size: 1.1rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 0.95rem;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Destaque para o pódio mensal */
+#podium-mensal {
+  position: relative;
+}
+
+#podium-mensal .podium-item {
+  border-width: 3px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+#podium-mensal .podium-item.gold {
+  border-color: #ffd700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+}
+
+#podium-mensal .podium-item.silver {
+  border-color: #c0c0c0;
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.05));
+}
+
+#podium-mensal .podium-item.bronze {
+  border-color: #cd7f32;
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.05));
+}
