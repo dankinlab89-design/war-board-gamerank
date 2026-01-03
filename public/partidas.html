@@ -260,6 +260,17 @@
             border: 1px solid rgba(220, 53, 69, 0.3);
         }
         
+        /* Ajustes para inputs de data/hora */
+        .datetime-inputs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .datetime-inputs > div {
+            flex: 1;
+        }
+        
         /* Ajustes de responsividade para o modal */
         @media (max-width: 768px) {
             .modal-content {
@@ -278,6 +289,11 @@
             
             .vencedor-option {
                 justify-content: center;
+            }
+            
+            .datetime-inputs {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -324,7 +340,7 @@
             <table class="table" id="tabela-partidas">
                 <thead>
                     <tr>
-                        <th>DATA</th>
+                        <th>DATA/HORA</th>
                         <th>TIPO</th>
                         <th>VENCEDOR</th>
                         <th>PARTICIPANTES</th>
@@ -364,20 +380,31 @@
                 <form id="form-editar">
                     <input type="hidden" id="partida-id">
                     
-                    <div class="row" style="display: flex; flex-wrap: wrap; margin: 0 -10px;">
-                        <div class="col-md-6" style="flex: 0 0 50%; padding: 0 10px;">
-                            <label class="form-label">Data:</label>
-                            <input type="date" id="editar-data" class="form-control" required>
+                    <!-- Data e Hora separadas -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">
+                            <i class="fas fa-calendar-alt"></i> Data e Hora da Batalha
+                        </h4>
+                        <div class="datetime-inputs">
+                            <div>
+                                <label class="form-label">Data:</label>
+                                <input type="date" id="editar-data" class="form-control" required>
+                            </div>
+                            <div>
+                                <label class="form-label">Hora:</label>
+                                <input type="time" id="editar-hora" class="form-control" required>
+                            </div>
                         </div>
-                        <div class="col-md-6" style="flex: 0 0 50%; padding: 0 10px;">
-                            <label class="form-label">Tipo:</label>
-                            <select id="editar-tipo" class="form-control" required>
-                                <option value="global">Global 🌎</option>
-                                <option value="campeonato">Campeonato 🏆</option>
-                                <option value="amistosa">Amistosa 🤝</option>
-                                <option value="eliminatoria">Eliminatória ⚔️</option>
-                            </select>
-                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label class="form-label">Tipo:</label>
+                        <select id="editar-tipo" class="form-control" required>
+                            <option value="global">Global 🌎</option>
+                            <option value="campeonato">Campeonato 🏆</option>
+                            <option value="amistosa">Amistosa 🤝</option>
+                            <option value="eliminatoria">Eliminatória ⚔️</option>
+                        </select>
                     </div>
                     
                     <!-- Seção: Participantes Atuais (Apenas visualização) -->
@@ -635,7 +662,7 @@
                 partidasLista.forEach(partida => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${formatarData(partida.data)}</td>
+                        <td>${formatarDataHora(partida.data)}</td>
                         <td>
                             <span class="badge-partida ${getBadgeClass(partida.tipo)}">
                                 ${formatarTipo(partida.tipo)}
@@ -686,11 +713,25 @@
                     // Preencher formulário básico
                     document.getElementById('partida-id').value = partidaAtual._id;
                     
-                    // Formatar data para input (YYYY-MM-DD)
+                    // CORREÇÃO: Separar data e hora
                     if (partidaAtual.data) {
                         const dataObj = new Date(partidaAtual.data);
-                        const dataFormatada = dataObj.toISOString().split('T')[0];
+                        
+                        // Data no formato YYYY-MM-DD
+                        const ano = dataObj.getFullYear();
+                        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+                        const dia = String(dataObj.getDate()).padStart(2, '0');
+                        const dataFormatada = `${ano}-${mes}-${dia}`;
+                        
+                        // Hora no formato HH:MM
+                        const horas = String(dataObj.getHours()).padStart(2, '0');
+                        const minutos = String(dataObj.getMinutes()).padStart(2, '0');
+                        const horaFormatada = `${horas}:${minutos}`;
+                        
                         document.getElementById('editar-data').value = dataFormatada;
+                        document.getElementById('editar-hora').value = horaFormatada;
+                        
+                        console.log('📅 Data/hora separadas:', dataFormatada, horaFormatada);
                     }
                     
                     document.getElementById('editar-tipo').value = partidaAtual.tipo || 'global';
@@ -923,7 +964,7 @@
             });
         }
         
-        // Função para salvar edição
+        // Função para salvar edição - CORRIGIDA para data/hora
         async function salvarEdicao(e) {
             e.preventDefault();
             
@@ -936,8 +977,25 @@
                 return;
             }
             
+            // Obter data e hora separadas
+            const dataInput = document.getElementById('editar-data').value;
+            const horaInput = document.getElementById('editar-hora').value;
+            
+            if (!dataInput || !horaInput) {
+                mostrarMensagem('⚠️ Preencha data e hora!', 'error');
+                return;
+            }
+            
+            // Combinar data e hora no formato ISO
+            const [horas, minutos] = horaInput.split(':');
+            const dataObj = new Date(dataInput);
+            dataObj.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+            
+            const dataFinal = dataObj.toISOString();
+            console.log('📅 Data/hora combinadas:', dataFinal);
+            
             const dados = {
-                data: document.getElementById('editar-data').value,
+                data: dataFinal,
                 tipo: document.getElementById('editar-tipo').value,
                 vencedor: vencedorSelecionado,
                 observacoes: document.getElementById('editar-observacoes').value
@@ -980,7 +1038,7 @@
             const partida = partidas.find(p => p._id === partidaId);
             if (!partida) return;
             
-            const confirmacao = confirm(`Tem certeza que deseja excluir esta batalha?\n\nData: ${formatarData(partida.data)}\nVencedor: ${partida.vencedor}\n\n⚠️ Esta ação não pode ser desfeita e afetará as estatísticas dos jogadores!`);
+            const confirmacao = confirm(`Tem certeza que deseja excluir esta batalha?\n\nData: ${formatarDataHora(partida.data)}\nVencedor: ${partida.vencedor}\n\n⚠️ Esta ação não pode ser desfeita e afetará as estatísticas dos jogadores!`);
             
             if (confirmacao) {
                 excluirPartida(partidaId);
@@ -1019,11 +1077,11 @@
             }
             
             // Cabeçalho
-            let csv = 'Data,Tipo,Vencedor,Participantes,Observações\n';
+            let csv = 'Data/Hora,Tipo,Vencedor,Participantes,Observações\n';
             
             // Dados
             partidas.forEach(partida => {
-                const dataFormatada = formatarDataParaCSV(partida.data);
+                const dataHoraFormatada = formatarDataHoraParaCSV(partida.data);
                 const tipo = partida.tipo || 'global';
                 const vencedor = partida.vencedor || '';
                 
@@ -1039,7 +1097,7 @@
                 const observacoes = (partida.observacoes || '').replace(/"/g, '""');
                 
                 // Linha CSV
-                csv += `"${dataFormatada}","${tipo}","${vencedor}","${participantes}","${observacoes}"\n`;
+                csv += `"${dataHoraFormatada}","${tipo}","${vencedor}","${participantes}","${observacoes}"\n`;
             });
             
             // Criar e baixar arquivo
@@ -1058,7 +1116,7 @@
         
         // ========== FUNÇÕES AUXILIARES ==========
         
-        function formatarData(dataString) {
+        function formatarDataHora(dataString) {
             if (!dataString) return '-';
             try {
                 const data = new Date(dataString);
@@ -1069,7 +1127,7 @@
             }
         }
         
-        function formatarDataParaCSV(dataString) {
+        function formatarDataHoraParaCSV(dataString) {
             if (!dataString) return '';
             try {
                 const data = new Date(dataString);
