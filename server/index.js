@@ -1597,6 +1597,94 @@ app.get('*', (req, res) => {
 });
 
 // ============================================
+// ROTA PARA PÓDIO MENSAL CORRIGIDA
+// ============================================
+
+app.get('/api/podios/mensal-corrigido', async (req, res) => {
+  try {
+    console.log('🏆 Calculando pódio mensal corrigido...');
+    
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59);
+    
+    // 1. Buscar TODAS as partidas do mês atual
+    const partidasDoMes = await Partida.find({
+      data: { $gte: inicioMes, $lte: fimMes }
+    }).lean();
+    
+    if (partidasDoMes.length === 0) {
+      return res.json({ 
+        success: true, 
+        podio: [],
+        mensagem: 'Nenhuma partida este mês' 
+      });
+    }
+    
+    // 2. Calcular vitórias e participações de cada jogador
+    const estatisticas = {};
+    
+    partidasDoMes.forEach(partida => {
+      const { vencedor, participantes } = partida;
+      
+      // Inicializar jogador se não existir
+      if (!estatisticas[vencedor]) {
+        estatisticas[vencedor] = { vitorias: 0, partidas: 0, apelido: vencedor };
+      }
+      
+      // Contar vitória
+      estatisticas[vencedor].vitorias += 1;
+      estatisticas[vencedor].partidas += 1;
+      
+      // Contar participação dos outros jogadores
+      participantes.forEach(participante => {
+        if (participante !== vencedor) {
+          if (!estatisticas[participante]) {
+            estatisticas[participante] = { vitorias: 0, partidas: 0, apelido: participante };
+          }
+          estatisticas[participante].partidas += 1;
+        }
+      });
+    });
+    
+    // 3. Converter para array
+    const rankingArray = Object.values(estatisticas);
+    
+    // 4. ORDENAR: Primeiro por vitórias (maior), depois por partidas (maior)
+    rankingArray.sort((a, b) => {
+      // Critério 1: Mais vitórias
+      if (b.vitorias !== a.vitorias) {
+        return b.vitorias - a.vitorias;
+      }
+      // Critério 2 (desempate): Mais partidas
+      return b.partidas - a.partidas;
+    });
+    
+    // 5. Pegar apenas os 3 primeiros
+    const podio = rankingArray.slice(0, 3);
+    
+    // 6. Buscar patentes dos jogadores do pódio
+    for (let i = 0; i < podio.length; i++) {
+      const jogador = await Jogador.findOne({ 
+        apelido: podio[i].apelido 
+      }).select('patente').lean();
+      
+      podio[i].patente = jogador?.patente || 'Cabo 🪖';
+    }
+    
+    console.log('✅ Pódio mensal calculado:', podio);
+    res.json({ success: true, podio });
+    
+  } catch (error) {
+    console.error('❌ Erro no pódio mensal:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ============================================
 // INICIAR SERVIDOR
 // ============================================
 
