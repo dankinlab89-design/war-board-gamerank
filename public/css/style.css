@@ -2473,3 +2473,106 @@ h1, h2, h3, h4 {
     font-size: 0.9rem !important;
     margin: 8px 0;
 }
+
+/* =============================================
+   CORREÇÃO DEFINITIVA DOS PÓDIOS
+============================================= */
+
+/* Container principal - AUMENTAR 30% */
+.rankings-section {
+    width: 100%;
+    margin: 10px 0 50px 0 !important;
+}
+
+/* Cada container de pódio - 30% MAIOR */
+.rankings-section .container {
+    margin-bottom: 40px !important;
+    padding: 30px 25px !important; /* 30% a mais */
+    background: rgba(26, 71, 42, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(184, 134, 11, 0.3);
+    min-height: 320px; /* Altura aumentada */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Título mais próximo */
+.rankings-section .section-title {
+    margin-bottom: 10px !important;
+    padding-bottom: 5px;
+    font-size: 1.8rem;
+}
+
+/* Pódio ocupar mais espaço */
+.podium-dashboard {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 25px;
+    margin-top: 15px;
+    min-height: 240px; /* Mais alto */
+}
+
+/* Itens do pódio maiores */
+.podium-item {
+    flex: 1;
+    min-width: 180px;
+    max-width: 300px;
+    height: 220px; /* 30% maior */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.podium-player {
+    padding: 20px 15px; /* Mais padding */
+    min-height: 160px;
+}
+
+.player-name {
+    font-size: 1.4rem !important; /* Maior */
+    margin-bottom: 10px;
+}
+
+.player-stats {
+    font-size: 1rem !important;
+    margin: 12px 0;
+}
+
+.podium-rank {
+    font-size: 3.5rem; /* Maior */
+    margin-bottom: 10px;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 992px) {
+    .podium-dashboard {
+        gap: 20px;
+    }
+    
+    .podium-item {
+        min-width: 160px;
+        height: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .rankings-section .container {
+        padding: 25px 20px !important;
+        min-height: auto;
+    }
+    
+    .podium-dashboard {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        min-height: auto;
+    }
+    
+    .podium-item {
+        width: 100%;
+        max-width: 300px;
+        height: 150px;
+    }
+}
