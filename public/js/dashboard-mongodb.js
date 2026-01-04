@@ -312,59 +312,214 @@ class DashboardMongoDB {
         }
     }
 
-    // ============ GRÁFICOS (CORRIGIDOS) ============
-    async loadChartData() {
-        try {
-            // Pequeno delay para garantir que o DOM está pronto
-            setTimeout(() => {
-                this.initializeCharts();
-            }, 500);
-        } catch (error) {
-            console.error('Erro gráficos:', error);
-        }
+    // ============ GRÁFICOS (VERSÃO CORRIGIDA DEFINITIVA) ============
+async loadChartData() {
+    try {
+        // Pequeno delay para garantir que o DOM está pronto
+        setTimeout(() => {
+            this.initializeCharts();
+        }, 500);
+    } catch (error) {
+        console.error('Erro gráficos:', error);
     }
+}
 
-    initializeCharts() {
-        // Destruir gráficos existentes
-        Object.values(this.charts).forEach(chart => {
-            if (chart && typeof chart.destroy === 'function') {
-                chart.destroy();
+    // ============ DESTRUIR GRÁFICOS ============
+destroyCharts() {
+    console.log('🗑️ Destruindo todos os gráficos...');
+    
+    // Destruir do array global
+    if (window.chartInstances && Array.isArray(window.chartInstances)) {
+        window.chartInstances.forEach(chart => {
+            try {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            } catch (e) {
+                // Ignorar erro
+            }
+        });
+        window.chartInstances = [];
+    }
+    
+    // Destruir do objeto local
+    if (this.charts) {
+        Object.keys(this.charts).forEach(key => {
+            try {
+                if (this.charts[key] && typeof this.charts[key].destroy === 'function') {
+                    this.charts[key].destroy();
+                }
+            } catch (e) {
+                // Ignorar erro
             }
         });
         this.charts = {};
-        
-        // Gráfico de patentes
-        const ctxPatentes = document.getElementById('chart-patentes');
-        if (ctxPatentes) {
-            this.charts.patentes = new Chart(ctxPatentes, {
+    }
+    
+    console.log('✅ Todos os gráficos destruídos');
+}
+    
+initializeCharts() {
+    console.log('📊 Inicializando gráficos...');
+    
+    // 1. VERIFICAR E DESTRUIR TODOS OS GRÁFICOS EXISTENTES
+    if (window.chartInstances && Array.isArray(window.chartInstances)) {
+        window.chartInstances.forEach(chart => {
+            try {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                    console.log('✅ Gráfico destruído');
+                }
+            } catch (err) {
+                console.warn('⚠️ Erro ao destruir gráfico:', err);
+            }
+        });
+        window.chartInstances = [];
+    } else {
+        window.chartInstances = [];
+    }
+    
+    // Limpar também do objeto this.charts
+    if (this.charts) {
+        Object.keys(this.charts).forEach(key => {
+            try {
+                if (this.charts[key] && typeof this.charts[key].destroy === 'function') {
+                    this.charts[key].destroy();
+                }
+            } catch (err) {
+                // Ignorar erros na destruição
+            }
+        });
+        this.charts = {};
+    }
+    
+    // 2. GRÁFICO DE PATENTES
+    const ctxPatentes = document.getElementById('chart-patentes');
+    if (ctxPatentes) {
+        try {
+            // Verificar se canvas já está em uso
+            const existingChart = Chart.getChart(ctxPatentes);
+            if (existingChart) {
+                console.log('🔄 Destruindo gráfico de patentes existente...');
+                existingChart.destroy();
+            }
+            
+            // Criar novo gráfico
+            const chartPatentes = new Chart(ctxPatentes, {
                 type: 'doughnut',
                 data: {
                     labels: ['Cabo 🪖', 'Sargento ⭐', 'Tenente 🌟', 'Capitão 🎖️'],
                     datasets: [{
-                        data: [7, 0, 0, 0], // 7 Cabos baseado nos dados
-                        backgroundColor: ['#1a472a', '#b8860b', '#8b0000', '#0d2d1c']
+                        data: [7, 0, 0, 0],
+                        backgroundColor: ['#1a472a', '#b8860b', '#8b0000', '#0d2d1c'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#fff',
+                                font: {
+                                    size: 12,
+                                    family: 'Montserrat'
+                                }
+                            }
+                        }
+                    }
                 }
             });
-        }
-        
-        // Gráfico de assiduidade
-        const ctxAssiduidade = document.getElementById('chart-assiduidade');
-        if (ctxAssiduidade) {
-            this.charts.assiduidade = new Chart(ctxAssiduidade, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-                    datasets: [{
-                        label: 'Partidas',
-                        data: [6, 0, 0, 0, 0, 0],
-                        backgroundColor: '#b8860b'
-                    }]
-                }
-            });
+            
+            // Guardar referência
+            this.charts.patentes = chartPatentes;
+            window.chartInstances.push(chartPatentes);
+            console.log('✅ Gráfico de patentes criado');
+            
+        } catch (error) {
+            console.error('❌ Erro no gráfico de patentes:', error);
         }
     }
-
+    
+    // 3. GRÁFICO DE ASSIDUIDADE
+    const ctxAssiduidade = document.getElementById('chart-assiduidade');
+    if (ctxAssiduidade) {
+        try {
+            // Verificar se canvas já está em uso
+            const existingChart = Chart.getChart(ctxAssiduidade);
+            if (existingChart) {
+                console.log('🔄 Destruindo gráfico de assiduidade existente...');
+                existingChart.destroy();
+            }
+            
+            // Criar novo gráfico
+            const chartAssiduidade = new Chart(ctxAssiduidade, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Partidas por Mês',
+                        data: [6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#b8860b',
+                        borderColor: '#ffd700',
+                        borderWidth: 2,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#fff',
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#fff'
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                font: {
+                                    size: 14,
+                                    family: 'Montserrat'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Guardar referência
+            this.charts.assiduidade = chartAssiduidade;
+            window.chartInstances.push(chartAssiduidade);
+            console.log('✅ Gráfico de assiduidade criado');
+            
+        } catch (error) {
+            console.error('❌ Erro no gráfico de assiduidade:', error);
+        }
+    }
+    
+    console.log('📊 Total de gráficos ativos:', window.chartInstances.length);
+}
     // ============ EXPORTAÇÃO ============
     setupExportButtons() {
         const ids = ['export-jogadores', 'export-partidas', 'export-estatisticas'];
@@ -455,17 +610,18 @@ class DashboardMongoDB {
         }
     }
 
-    startAutoRefresh() {
-        // Atualizar a cada 60 segundos
-        setInterval(() => {
-            this.loadAllData();
-        }, 60000);
-    }
-
-    updateTimestamp() {
-        const now = new Date();
-        console.log(`🕒 Atualizado: ${now.toLocaleTimeString('pt-BR')}`);
-    }
+   startAutoRefresh() {
+    // Atualizar a cada 60 segundos
+    setInterval(() => {
+        console.log('🔄 Auto-refresh do dashboard...');
+        
+        // Destruir gráficos antes de recarregar
+        this.destroyCharts();
+        
+        // Recarregar dados
+        this.loadAllData();
+        this.updateTimestamp();
+    }, 60000);
 }
 
 // Exportar para uso global
