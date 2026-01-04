@@ -2293,3 +2293,183 @@ h1, h2, h3, h4 {
     align-items: center;
     gap: 15px;
 }
+
+/* =============================================
+   CORREÇÃO DE LAYOUT DOS PÓDIOS
+============================================= */
+
+/* Container dos rankings - MENOS ESPAÇO */
+.rankings-section {
+    margin: 20px 0 40px 0 !important;
+}
+
+/* Cada pódio individual - MAIS PRÓXIMO DO TÍTULO */
+.rankings-section .container {
+    margin-bottom: 30px !important;
+    padding: 15px 20px !important;
+    background: rgba(26, 71, 42, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 134, 11, 0.25);
+}
+
+/* Título mais próximo do conteúdo */
+.rankings-section .section-title {
+    margin-bottom: 15px !important;
+    padding-bottom: 8px;
+}
+
+/* Pódio mais compacto */
+.podium-dashboard {
+    margin-top: 10px !important;
+    min-height: 220px;
+    gap: 15px;
+}
+
+/* Itens do pódio mais compactos */
+.podium-item {
+    padding: 15px 10px;
+}
+
+.podium-player {
+    padding: 15px 10px;
+}
+
+.player-name {
+    font-size: 1.2rem !important;
+    margin-bottom: 5px;
+}
+
+/* =============================================
+   ESTILOS PARA VENCEDORES MENSAIS CORRIGIDOS
+============================================= */
+
+.ano-info-header {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(26, 71, 42, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(184, 134, 11, 0.2);
+}
+
+.ano-info-header h4 {
+    color: #ffd700;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+}
+
+.ano-info-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Grade de meses mais compacta */
+.vencedores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.mes-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+}
+
+.mes-card.com-vencedor {
+    background: rgba(184, 134, 11, 0.15);
+    border-color: #b8860b;
+    box-shadow: 0 4px 10px rgba(184, 134, 11, 0.2);
+}
+
+.mes-card.atual {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.mes-card.futuro {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.mes-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+.mes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mes-header h4 {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+}
+
+.mes-badge {
+    font-size: 1rem;
+}
+
+.mes-badge.vencedor {
+    color: #ffd700;
+}
+
+.mes-badge.atual {
+    color: #3b82f6;
+}
+
+.mes-badge.futuro {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.mes-badge.passado {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.mes-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Ranking anual 2025 melhorado */
+.ranking-anual-2025 .ano-card {
+    padding: 25px;
+}
+
+.ano-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.info-adicional {
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.player-stats {
+    font-size: 0.9rem !important;
+    margin: 8px 0;
+}
