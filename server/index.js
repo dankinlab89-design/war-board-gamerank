@@ -1391,24 +1391,25 @@ app.get('/api/podios/performance', async (req, res) => {
 });
 
 // ============================================
-// FUNÇÃO PARA CALCULAR RECORDE CONSECUTIVO
+// FUNÇÃO PARA CALCULAR RECORDE CONSECUTIVO (COM DESEMPATE)
 // ============================================
 
 async function calcularRecordeConsecutivo() {
   try {
     console.log('🔍 Calculando recorde de vitórias consecutivas...');
     
-    const jogadores = await Jogador.find({ ativo: true }).select('apelido');
+    // 1. Buscar TODOS os jogadores ativos
+    const jogadores = await Jogador.find({ ativo: true }).select('apelido vitorias partidas');
     
-    let maxConsecutivo = 0;
-    let recordHolder = '';
+    let candidatosRecorde = []; // Array para armazenar todos os candidatos
     
     for (const jogador of jogadores) {
-      // Buscar partidas do jogador ordenadas por data
+      // 2. Buscar partidas do jogador ordenadas por data
       const partidasJogador = await Partida.find({
         participantes: jogador.apelido
       }).sort({ data: 1 });
       
+      // 3. Calcular maior sequência de vitórias
       let consecutivoAtual = 0;
       let maxConsecutivoJogador = 0;
       
@@ -1417,39 +1418,122 @@ async function calcularRecordeConsecutivo() {
           consecutivoAtual++;
           maxConsecutivoJogador = Math.max(maxConsecutivoJogador, consecutivoAtual);
         } else {
-          consecutivoAtual = 0;
+          consecutivoAtual = 0; // Resetar sequência
         }
       }
       
-      if (maxConsecutivoJogador > maxConsecutivo) {
-        maxConsecutivo = maxConsecutivoJogador;
-        recordHolder = jogador.apelido;
+      // 4. Adicionar jogador à lista de candidatos se tiver sequência
+      if (maxConsecutivoJogador > 0) {
+        candidatosRecorde.push({
+          apelido: jogador.apelido,
+          maxConsecutivo: maxConsecutivoJogador,
+          totalPartidas: jogador.partidas || 0,
+          totalVitorias: jogador.vitorias || 0
+        });
+        
+        console.log(`📊 ${jogador.apelido}: ${maxConsecutivoJogador} vitórias seguidas (${jogador.partidas} partidas totais)`);
       }
     }
     
-    // Salvar no banco de estatísticas
+    // 5. ENCONTRAR O VENCEDOR COM CRITÉRIO DE DESEMPATE
+    let maxConsecutivo = 0;
+    let recordHolder = '-';
+    let dadosVencedor = null;
+    
+    if (candidatosRecorde.length > 0) {
+      // Primeiro: ordenar por maior sequência (decrescente)
+      candidatosRecorde.sort((a, b) => b.maxConsecutivo - a.maxConsecutivo);
+      
+      // Encontrar a maior sequência
+      const maiorSequencia = candidatosRecorde[0].maxConsecutivo;
+      
+      // Filtrar jogadores com esta sequência (pode haver empate)
+      const empatados = candidatosRecorde.filter(j => j.maxConsecutivo === maiorSequencia);
+      
+      console.log(`🏆 Maior sequência: ${maiorSequencia} vitórias`);
+      console.log(`🤝 Jogadores empatados:`, empatados.map(e => e.apelido));
+      
+      if (empatados.length === 1) {
+        // Caso 1: Apenas um jogador tem esta sequência
+        recordHolder = empatados[0].apelido;
+        maxConsecutivo = maiorSequencia;
+        dadosVencedor = empatados[0];
+      } else {
+        // Caso 2: Empate na sequência → APLICAR CRITÉRIO DE DESEMPATE
+        console.log('⚖️ Aplicando critério de desempate...');
+        
+        // Critério de desempate: quem tem MAIS PARTIDAS totais
+        empatados.sort((a, b) => b.totalPartidas - a.totalPartidas);
+        
+        // Se ainda houver empate (mesmo número de partidas), usar mais vitórias totais
+        if (empatados[0].totalPartidas === empatados[1]?.totalPartidas) {
+          console.log('⚖️ Empate em partidas, usando vitórias totais...');
+          empatados.sort((a, b) => b.totalVitorias - a.totalVitorias);
+        }
+        
+        recordHolder = empatados[0].apelido;
+        maxConsecutivo = maiorSequencia;
+        dadosVencedor = empatados[0];
+        
+        console.log(`✅ Vencedor após desempate: ${recordHolder}`);
+        console.log(`   - Sequência: ${maxConsecutivo} vitórias`);
+        console.log(`   - Partidas: ${dadosVencedor.totalPartidas}`);
+        console.log(`   - Vitórias totais: ${dadosVencedor.totalVitorias}`);
+      }
+    } else {
+      console.log('📭 Nenhum jogador com sequência de vitórias encontrada');
+    }
+    
+    // 6. Salvar no banco de estatísticas
     await Estatistica.findOneAndUpdate(
       { tipo: 'record_consecutivo' },
       { 
         valor: { 
           max_consecutivo: maxConsecutivo,
-          jogador_apelido: recordHolder 
+          jogador_apelido: recordHolder,
+          total_partidas: dadosVencedor?.totalPartidas || 0,
+          total_vitorias: dadosVencedor?.totalVitorias || 0
         },
         jogador_associado: recordHolder,
         data_atualizacao: new Date()
       },
-      { upsert: true }
+      { upsert: true, new: true }
     );
     
-    console.log(`✅ Recorde consecutivo: ${recordHolder} com ${maxConsecutivo} vitórias seguidas`);
+    console.log(`✅ Recorde salvo: ${recordHolder} com ${maxConsecutivo} vitórias seguidas`);
     
-    return { maxConsecutivo, recordHolder };
+    return { 
+      maxConsecutivo, 
+      recordHolder,
+      candidatos: candidatosRecorde 
+    };
     
   } catch (error) {
     console.error('❌ Erro ao calcular recorde consecutivo:', error);
     return { maxConsecutivo: 0, recordHolder: '-' };
   }
 }
+
+// ROTA DE TESTE PARA VERIFICAR CÁLCULO
+app.get('/api/teste-recorde', async (req, res) => {
+  try {
+    const resultado = await calcularRecordeConsecutivo();
+    
+    // Buscar estatísticas salvas
+    const estatisticaSalva = await Estatistica.findOne({ 
+      tipo: 'record_consecutivo' 
+    });
+    
+    res.json({
+      sucesso: true,
+      calculo: resultado,
+      salvoNoBanco: estatisticaSalva?.valor,
+      jogadores: await Jogador.find({ ativo: true }).select('apelido vitorias partidas')
+    });
+  } catch (error) {
+    res.status(500).json({ sucesso: false, error: error.message });
+  }
+});
 
 // ============================================
 // ROTA PARA ATUALIZAR ESTATÍSTICAS
