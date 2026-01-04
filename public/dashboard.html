@@ -179,6 +179,273 @@
                 align-items: flex-start !important;
             }
         }
+        
+        /* =============================================
+           CORREÇÃO URGENTE - PÓDIOS "COMIDOS"
+        ============================================= */
+        
+        /* Container principal - GARANTIR ESPAÇO */
+        .rankings-section {
+            margin: 30px 0 60px 0 !important;
+            width: 100%;
+        }
+        
+        /* Cada pódio individual - ALTURA AUMENTADA */
+        .rankings-section .container {
+            min-height: 350px !important; /* MAIS ALTO */
+            padding: 30px 25px !important;
+            margin-bottom: 60px !important;
+            background: rgba(26, 71, 42, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(184, 134, 11, 0.3);
+            box-sizing: border-box;
+            overflow: visible !important; /* NÃO CORTA CONTEÚDO */
+        }
+        
+        /* Área do pódio (os 3 lugares) */
+        .podium-dashboard {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 30px;
+            min-height: 280px; /* ALTURA GARANTIDA */
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* Cada posição do pódio */
+        .podium-item {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Card dentro de cada posição */
+        .podium-player {
+            padding: 30px 20px !important; /* MAIS ESPAÇO INTERNO */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; /* DISTRIBUI MELHOR */
+            min-height: 200px;
+        }
+        
+        /* Títulos maiores */
+        .player-name {
+            font-size: 1.4rem !important;
+            margin-bottom: 15px !important;
+            min-height: 2.5em; /* ESPAÇO PARA 2 LINHAS */
+        }
+        
+        /* Estatísticas mais visíveis */
+        .player-stats {
+            font-size: 1.1rem !important;
+            margin: 10px 0;
+        }
+        
+        .podium-rank {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+        
+        /* Pódio de Performance (o maior) - ESPECIAL */
+        #podium-performance .container {
+            min-height: 380px !important; /* AINDA MAIS ALTO */
+        }
+        
+        #podium-performance .podium-player {
+            padding: 35px 25px !important;
+            min-height: 220px;
+        }
+        
+        /* RESPONSIVO: Em telas pequenas empilha */
+        @media (max-width: 992px) {
+            .podium-dashboard {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .podium-dashboard {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .podium-item {
+                width: 100%;
+                max-width: 350px;
+                margin-bottom: 15px;
+            }
+            
+            .rankings-section .container {
+                min-height: auto !important;
+                padding: 20px 15px !important;
+            }
+        }
+        
+        /* Badge de critério */
+        .criterio-global-badge {
+            text-align: center;
+            margin: 40px auto 60px auto;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #1a472a, #0d2d1c);
+            border: 2px solid #b8860b;
+            border-radius: 10px;
+            color: #ffd700;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            max-width: 500px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        }
+        
+        /* Botões de exportação militares */
+        .military-btn {
+            background: linear-gradient(135deg, #1a472a 0%, #0d2d1c 100%);
+            color: #ffd700 !important;
+            border: 2px solid #b8860b;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .military-btn:hover {
+            background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            border-color: #ffd700;
+        }
+        
+        .military-icon {
+            color: #ffd700;
+            font-size: 1.2rem;
+        }
+        
+        /* Vencedores mensais - estilos */
+        .vencedores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .mes-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mes-card.com-vencedor {
+            background: rgba(184, 134, 11, 0.15);
+            border-color: #b8860b;
+            box-shadow: 0 4px 10px rgba(184, 134, 11, 0.2);
+        }
+        
+        .mes-card.atual {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+        
+        .mes-card.futuro {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .mes-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mes-header h4 {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+        
+        .mes-badge {
+            font-size: 1rem;
+        }
+        
+        .mes-badge.vencedor {
+            color: #ffd700;
+        }
+        
+        .mes-badge.atual {
+            color: #3b82f6;
+        }
+        
+        .mes-badge.futuro {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .mes-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .vencedor-nome {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .vencedor-stats {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+        
+        .sem-vencedor {
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        .sem-vencedor.futuro {
+            color: #3b82f6;
+        }
+        
+        .sem-vencedor.atual {
+            color: #f59e0b;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -245,36 +512,37 @@
 
         <!-- ============ PÓDIOS DE BATALHA ============ -->
         <section class="rankings-section">
-    <!-- Pódio Global -->
-    <div class="container" style="margin-bottom: 60px;">
-        <h2 class="section-title"><i class="fas fa-globe" style="margin-right: 10px;"></i>PÓDIO GLOBAL</h2>
-        <div class="podium" id="podium-global">
-            <div class="no-data-message">Carregando pódio global...</div>
-        </div>
-    </div>
+            <!-- Pódio Global -->
+            <div class="container" style="margin-bottom: 60px;">
+                <h2 class="section-title"><i class="fas fa-globe" style="margin-right: 10px;"></i>PÓDIO GLOBAL</h2>
+                <div class="podium" id="podium-global">
+                    <div class="no-data-message">Carregando pódio global...</div>
+                </div>
+            </div>
 
-    <!-- Pódio Mensal -->
-    <div class="container" style="margin-bottom: 60px;">
-        <h2 class="section-title"><i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>PÓDIO MENSAL</h2>
-        <div class="podium" id="podium-mensal">
-            <div class="no-data-message">Carregando pódio mensal...</div>
-        </div>
-    </div>
+            <!-- Pódio Mensal -->
+            <div class="container" style="margin-bottom: 60px;">
+                <h2 class="section-title"><i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>PÓDIO MENSAL</h2>
+                <div class="podium" id="podium-mensal">
+                    <div class="no-data-message">Carregando pódio mensal...</div>
+                </div>
+            </div>
 
-    <!-- Pódio de Performance -->
-    <div class="container">
-        <h2 class="section-title"><i class="fas fa-bolt" style="margin-right: 10px;"></i>PÓDIO DE PERFORMANCE</h2>
-        <div class="podium" id="podium-performance">
-            <div class="no-data-message">Carregando pódio de performance...</div>
+            <!-- Pódio de Performance -->
+            <div class="container">
+                <h2 class="section-title"><i class="fas fa-bolt" style="margin-right: 10px;"></i>PÓDIO DE PERFORMANCE</h2>
+                <div class="podium" id="podium-performance">
+                    <div class="no-data-message">Carregando pódio de performance...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- BADGE DE CRITÉRIO -->
+        <div class="criterio-global-badge">
+            <i class="fas fa-info-circle"></i>
+            Critério de desempate para os Pódios: 1º Vitórias | 2º Mais Partidas
         </div>
-    </div>
-</section>
-    <!-- BADGE DE CRITÉRIO -->
-    <div class="criterio-global-badge">
-        <i class="fas fa-info-circle"></i>
-        Critério de desempate para os Pódios: 1º Vitórias | 2º Mais Partidas
-    </div>
-           
+               
         <!-- ============ GRÁFICOS ============ -->
         <section class="charts-section">
             <div class="dashboard-grid">
@@ -361,21 +629,21 @@
                 </div>
                 
                 <div class="footer-export">
-  <h4>EXPORTAR DADOS</h4>
-  <div class="export-buttons">
-    <button id="export-jogadores" class="export-btn military-btn">
-      <i class="fas fa-file-csv military-icon"></i> Jogadores (CSV)
-    </button>
-    <button id="export-partidas" class="export-btn military-btn csv">
-      <i class="fas fa-file-csv military-icon"></i> Batalhas (CSV)
-    </button>
-    <button id="export-estatisticas" class="export-btn military-btn json">
-      <i class="fas fa-chart-bar military-icon"></i> Estatísticas (CSV)
-    </button>
-  </div>
-</div>
+                    <h4>EXPORTAR DADOS</h4>
+                    <div class="export-buttons">
+                        <button id="export-jogadores" class="export-btn military-btn">
+                            <i class="fas fa-file-csv military-icon"></i> Jogadores (CSV)
+                        </button>
+                        <button id="export-partidas" class="export-btn military-btn csv">
+                            <i class="fas fa-file-csv military-icon"></i> Batalhas (CSV)
+                        </button>
+                        <button id="export-estatisticas" class="export-btn military-btn json">
+                            <i class="fas fa-chart-bar military-icon"></i> Estatísticas (CSV)
+                        </button>
+                    </div>
+                </div>
 
-                                <div class="footer-info">
+                <div class="footer-info">
                     <h4>ATUALIZAÇÃO</h4>
                     <div class="status-indicator online">
                         <span class="status-dot"></span>
@@ -391,1182 +659,61 @@
         </div>
     </footer>
 
-<!-- Scripts do Dashboard -->
-<script src="js/dashboard-mongodb.js"></script>
-<script src="js/ranking.js"></script>
-<script>
-    // Inicializar dashboard quando a página carregar
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Inicializando Dashboard...');
-        window.dashboard = new DashboardMongoDB();
-    });
-</script>
-    
-    <!-- ============ JAVASCRIPT CORRIGIDO ============ -->
+    <!-- ============ SCRIPTS CORRIGIDOS ============ -->
+    <script src="js/dashboard-mongodb.js"></script>
     <script>
-        // ============ CONFIGURAÇÃO ============
-        const API_BASE = window.location.origin + '/api';
-        let charts = {};
-        let dadosJogadores = [];
-        let dadosPartidas = [];
-        
-        // ============ INICIALIZAÇÃO ============
+        // Inicialização SEGURA do dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Dashboard inicializando...');
+            console.log('🎮 Dashboard - DOM Carregado');
             
-            // Menu mobile
-            document.querySelector('.nav-toggle').addEventListener('click', function() {
-                document.querySelector('.nav-menu').classList.toggle('active');
-            });
-            
-            // Popular anos
-            popularSeletorAnos();
-            
-            // Carregar dados
-            carregarTodosDados();
-            
-            // Auto-refresh
-            setInterval(carregarDadosPrincipais, 30000);
-            
-            // Atualizar timestamp
-            atualizarTimestamp();
-            setInterval(atualizarTimestamp, 60000);
-        });
-        
-        // ============ FUNÇÕES PRINCIPAIS ============
-        async function carregarTodosDados() {
-            try {
-                // Carregar dados básicos primeiro
-                await carregarDadosBasicos();
-                
-                // Depois carregar o resto
-                await Promise.all([
-                    carregarPodios(),
-                    carregarVencedoresMensais(),
-                    carregarUltimasPartidas()
-                ]);
-                
-                // Finalmente os gráficos
-                await carregarGraficos();
-                
-                console.log('✅ Todos os dados carregados');
-                
-            } catch (error) {
-                console.error('❌ Erro ao carregar dados:', error);
-                mostrarNotificacao('Erro ao carregar dados do dashboard', 'error');
-            }
-        }
-        
-        async function carregarDadosBasicos() {
-            try {
-                const [jogadoresRes, partidasRes] = await Promise.all([
-                    fetch(`${API_BASE}/jogadores`),
-                    fetch(`${API_BASE}/partidas`)
-                ]);
-                
-                const jogadoresData = await jogadoresRes.json();
-                const partidasData = await partidasRes.json();
-                
-                // Guardar dados para uso posterior
-                dadosJogadores = jogadoresData.jogadores || jogadoresData || [];
-                dadosPartidas = partidasData.partidas || partidasData || [];
-                
-                // Atualizar estatísticas
-                atualizarEstatisticas();
-                
-            } catch (error) {
-                console.error('Erro dados básicos:', error);
-            }
-        }
-        
-        function carregarDadosPrincipais() {
-            carregarDadosBasicos();
-            carregarUltimasPartidas();
-            atualizarTimestamp();
-        }
-        
-        // ============ ESTATÍSTICAS CORRIGIDAS ============
-        function atualizarEstatisticas() {
-            const totalJogadores = dadosJogadores.length;
-            const totalPartidas = dadosPartidas.length;
-            
-            // Total de jogadores
-            document.getElementById('stat-jogadores').textContent = totalJogadores;
-            document.getElementById('trend-jogadores').textContent = '100% ativos';
-            
-            // Total de partidas
-            document.getElementById('stat-partidas').textContent = totalPartidas;
-            
-            // Calcular % do mês atual
-            const hoje = new Date();
-            const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            const partidasEsteMes = dadosPartidas.filter(p => {
-                const dataPartida = new Date(p.data);
-                return dataPartida >= primeiroDiaMes;
-            }).length;
-            
-            const percentualMes = totalPartidas > 0 ? 
-                Math.round((partidasEsteMes / totalPartidas) * 100) : 0;
-            document.getElementById('trend-partidas').textContent = `${percentualMes}% este mês`;
-            
-            // RECORDE CONSECUTIVAS - CALCULAR CORRETAMENTE
-            const recordeConsecutivo = calcularRecordeConsecutivo();
-            document.getElementById('stat-record').textContent = recordeConsecutivo.max;
-            document.getElementById('record-holder').textContent = recordeConsecutivo.jogador;
-        }
-        
-        // ============ CALCULAR RECORDE CONSECUTIVO ============
-        function calcularRecordeConsecutivo() {
-            let maxGeral = 0;
-            let jogadorRecorde = '-';
-            
-            // Para cada jogador, calcular maior sequência de vitórias
-            dadosJogadores.forEach(jogador => {
-                // Filtrar partidas deste jogador
-                const partidasJogador = dadosPartidas.filter(p => 
-                    p.participantes && p.participantes.includes(jogador.apelido)
-                ).sort((a, b) => new Date(a.data) - new Date(b.data));
-                
-                let sequenciaAtual = 0;
-                let maxJogador = 0;
-                
-                // Verificar sequência de vitórias
-                for (const partida of partidasJogador) {
-                    if (partida.vencedor === jogador.apelido) {
-                        sequenciaAtual++;
-                        maxJogador = Math.max(maxJogador, sequenciaAtual);
-                    } else {
-                        sequenciaAtual = 0;
-                    }
-                }
-                
-                // Atualizar recorde geral
-                if (maxJogador > maxGeral) {
-                    maxGeral = maxJogador;
-                    jogadorRecorde = jogador.apelido;
-                }
-            });
-            
-            return { max: maxGeral, jogador: jogadorRecorde };
-        }
-        
-        // ============ PÓDIOS CORRIGIDOS ============
-        async function carregarPodios() {
-            await Promise.all([
-                carregarPodioGlobal(),
-                carregarPodioMensal(),
-                carregarPodioPerformance()
-            ]);
-        }
-        
-        function carregarPodioGlobal() {
-            const container = document.getElementById('podium-global');
-            if (!container || dadosJogadores.length === 0) {
-                if (container) container.innerHTML = '<div class="no-data-message">Sem dados para pódio global</div>';
-                return;
-            }
-            
-            // Ordenar por vitórias
-            const rankingGlobal = [...dadosJogadores]
-                .filter(j => j.ativo !== false)
-                .sort((a, b) => (b.vitorias || 0) - (a.vitorias || 0))
-                .slice(0, 3);
-            
-            renderizarPodio(rankingGlobal, 'podium-global', 'vitórias');
-        }
-        
-        function carregarPodioMensal() {
-            const container = document.getElementById('podium-mensal');
-            if (!container) return;
-            
-            const hoje = new Date();
-            const mesAtual = hoje.getMonth() + 1;
-            const anoAtual = hoje.getFullYear();
-            
-            // Filtrar partidas do mês atual
-            const partidasMes = dadosPartidas.filter(p => {
-                const data = new Date(p.data);
-                return data.getMonth() + 1 === mesAtual && data.getFullYear() === anoAtual;
-            });
-            
-            if (partidasMes.length === 0) {
-                const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long' });
-                container.innerHTML = `<div class="no-data-message">Nenhuma partida em ${mesNome}</div>`;
-                return;
-            }
-            
-            // Calcular vitórias por jogador no mês
-            const vitoriasPorJogador = {};
-            
-            partidasMes.forEach(partida => {
-                if (partida.vencedor) {
-                    vitoriasPorJogador[partida.vencedor] = (vitoriasPorJogador[partida.vencedor] || 0) + 1;
-                }
-            });
-            
-            // Converter para array e ordenar
-            const rankingMensal = Object.entries(vitoriasPorJogador)
-                .map(([apelido, vitorias]) => {
-                    const jogador = dadosJogadores.find(j => j.apelido === apelido) || { apelido, patente: 'Cabo 🪖' };
-                    return { ...jogador, vitorias };
-                })
-                .sort((a, b) => b.vitorias - a.vitorias)
-                .slice(0, 3);
-            
-            renderizarPodio(rankingMensal, 'podium-mensal', 'vitórias');
-        }
-        
-        function carregarPodioPerformance() {
-            const container = document.getElementById('podium-performance');
-            if (!container || dadosJogadores.length === 0) {
-                if (container) container.innerHTML = '<div class="no-data-message">Sem dados de performance</div>';
-                return;
-            }
-            
-            // Calcular performance (mínimo 3 partidas)
-            const jogadoresComPerformance = dadosJogadores
-                .filter(j => (j.partidas || 0) >= 3)
-                .map(j => {
-                    const vitorias = j.vitorias || 0;
-                    const partidas = j.partidas || 0;
-                    const performance = partidas > 0 ? (vitorias / partidas * 100).toFixed(1) : 0;
-                    return { ...j, performance };
-                })
-                .sort((a, b) => parseFloat(b.performance) - parseFloat(a.performance))
-                .slice(0, 3);
-            
-            if (jogadoresComPerformance.length === 0) {
-                container.innerHTML = '<div class="no-data-message">Mínimo 3 partidas para performance</div>';
-                return;
-            }
-            
-            renderizarPodioPerformance(jogadoresComPerformance);
-        }
-        
-        function renderizarPodio(podio, containerId, tipo = 'vitórias') {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            const podioCompleto = [
-                podio[0] || null,
-                podio[1] || null,
-                podio[2] || null
-            ];
-            
-            container.innerHTML = `
-                <div class="podium-dashboard">
-                    <div class="podium-item silver">
-                        <div class="podium-rank">🥈</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[1]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[1]?.vitorias || 0}</span> ${tipo}
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[1]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="podium-item gold">
-                        <div class="podium-rank">🥇</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[0]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[0]?.vitorias || 0}</span> ${tipo}
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[0]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="podium-item bronze">
-                        <div class="podium-rank">🥉</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[2]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[2]?.vitorias || 0}</span> ${tipo}
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[2]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function renderizarPodioPerformance(podio) {
-            const container = document.getElementById('podium-performance');
-            if (!container) return;
-            
-            const podioCompleto = [
-                podio[0] || null,
-                podio[1] || null,
-                podio[2] || null
-            ];
-            
-            container.innerHTML = `
-                <div class="podium-dashboard">
-                    <div class="podium-item silver">
-                        <div class="podium-rank">🥈</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[1]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[1]?.performance || 0}%</span>
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[1]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="podium-item gold">
-                        <div class="podium-rank">🥇</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[0]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[0]?.performance || 0}%</span>
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[0]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="podium-item bronze">
-                        <div class="podium-rank">🥉</div>
-                        <div class="podium-player">
-                            <div class="player-name">${podioCompleto[2]?.apelido || '-'}</div>
-                            <div class="player-stats">
-                                <span>${podioCompleto[2]?.performance || 0}%</span>
-                            </div>
-                            <div class="player-patente">
-                                ${podioCompleto[2]?.patente || 'Cabo 🪖'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-       // ============ VENCEDORES MENSAIS - VERSÃO SIMPLIFICADA ============
-
-class VencedoresManager {
-    constructor() {
-        this.carregando = false;
-        this.ultimoAno = null;
-        this.init();
-    }
-    
-    init() {
-        this.setupSelect();
-        this.carregarVencedores('2026'); // Sempre inicia com 2026
-    }
-    
-    setupSelect() {
-        const select = document.getElementById('select-ano');
-        if (!select) return;
-        
-        // Garantir opções
-        if (!select.querySelector('option[value="2027"]')) {
-            const opt = document.createElement('option');
-            opt.value = '2027';
-            opt.textContent = '2027';
-            select.appendChild(opt);
-        }
-        
-        // Setar 2026 como padrão
-        select.value = '2026';
-        
-        // Event listener
-        select.addEventListener('change', (e) => {
-            this.carregarVencedores(e.target.value);
-        });
-    }
-    
-    async carregarVencedores(ano) {
-        // Evitar chamadas duplicadas
-        if (this.carregando || this.ultimoAno === ano) return;
-        
-        this.carregando = true;
-        this.ultimoAno = ano;
-        
-        const grid = document.getElementById('vencedores-grid');
-        if (!grid) {
-            this.carregando = false;
-            return;
-        }
-        
-        // Mostrar loading
-        grid.innerHTML = '<div class="loading-simple">Carregando...</div>';
-        
-        console.log(`📅 Carregando: ${ano}`);
-        
-        // Delay para evitar flash
-        setTimeout(async () => {
-            try {
-                if (ano === '2025') {
-                    this.mostrar2025();
-                } else if (ano === '2026' || ano === '2027') {
-                    await this.carregarDaAPI(ano);
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                this.mostrarGradeVazia(ano);
-            } finally {
-                this.carregando = false;
-            }
-        }, 100);
-    }
-    
-    mostrar2025() {
-        const grid = document.getElementById('vencedores-grid');
-        grid.innerHTML = `
-            <div class="ranking-2025-fixo">
-                <div class="ano-card">
-                    <div class="ano-header">
-                        <h3>🏆 2025 - PRIMEIRO ANO 🏆</h3>
-                        <p>Ranking Anual Histórico</p>
-                    </div>
-                    <div class="ranking-content">
-                        <div class="rank-item gold">
-                            <span class="medal">🥇</span>
-                            <span class="nome">NEY2002</span>
-                            <span class="stats">30 vitórias</span>
-                        </div>
-                        <div class="rank-item silver">
-                            <span class="medal">🥈</span>
-                            <div class="empate">
-                                <div class="jogador">
-                                    <span class="nome">PetroIdeal</span>
-                                    <span class="stats">22 vitórias</span>
-                                </div>
-                                <div class="jogador">
-                                    <span class="nome">Daniel$80</span>
-                                    <span class="stats">22 vitórias</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="rank-item bronze">
-                            <span class="medal">🥉</span>
-                            <span class="nome">TucaRei</span>
-                            <span class="stats">21 vitórias</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    async carregarDaAPI(ano) {
-        try {
-            const response = await fetch(`/api/vencedores/mensal/${ano}`);
-            const data = await response.json();
-            
-            const grid = document.getElementById('vencedores-grid');
-            
-            if (data.success && data.vencedores && data.vencedores.length > 0) {
-                this.mostrarVencedoresAPI(data.vencedores, ano);
-            } else {
-                // API não retornou dados - mostrar grade padrão
-                this.mostrarGradeMeses(ano, false);
-            }
-        } catch (error) {
-            // Erro na API - mostrar grade padrão
-            this.mostrarGradeMeses(ano, false);
-        }
-    }
-    
-    mostrarGradeMeses(ano, temDados = false) {
-        const grid = document.getElementById('vencedores-grid');
-        const hoje = new Date();
-        const anoAtual = hoje.getFullYear();
-        const mesAtual = hoje.getMonth() + 1;
-        const anoInt = parseInt(ano);
-        
-        let html = `
-            <div class="info-topo">
-                <h4>${ano} - Vencedores Mensais</h4>
-                <p>${temDados ? 'Dados do sistema' : 'Registro de partidas'}</p>
-            </div>
-            <div class="meses-grid">
-        `;
-        
-        const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 
-                      'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-        
-        meses.forEach((mes, index) => {
-            const mesNum = index + 1;
-            const isPassado = anoInt < anoAtual || (anoInt === anoAtual && mesNum < mesAtual);
-            const isAtual = anoInt === anoAtual && mesNum === mesAtual;
-            const isFuturo = anoInt > anoAtual || (anoInt === anoAtual && mesNum > mesAtual);
-            
-            let status = '', texto = '', icone = '';
-            
-            if (isFuturo) {
-                status = 'futuro';
-                texto = 'Aguardando';
-                icone = '⏳';
-            } else if (isAtual) {
-                status = 'atual';
-                texto = 'Em andamento';
-                icone = '📊';
-            } else {
-                status = 'passado';
-                texto = 'Sem registro';
-                icone = '–';
-            }
-            
-            html += `
-                <div class="mes-card ${status}">
-                    <div class="mes-nome">${mes}</div>
-                    <div class="mes-icone">${icone}</div>
-                    <div class="mes-status">${texto}</div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-        grid.innerHTML = html;
-    }
-    
-    mostrarVencedoresAPI(vencedores, ano) {
-        // Similar a mostrarGradeMeses, mas com dados reais
-        // Implementação simplificada por enquanto
-        this.mostrarGradeMeses(ano, true);
-    }
-    
-    mostrarGradeVazia(ano) {
-        const grid = document.getElementById('vencedores-grid');
-        grid.innerHTML = `
-            <div class="aviso-simples">
-                <div class="aviso-icon">📅</div>
-                <div class="aviso-texto">
-                    <h4>${ano}</h4>
-                    <p>Sem dados registrados para este ano</p>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    window.vencedoresManager = new VencedoresManager();
-});
-
-// FUNÇÃO PARA RENDERIZAR DADOS DA API (se existirem)
-function renderizarVencedoresDaAPI(vencedores, ano) {
-    const grid = document.getElementById('vencedores-grid');
-    if (!grid) return;
-    
-    const meses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    let html = `
-        <div class="ano-info-header">
-            <h4>${ano} - Vencedores Mensais</h4>
-            <p><i class="fas fa-database"></i> Dados carregados do sistema</p>
-        </div>
-    `;
-    
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = hoje.getMonth() + 1;
-    const anoInt = parseInt(ano);
-    
-    meses.forEach((mes, index) => {
-        const mesNumero = index + 1;
-        const vencedorMes = Array.isArray(vencedores) ? 
-            vencedores.find(v => v.mes === mesNumero) : null;
-        
-        const isMesPassado = anoInt < anoAtual || (anoInt === anoAtual && mesNumero < mesAtual);
-        const isMesAtual = anoInt === anoAtual && mesNumero === mesAtual;
-        const isMesFuturo = anoInt > anoAtual || (anoInt === anoAtual && mesNumero > mesAtual);
-        
-        let status = '';
-        let badge = '';
-        let conteudo = '';
-        
-        if (vencedorMes) {
-            status = 'com-vencedor';
-            badge = '<span class="mes-badge vencedor">🏆</span>';
-            conteudo = `
-                <div class="vencedor-nome">${vencedorMes.jogador_apelido || vencedorMes.apelido || '-'}</div>
-                <div class="vencedor-stats">
-                    <div class="vitorias">${vencedorMes.vitorias || 0} vitórias</div>
-                    <div class="participacoes">${vencedorMes.partidas || 0} partidas</div>
-                </div>
-            `;
-        } else if (isMesFuturo) {
-            status = 'futuro';
-            badge = '<span class="mes-badge futuro">➡️</span>';
-            conteudo = '<div class="sem-vencedor futuro">Aguardando...</div>';
-        } else if (isMesAtual) {
-            status = 'atual';
-            badge = '<span class="mes-badge atual">⏳</span>';
-            conteudo = '<div class="sem-vencedor atual">Em andamento...</div>';
-        } else {
-            status = 'passado';
-            badge = '<span class="mes-badge passado">?</span>';
-            conteudo = '<div class="sem-vencedor">Sem registro</div>';
-        }
-        
-        html += `
-            <div class="mes-card ${status}">
-                <div class="mes-header">
-                    <h4>${mes.substring(0, 3).toUpperCase()}</h4>
-                    ${badge}
-                </div>
-                <div class="mes-content">
-                    ${conteudo}
-                </div>
-            </div>
-        `;
-    });
-    
-    grid.innerHTML = html;
-}
-
-// ============ INICIALIZAÇÃO ============
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎮 Inicializando seletor de ano...');
-    
-    const selectAno = document.getElementById('select-ano');
-    
-    if (selectAno) {
-        // Configurar valor padrão
-        selectAno.value = '2026';
-        
-        // Adicionar opção 2027 se não existir
-        if (!selectAno.querySelector('option[value="2027"]')) {
-            const option2027 = document.createElement('option');
-            option2027.value = '2027';
-            option2027.textContent = '2027';
-            selectAno.appendChild(option2027);
-        }
-        
-        // Carregar inicialmente
-        setTimeout(() => {
-            carregarVencedoresMensais();
-        }, 500);
-        
-        // Listener para mudanças
-        selectAno.addEventListener('change', function() {
-            console.log(`🔄 Ano alterado para: ${this.value}`);
-            carregarVencedoresMensais();
-        });
-    }
-});
-
-// Função para renderizar dados REAIS da API
-function renderizarVencedoresDaAPI(vencedores, ano) {
-    const grid = document.getElementById('vencedores-grid');
-    if (!grid) return;
-    
-    const meses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    let html = '';
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = hoje.getMonth() + 1;
-    
-    meses.forEach((mes, index) => {
-        const mesNumero = index + 1;
-        
-        // Buscar vencedor deste mês nos dados da API
-        const vencedorMes = Array.isArray(vencedores) ? 
-            vencedores.find(v => v.mes === mesNumero) : null;
-        
-        const isMesPassado = ano < anoAtual || (ano === anoAtual && mesNumero < mesAtual);
-        const isMesAtual = ano === anoAtual && mesNumero === mesAtual;
-        const isMesFuturo = ano > anoAtual || (ano === anoAtual && mesNumero > mesAtual);
-        
-        html += `
-            <div class="mes-card ${vencedorMes ? 'com-vencedor' : 'sem-vencedor'} ${isMesAtual ? 'mes-atual' : ''}">
-                <div class="mes-header">
-                    <h4>${mes.toUpperCase()}</h4>
-                    ${vencedorMes ? 
-                        '<span class="mes-badge vencedor">🏆</span>' : 
-                        isMesFuturo ? 
-                            '<span class="mes-badge futuro">➡️</span>' : 
-                            '<span class="mes-badge sem-dados">?</span>'}
-                </div>
-                <div class="mes-content">
-        `;
-        
-        if (vencedorMes) {
-            html += `
-                    <div class="vencedor-nome">${vencedorMes.jogador_apelido || vencedorMes.apelido || 'N/A'}</div>
-                    <div class="vencedor-stats">
-                        <div class="vitorias">${vencedorMes.vitorias || 0} vitórias</div>
-                        <div class="participacoes">${vencedorMes.partidas || 0} partidas</div>
-                        ${vencedorMes.patente ? `<div class="patente">${vencedorMes.patente}</div>` : ''}
-                    </div>
-            `;
-        } else if (isMesFuturo) {
-            html += `<div class="sem-vencedor futuro">Aguardando...</div>`;
-        } else if (isMesAtual) {
-            html += `<div class="sem-vencedor atual">Em andamento...</div>`;
-        } else {
-            html += `<div class="sem-vencedor">Sem registro</div>`;
-        }
-        
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    grid.innerHTML = html;
-}
-
-// Função atualizada para grade vazia (com parâmetro para saber se veio da API)
-function renderizarVencedoresVazios(ano, veioDaAPI = false) {
-    const grid = document.getElementById('vencedores-grid');
-    if (!grid) return;
-    
-    const meses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    let html = '';
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = hoje.getMonth() + 1;
-    
-    meses.forEach((mes, index) => {
-        const mesNumero = index + 1;
-        const isMesPassado = ano < anoAtual || (ano === anoAtual && mesNumero < mesAtual);
-        const isMesAtual = ano === anoAtual && mesNumero === mesAtual;
-        const isMesFuturo = ano > anoAtual || (ano === anoAtual && mesNumero > mesAtual);
-        
-        html += `
-            <div class="mes-card ${isMesAtual ? 'mes-atual' : ''}">
-                <div class="mes-header">
-                    <h4>${mes.toUpperCase()}</h4>
-                    ${isMesFuturo ? 
-                        '<span class="mes-badge futuro">➡️</span>' : 
-                        '<span class="mes-badge sem-dados">?</span>'}
-                </div>
-                <div class="mes-content">
-        `;
-        
-        if (isMesFuturo) {
-            html += `<div class="sem-vencedor futuro">Aguardando...</div>`;
-        } else if (isMesAtual) {
-            html += `<div class="sem-vencedor atual">${veioDaAPI ? 'Nenhum vencedor registrado' : 'Em andamento...'}</div>`;
-        } else {
-            html += `<div class="sem-vencedor">${veioDaAPI ? 'Sem registro' : 'Dados não disponíveis'}</div>`;
-        }
-        
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    grid.innerHTML = html;
-}
-
-// Função para 2025 (mantida, mas opcionalmente pode buscar da API também)
-function mostrarRankingAnual2025() {
-    const grid = document.getElementById('vencedores-grid');
-    if (!grid) return;
-    
-    grid.innerHTML = `
-        <div class="ranking-anual-2025">
-            <div class="ano-card">
-                <div class="ano-header">
-                    <h4>🏆 2025 - PRIMEIRO ANO 🏆</h4>
-                </div>
-                <div class="ano-content">
-                    <div class="ranking-item gold">
-                        <span class="rank">🥇</span>
-                        <span class="nome">NEY2002</span>
-                        <span class="vitorias">30 vitórias</span>
-                    </div>
-                    <div class="ranking-item silver">
-                        <span class="rank">🥈</span>
-                        <div class="empate-container">
-                            <div class="empate">
-                                <span class="nome">PetroIdeal</span>
-                                <span class="vitorias">22 vitórias</span>
-                            </div>
-                            <div class="empate">
-                                <span class="nome">Daniel$80</span>
-                                <span class="vitorias">22 vitórias</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ranking-item bronze">
-                        <span class="rank">🥉</span>
-                        <span class="nome">TucaRei</span>
-                        <span class="vitorias">21 vitórias</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-        
-        // ============ ÚLTIMAS PARTIDAS ============
-        async function carregarUltimasPartidas() {
-            const tbody = document.querySelector('#ultimas-partidas tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            
-            if (dadosPartidas.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 30px; color: rgba(255,255,255,0.5);">
-                            Nenhuma partida registrada
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            // Últimas 5 partidas
-            const ultimas = [...dadosPartidas]
-                .sort((a, b) => new Date(b.data) - new Date(a.data))
-                .slice(0, 5);
-            
-            ultimas.forEach(partida => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${formatarData(partida.data)}</td>
-                    <td><strong style="color: #10b981;">${partida.vencedor}</strong></td>
-                    <td><span class="badge ${getBadgeClass(partida.tipo)}">${partida.tipo || 'global'}</span></td>
-                    <td>${partida.participantes?.length || 0}</td>
-                    <td>${partida.observacoes || '-'}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        // ============ GRÁFICOS ============
-        async function carregarGraficos() {
-            try {
-                await Promise.all([
-                    carregarGraficoPatentes(),
-                    carregarGraficoAssiduidade()
-                ]);
-            } catch (error) {
-                console.error('Erro gráficos:', error);
-            }
-        }
-        
-        function carregarGraficoPatentes() {
-            const ctx = document.getElementById('chart-patentes');
-            if (!ctx) return;
-            
-            // Destruir gráfico anterior
-            if (charts.patentes) {
-                charts.patentes.destroy();
-            }
-            
-            if (dadosJogadores.length === 0) {
-                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de patentes</div>';
-                return;
-            }
-            
-            // Contar patentes
-            const contagem = {};
-            dadosJogadores.forEach(j => {
-                const patente = j.patente || 'Cabo 🪖';
-                contagem[patente] = (contagem[patente] || 0) + 1;
-            });
-            
-            const labels = Object.keys(contagem);
-            const valores = Object.values(contagem);
-            
-            if (labels.length === 0) {
-                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de patentes</div>';
-                return;
-            }
-            
-            charts.patentes = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: valores,
-                        backgroundColor: getCoresPatentes(labels),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { 
-                                color: 'white', 
-                                font: { size: 11 } 
-                            } 
-                        },
-                        tooltip: { 
-                            callbacks: { 
-                                label: ctx => `${ctx.label}: ${ctx.raw} jogadores` 
-                            } 
-                        }
-                    }
-                }
-            });
-        }
-        
-        function carregarGraficoAssiduidade() {
-            const ctx = document.getElementById('chart-assiduidade');
-            if (!ctx) return;
-            
-            // Destruir gráfico anterior
-            if (charts.assiduidade) {
-                charts.assiduidade.destroy();
-            }
-            
-            if (dadosJogadores.length === 0) {
-                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de participação</div>';
-                return;
-            }
-            
-            // Top 8 por partidas
-            const topJogadores = [...dadosJogadores]
-                .sort((a, b) => (b.partidas || 0) - (a.partidas || 0))
-                .slice(0, 8);
-            
-            const labels = topJogadores.map(j => j.apelido);
-            const valores = topJogadores.map(j => j.partidas || 0);
-            
-            if (labels.length === 0) {
-                ctx.parentElement.innerHTML = '<div class="sem-vencedor">Sem dados de participação</div>';
-                return;
-            }
-            
-            charts.assiduidade = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Participações',
-                        data: valores,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { color: 'rgba(255,255,255,0.7)' }, 
-                            grid: { color: 'rgba(255,255,255,0.1)' } 
-                        },
-                        x: { 
-                            ticks: { 
-                                color: 'rgba(255,255,255,0.7)', 
-                                maxRotation: 45,
-                                font: { size: 11 }
-                            }, 
-                            grid: { color: 'rgba(255,255,255,0.1)' } 
-                        }
-                    },
-                    plugins: { 
-                        legend: { 
-                            labels: { 
-                                color: 'white',
-                                font: { size: 12 }
-                            } 
-                        } 
-                    }
-                }
-            });
-        }
-        
-        // ============ FUNÇÕES AUXILIARES ============
-        function getCoresPatentes(patentes) {
-            const cores = [
-                '#9ca3af', '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b',
-                '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#fbbf24',
-                '#dc2626', '#ea580c', '#ca8a04', '#65a30d', '#16a34a'
-            ];
-            return patentes.map((_, i) => cores[i % cores.length]);
-        }
-        
-        function formatarData(dataString) {
-            try {
-                const data = new Date(dataString);
-                return data.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-            } catch (e) {
-                return dataString;
-            }
-        }
-        
-        function getBadgeClass(tipo) {
-            if (!tipo) return 'badge-secondary';
-            
-            const tipoLower = tipo.toLowerCase();
-            if (tipoLower.includes('global')) return 'badge-primary';
-            if (tipoLower.includes('campeonato')) return 'badge-warning';
-            if (tipoLower.includes('amistosa')) return 'badge-info';
-            if (tipoLower.includes('eliminatoria')) return 'badge-danger';
-            return 'badge-secondary';
-        }
-        
-        function popularSeletorAnos() {
-            const select = document.getElementById('select-ano');
-            if (!select) return;
-            
-            select.innerHTML = '';
-            const anoAtual = new Date().getFullYear();
-            
-            // Adicionar anos de 2025 até atual + 1
-            for (let ano = 2025; ano <= anoAtual + 1; ano++) {
-                const option = document.createElement('option');
-                option.value = ano;
-                option.textContent = ano;
-                select.appendChild(option);
-            }
-            
-            select.value = anoAtual;
-            
-            // Adicionar listener
-            select.addEventListener('change', carregarVencedoresMensais);
-        }
-        
-        function atualizarTimestamp() {
-            const elemento = document.getElementById('last-update');
-            if (elemento) {
-                elemento.textContent = new Date().toLocaleTimeString('pt-BR', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            }
-        }
-        
-        function mostrarNotificacao(mensagem, tipo = 'success') {
-            // Implementação simples de notificação
-            console.log(`${tipo === 'error' ? '❌' : '✅'} ${mensagem}`);
-        }
-        
-        // ============ EXPORTAÇÃO ============
-        document.addEventListener('click', async function(e) {
-            if (e.target.closest('.export-btn')) {
-                const btn = e.target.closest('.export-btn');
-                const tipo = btn.id.replace('export-', '');
-                
+            // Pequeno delay para garantir tudo carregou
+            setTimeout(function() {
                 try {
-                    let data, filename;
+                    console.log('🔍 Verificando DashboardMongoDB...');
                     
-                    switch(tipo) {
-                        case 'jogadores':
-                            data = { jogadores: dadosJogadores };
-                            filename = `jogadores-war-${new Date().toISOString().split('T')[0]}.json`;
-                            break;
-                        case 'partidas':
-                            data = { partidas: dadosPartidas };
-                            filename = `partidas-war-${new Date().toISOString().split('T')[0]}.json`;
-                            break;
-                        case 'estatisticas':
-                            data = {
-                                estatisticas: {
-                                    total_jogadores: dadosJogadores.length,
-                                    total_partidas: dadosPartidas.length,
-                                    record_consecutivo: calcularRecordeConsecutivo().max,
-                                    record_holder: calcularRecordeConsecutivo().jogador
-                                }
-                            };
-                            filename = `estatisticas-war-${new Date().toISOString().split('T')[0]}.json`;
-                            break;
-                        default:
-                            return;
+                    if (typeof DashboardMongoDB !== 'undefined' && typeof DashboardMongoDB === 'function') {
+                        console.log('✅ DashboardMongoDB encontrado. Inicializando...');
+                        window.dashboard = new DashboardMongoDB();
+                        
+                        // Verificar se o método init existe
+                        if (window.dashboard && typeof window.dashboard.init === 'function') {
+                            window.dashboard.init();
+                            console.log('🚀 Dashboard inicializado com sucesso!');
+                        } else {
+                            console.error('❌ Método init não encontrado no dashboard');
+                        }
+                    } else {
+                        console.error('❌ DashboardMongoDB NÃO está definido como função!');
+                        console.error('   Tipo encontrado:', typeof DashboardMongoDB);
+                        
+                        // Mostrar erro visível na página
+                        const errorDiv = document.createElement('div');
+                        errorDiv.style.cssText = `
+                            position: fixed;
+                            top: 10px;
+                            right: 10px;
+                            background: #8b0000;
+                            color: white;
+                            padding: 15px;
+                            border-radius: 5px;
+                            z-index: 9999;
+                            font-family: Arial, sans-serif;
+                            max-width: 400px;
+                        `;
+                        errorDiv.innerHTML = `
+                            <strong>❌ Erro no Dashboard</strong><br>
+                            JavaScript não carregou corretamente.<br>
+                            Recarregue a página (Ctrl+F5).
+                        `;
+                        document.body.appendChild(errorDiv);
                     }
-                    
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    mostrarNotificacao(`Dados exportados como ${filename}`);
-                    
                 } catch (error) {
-                    console.error('Erro exportação:', error);
-                    mostrarNotificacao('Erro ao exportar dados', 'error');
+                    console.error('❌ ERRO na inicialização:', error);
+                    console.error('   Mensagem:', error.message);
+                    console.error('   Stack:', error.stack);
                 }
-            }
+            }, 500); // Delay de 500ms
         });
-        
-        // ============ FUNÇÕES DO TEMPLATE ============
-        //window.switchTab = function(tabName) {
-            // Remove active de todas as tabs
-            //document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            //document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Adiciona active na tab selecionada
-            //const tabBtn = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
-            //const tabContent = document.getElementById(`tab-${tabName}`);
-            
-            //if (tabBtn) tabBtn.classList.add('active');
-            //if (tabContent) tabContent.classList.add('active');
-        //};
-        
-        console.log('✅ Dashboard corrigido e pronto!');
     </script>
-
-</script>
-<!-- NO FINAL DO ARQUIVO, ANTES DO </body> -->
-<script src="js/dashboard-mongodb.js"></script>
-<script>
-    // Inicialização segura
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎮 WAR Dashboard - DOM Carregado');
-        
-        // Pequeno delay para garantir tudo carregou
-        setTimeout(() => {
-            try {
-                if (typeof DashboardMongoDB !== 'undefined') {
-                    window.dashboard = new DashboardMongoDB();
-                    window.dashboard.init();
-                    console.log('✅ Dashboard inicializado com sucesso!');
-                } else {
-                    console.error('❌ DashboardMongoDB não definido!');
-                    document.body.innerHTML += '<div style="color:red;padding:20px;">Erro: JavaScript não carregado corretamente</div>';
-                }
-            } catch (error) {
-                console.error('❌ Erro na inicialização:', error);
-            }
-        }, 500);
-    });
-</script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
