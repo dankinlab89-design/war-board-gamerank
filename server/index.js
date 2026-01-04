@@ -1183,7 +1183,7 @@ app.get('/api/vencedores/mensal/:ano', async (req, res) => {
         ano: 2025,
         tipo: 'ranking_anual',
         vencedores: [
-          { posicao: 1, apelido: 'NEY2003', vitorias: 30, partidas: 0 },
+          { posicao: 1, apelido: 'NEY2002', vitorias: 30, partidas: 0 },
           { posicao: 2, apelido: 'PetroIdeal', vitorias: 22, partidas: 0 },
           { posicao: 2, apelido: 'Daniel$80', vitorias: 22, partidas: 0 },
           { posicao: 3, apelido: 'TucaRei', vitorias: 21, partidas: 0 }
