@@ -2089,3 +2089,207 @@ h1, h2, h3, h4 {
 .charts-section canvas {
     margin-top: 10px;
 }
+
+/* Estilos para vencedores mensais */
+.vencedores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.mes-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+}
+
+.mes-card.com-vencedor {
+    background: rgba(184, 134, 11, 0.1);
+    border-color: #b8860b;
+}
+
+.mes-card.mes-atual {
+    border: 2px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.mes-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mes-header h4 {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.mes-badge {
+    font-size: 1.2rem;
+}
+
+.mes-badge.vencedor {
+    color: #ffd700;
+}
+
+.mes-badge.futuro {
+    color: #3b82f6;
+}
+
+.mes-badge.sem-dados {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mes-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.vencedor-nome {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.vencedor-stats {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+}
+
+.vitorias {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.participacoes {
+    color: #3b82f6;
+}
+
+.patente {
+    color: #b8860b;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.sem-vencedor {
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    text-align: center;
+    padding: 15px 0;
+}
+
+.sem-vencedor.futuro {
+    color: #3b82f6;
+}
+
+.sem-vencedor.atual {
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.loading-message, .error-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+}
+
+.error-message {
+    color: #ef4444;
+}
+
+/* Ranking anual 2025 */
+.ranking-anual-2025 {
+    grid-column: 1 / -1;
+}
+
+.ano-card {
+    background: linear-gradient(135deg, rgba(26, 71, 42, 0.9), rgba(13, 45, 28, 0.9));
+    border: 2px solid #b8860b;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+}
+
+.ano-header h4 {
+    color: #ffd700;
+    font-size: 1.5rem;
+    margin-bottom: 25px;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px 0;
+    padding: 15px 25px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ranking-item.gold {
+    border: 2px solid #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.ranking-item.silver {
+    border: 2px solid #c0c0c0;
+    background: rgba(192, 192, 192, 0.1);
+}
+
+.ranking-item.bronze {
+    border: 2px solid #cd7f32;
+    background: rgba(205, 127, 50, 0.1);
+}
+
+.rank {
+    font-size: 2rem;
+}
+
+.nome {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: white;
+}
+
+.vitorias {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.empate-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.empate {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
