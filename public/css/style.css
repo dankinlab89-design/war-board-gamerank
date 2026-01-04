@@ -2054,3 +2054,38 @@ h1, h2, h3, h4 {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
 }
+
+/* Correção de layout dos pódios */
+.rankings-section .container {
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.podium-dashboard {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .podium-dashboard {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+.charts-section {
+    margin-top: 60px !important;
+}
+
+.charts-section .card-header {
+    margin-bottom: 20px;
+}
+
+.charts-section canvas {
+    margin-top: 10px;
+}
