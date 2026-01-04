@@ -1640,3 +1640,85 @@ h1, h2, h3, h4 {
         padding-bottom: 30px !important;
     }
 }
+
+/* Botões de exportação militares */
+.military-btn {
+    background: linear-gradient(135deg, #1a472a 0%, #0d2d1c 100%);
+    color: #ffd700 !important;
+    border: 2px solid #b8860b;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.military-btn:hover {
+    background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    border-color: #ffd700;
+}
+
+/* Badge de critério */
+.criterio-badge {
+    background: linear-gradient(135deg, rgba(26, 71, 42, 0.9), rgba(13, 45, 28, 0.9));
+    border: 2px solid #b8860b;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    color: #ffd700;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Estatísticas no pódio */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+    font-size: 0.95rem;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.stat-value.win {
+    color: #10b981;
+    font-weight: bold;
+}
+
+.stat-value.match {
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+/* Espaçamento entre seções */
+.charts-section {
+    margin-top: 80px !important;
+}
+
+.vencedores-section {
+    margin-top: 100px !important;
+}
