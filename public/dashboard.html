@@ -1172,8 +1172,33 @@
         window.dashboard = new DashboardMongoDB();
     });
 </script>
+<!-- NO FINAL DO ARQUIVO, ANTES DO </body> -->
+<script src="js/dashboard-mongodb.js"></script>
+<script>
+    // Inicialização segura
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎮 WAR Dashboard - DOM Carregado');
+        
+        // Pequeno delay para garantir tudo carregou
+        setTimeout(() => {
+            try {
+                if (typeof DashboardMongoDB !== 'undefined') {
+                    window.dashboard = new DashboardMongoDB();
+                    window.dashboard.init();
+                    console.log('✅ Dashboard inicializado com sucesso!');
+                } else {
+                    console.error('❌ DashboardMongoDB não definido!');
+                    document.body.innerHTML += '<div style="color:red;padding:20px;">Erro: JavaScript não carregado corretamente</div>';
+                }
+            } catch (error) {
+                console.error('❌ Erro na inicialização:', error);
+            }
+        }, 500);
+    });
+</script>
 </body>
 </html>
+
 
 
 
