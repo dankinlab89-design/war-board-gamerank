@@ -1944,3 +1944,113 @@ h1, h2, h3, h4 {
 .vencedores-section {
     margin-top: 100px !important;
 }
+
+/* =============================================
+   CORREÇÕES DE LAYOUT E ESPAÇAMENTO
+============================================= */
+
+/* Container principal dos rankings - EVITAR SOBREPOSIÇÃO */
+.rankings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 80px !important;
+    margin: 40px 0 100px 0 !important;
+}
+
+/* Cada pódio individual */
+.rankings-section .container {
+    margin-bottom: 80px !important;
+    padding: 30px 20px;
+    background: rgba(26, 71, 42, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(184, 134, 11, 0.3);
+    position: relative;
+}
+
+/* Garantir altura mínima para os pódios */
+.podium-dashboard {
+    min-height: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 40px;
+    margin-top: 40px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Badge de critério global */
+.criterio-global-badge {
+    text-align: center;
+    margin: 40px auto 60px auto;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #1a472a, #0d2d1c);
+    border: 2px solid #b8860b;
+    border-radius: 10px;
+    color: #ffd700;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    max-width: 500px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+}
+
+/* Espaço entre pódios e gráficos */
+.charts-section {
+    margin-top: 120px !important;
+    clear: both;
+}
+
+/* Estatísticas rápidas - evitar sobreposição */
+.quick-stats {
+    margin-bottom: 60px !important;
+}
+
+/* Vencedores mensais */
+.vencedores-section {
+    margin-top: 100px !important;
+    padding-top: 40px;
+    border-top: 3px solid rgba(184, 134, 11, 0.4);
+}
+
+.vencedores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.mes-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.mes-card:hover {
+    transform: translateY(-5px);
+    border-color: #b8860b;
+}
+
+.mes-card.com-vencedor {
+    background: rgba(184, 134, 11, 0.1);
+    border-color: #b8860b;
+}
+
+/* Rodapé limpo */
+.footer {
+    margin-top: 100px;
+    padding: 40px 0 20px 0;
+    background: linear-gradient(135deg, #0d2d1c 0%, #1a472a 100%);
+    border-top: 3px solid #b8860b;
+}
+
+.footer-copy {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
