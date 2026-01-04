@@ -1641,6 +1641,8 @@ h1, h2, h3, h4 {
     }
 }
 
+/* =============================================
+   BOTÕES DE EXPORTAÇÃO MILITARES
 /* Botões de exportação militares */
 .military-btn {
     background: linear-gradient(135deg, #1a472a 0%, #0d2d1c 100%);
@@ -1722,3 +1724,6 @@ h1, h2, h3, h4 {
 .vencedores-section {
     margin-top: 100px !important;
 }
+
+/* =============================================
+   CORREÇÕES DE LAYOUT E ESPAÇAMENTO
