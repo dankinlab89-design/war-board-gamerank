@@ -1536,6 +1536,128 @@ app.get('/api/teste-recorde', async (req, res) => {
 });
 
 // ============================================
+// ROTA PARA FORÇAR ATUALIZAÇÃO DO RECORDE
+// ============================================
+
+app.get('/api/atualizar-recorde', async (req, res) => {
+  try {
+    console.log('🔄 Forçando atualização do recorde consecutivo...');
+    
+    const resultado = await calcularRecordeConsecutivo();
+    
+    // Buscar estatística atualizada
+    const estatistica = await Estatistica.findOne({ tipo: 'record_consecutivo' });
+    
+    res.json({
+      success: true,
+      mensagem: 'Recorde atualizado com sucesso',
+      recorde: resultado.maxConsecutivo,
+      detentor: resultado.recordHolder,
+      estatistica_salva: estatistica?.valor,
+      data: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao atualizar recorde:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// ROTA DE DIAGNÓSTICO DO RECORDE
+// ============================================
+app.get('/api/diagnostico-recorde', async (req, res) => {
+  try {
+    // 1. Verificar estatística salva
+    const estatistica = await Estatistica.findOne({ tipo: 'record_consecutivo' });
+    
+    // 2. Verificar todas as partidas
+    const partidas = await Partida.find().sort({ data: 1 });
+    
+    // 3. Verificar jogadores
+    const jogadores = await Jogador.find({ ativo: true })
+      .select('apelido vitorias partidas')
+      .sort({ vitorias: -1 });
+    
+    // 4. Executar cálculo manual
+    const calculoManual = await calcularRecordeConsecutivo();
+    
+    res.json({
+      success: true,
+      diagnostico: {
+        // O que está salvo no banco
+        estatistica_salva: estatistica,
+        
+        // Dados brutos
+        total_partidas: partidas.length,
+        partidas_ordenadas: partidas.map(p => ({
+          data: p.data,
+          vencedor: p.vencedor,
+          participantes: p.participantes
+        })),
+        
+        // Jogadores
+        jogadores: jogadores,
+        
+        // Cálculo atual
+        calculo_atual: calculoManual,
+        
+        // Verificação de sequências
+        sequencias_detectadas: await verificarSequencias(partidas)
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Função auxiliar para verificar sequências
+async function verificarSequencias(partidas) {
+  const sequencias = {};
+  
+  // Agrupar por jogador
+  const partidasPorJogador = {};
+  partidas.forEach(p => {
+    p.participantes?.forEach(participante => {
+      if (!partidasPorJogador[participante]) {
+        partidasPorJogador[participante] = [];
+      }
+      partidasPorJogador[participante].push({
+        data: p.data,
+        venceu: p.vencedor === participante
+      });
+    });
+  });
+  
+  // Calcular sequências
+  for (const [jogador, partidasJog] of Object.entries(partidasPorJogador)) {
+    partidasJog.sort((a, b) => new Date(a.data) - new Date(b.data));
+    
+    let sequenciaAtual = 0;
+    let maiorSequencia = 0;
+    
+    partidasJog.forEach(p => {
+      if (p.venceu) {
+        sequenciaAtual++;
+        maiorSequencia = Math.max(maiorSequencia, sequenciaAtual);
+      } else {
+        sequenciaAtual = 0;
+      }
+    });
+    
+    if (maiorSequencia > 0) {
+      sequencias[jogador] = {
+        maior_sequencia: maiorSequencia,
+        total_partidas: partidasJog.length
+      };
+    }
+  }
+  
+  return sequencias;
+}
+
+// ============================================
 // ROTA PARA ATUALIZAR ESTATÍSTICAS
 // ============================================
 
