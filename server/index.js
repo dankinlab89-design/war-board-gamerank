@@ -195,6 +195,32 @@ const ordenarRankingPerformance = (a, b) => {
 };
 
 // ============================================
+// FUNÇÃO DE CÁLCULO DE PATENTE (SÓ CÁLCULO)
+// ============================================
+
+function calcularPatente(vitorias) {
+    const patentes = [
+        { nome: 'Cabo 🪖', min: 0, max: 5 },
+        { nome: 'Sargento 🛡️', min: 6, max: 10 },
+        { nome: 'Tenente ⚔️', min: 11, max: 20 },
+        { nome: 'Capitão 👮', min: 21, max: 30 },
+        { nome: 'Major 💪', min: 31, max: 40 },
+        { nome: 'Coronel 🎖️', min: 41, max: 60 },
+        { nome: 'General ⭐', min: 61, max: 99 },
+        { nome: 'Marechal 🏆', min: 100, max: Infinity }
+    ];
+
+    for (const patente of patentes) {
+        if (vitorias >= patente.min && vitorias <= patente.max) {
+            return patente.nome;
+        }
+    }
+    
+    return 'Cabo 🪖'; // Fallback seguro
+}
+
+
+// ============================================
 // ROTAS DA API - JOGADORES
 // ============================================
 
@@ -350,44 +376,140 @@ app.get('/api/partidas', async (req, res) => {
   }
 });
 
-// POST nova partida
+// POST nova partida - VERSÃO ÚNICA E COMPLETA (com sistema de patentes)
 app.post('/api/partidas', async (req, res) => {
   try {
-    // Atualizar estatísticas do vencedor
-    await Jogador.findOneAndUpdate(
-      { apelido: req.body.vencedor },
-      { 
-        $inc: { 
-          vitorias: 1,
-          partidas: 1 
-        }
-      }
-    );
+    const { data, tipo, vencedor, participantes, observacoes, pontos } = req.body;
+
+    // ============================================
+    // VALIDAÇÕES
+    // ============================================
+    if (!data || !vencedor || !participantes || !Array.isArray(participantes)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dados incompletos ou inválidos' 
+      });
+    }
+
+    if (participantes.length < 3) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Mínimo de 3 participantes necessário' 
+      });
+    }
+
+    if (!participantes.includes(vencedor)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Vencedor deve estar entre os participantes' 
+      });
+    }
+
+    // ============================================
+    // 1. BUSCAR JOGADOR VENCEDOR
+    // ============================================
+    const jogadorVencedor = await Jogador.findOne({ apelido: vencedor });
+    if (!jogadorVencedor) {
+      return res.status(404).json({ 
+        success: false, 
+        error: `Jogador vencedor "${vencedor}" não encontrado` 
+      });
+    }
+
+    // ============================================
+    // 2. CRIAR PARTIDA NO BANCO
+    // ============================================
+    const novaPartida = new Partida({
+      data: new Date(data),
+      tipo: tipo || 'global',
+      vencedor: vencedor,
+      participantes: participantes,
+      observacoes: observacoes || '',
+      pontos: pontos || 100
+    });
+
+    const partidaSalva = await novaPartida.save();
+    console.log(`✅ Partida registrada: ${vencedor} venceu em ${data}`);
+
+    // ============================================
+    // 3. ATUALIZAR ESTATÍSTICAS DO VENCEDOR + PATENTE
+    // ============================================
+    const vitoriasAtualizadas = (jogadorVencedor.vitorias || 0) + 1;
+    const partidasAtualizadas = (jogadorVencedor.partidas || 0) + 1;
     
-    // Atualizar estatísticas dos participantes (apenas partidas, não vitórias)
-    if (req.body.participantes && Array.isArray(req.body.participantes)) {
-      const outrosParticipantes = req.body.participantes.filter(p => p !== req.body.vencedor);
+    // Calcular nova patente
+    const novaPatente = calcularPatente(vitoriasAtualizadas);
+    const patenteMudou = jogadorVencedor.patente !== novaPatente;
+    
+    // Dados para atualização
+    const updateDataVencedor = {
+      vitorias: vitoriasAtualizadas,
+      partidas: partidasAtualizadas,
+      atualizado_em: new Date()
+    };
+    
+    // Se patente mudou, adicionar ao update
+    if (patenteMudou) {
+      updateDataVencedor.patente = novaPatente;
+      updateDataVencedor.data_promocao = new Date();
+    }
+    
+    // Atualizar vencedor
+    await Jogador.findOneAndUpdate(
+      { apelido: vencedor },
+      updateDataVencedor
+    );
+
+    // ============================================
+    // 4. ATUALIZAR PARTIDAS DOS OUTROS PARTICIPANTES
+    // ============================================
+    if (participantes && Array.isArray(participantes)) {
+      const outrosParticipantes = participantes.filter(p => p !== vencedor);
       
       if (outrosParticipantes.length > 0) {
         await Jogador.updateMany(
           { apelido: { $in: outrosParticipantes } },
-          { $inc: { partidas: 1 } }
+          { 
+            $inc: { partidas: 1 },
+            $set: { atualizado_em: new Date() }
+          }
         );
       }
     }
-    
-    const partida = new Partida(req.body);
-    await partida.save();
-    
-    res.status(201).json({ 
+
+    // ============================================
+    // 5. PREPARAR RESPOSTA
+    // ============================================
+    const resposta = {
       success: true, 
       message: 'Partida registrada com sucesso!',
-      partida 
-    });
+      partida: partidaSalva
+    };
+    
+    // Adicionar informação de promoção se ocorreu
+    if (patenteMudou) {
+      resposta.promocao = {
+        promovido: true,
+        apelido: jogadorVencedor.apelido,
+        antiga: jogadorVencedor.patente,
+        nova: novaPatente,
+        vitorias: vitoriasAtualizadas
+      };
+      resposta.message += ` 🎖️ ${vencedor} foi promovido para ${novaPatente}!`;
+    }
+    
+    res.status(201).json(resposta);
+    
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    console.error('❌ Erro ao registrar partida:', error);
+    res.status(400).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
+
+// ... (restante do código: GET por ID, PUT, DELETE - MANTENHA TUDO IGUAL) ...
 
 // GET partida específica
 app.get('/api/partidas/:id', async (req, res) => {
@@ -422,7 +544,7 @@ app.get('/api/partidas/:id', async (req, res) => {
   }
 });
 
-// PUT atualizar partida
+// PUT atualizar partida - VERSÃO ATUALIZADA COM PATENTES
 app.put('/api/partidas/:id', async (req, res) => {
   try {
     console.log('📝 Atualizando partida ID:', req.params.id);
@@ -443,22 +565,100 @@ app.put('/api/partidas/:id', async (req, res) => {
       });
     }
     
-    // IMPORTANTE: Se mudou o vencedor, precisamos ajustar estatísticas
+    // ============================================
+    // IMPORTANTE: Se mudou o vencedor, ajustar estatísticas E PATENTES
+    // ============================================
     if (req.body.vencedor && req.body.vencedor !== partidaExistente.vencedor) {
-      // Remover vitória do vencedor antigo
-      await Jogador.findOneAndUpdate(
-        { apelido: partidaExistente.vencedor },
-        { $inc: { vitorias: -1 } }
-      );
+      console.log(`🔄 Mudança de vencedor: ${partidaExistente.vencedor} → ${req.body.vencedor}`);
       
-      // Adicionar vitória ao novo vencedor
-      await Jogador.findOneAndUpdate(
-        { apelido: req.body.vencedor },
-        { $inc: { vitorias: 1 } }
-      );
+      // 1. REMOVER VITÓRIA DO VENCEDOR ANTIGO E RECALCULAR PATENTE
+      const vencedorAntigo = await Jogador.findOne({ apelido: partidaExistente.vencedor });
+      if (vencedorAntigo) {
+        const novasVitoriasAntigo = Math.max(0, (vencedorAntigo.vitorias || 0) - 1);
+        const novaPatenteAntigo = calcularPatente(novasVitoriasAntigo);
+        
+        console.log(`↘️ Removendo vitória de ${vencedorAntigo.apelido}: ${vencedorAntigo.vitorias} → ${novasVitoriasAntigo} vitórias`);
+        
+        await Jogador.findOneAndUpdate(
+          { apelido: partidaExistente.vencedor },
+          { 
+            $inc: { vitorias: -1 },
+            $set: { 
+              patente: novaPatenteAntigo,
+              atualizado_em: new Date()
+            }
+          }
+        );
+      }
+      
+      // 2. ADICIONAR VITÓRIA AO NOVO VENCEDOR E RECALCULAR PATENTE
+      const novoVencedor = await Jogador.findOne({ apelido: req.body.vencedor });
+      if (novoVencedor) {
+        const novasVitoriasNovo = (novoVencedor.vitorias || 0) + 1;
+        const novaPatenteNovo = calcularPatente(novasVitoriasNovo);
+        const patenteMudou = novoVencedor.patente !== novaPatenteNovo;
+        
+        console.log(`↗️ Adicionando vitória a ${novoVencedor.apelido}: ${novoVencedor.vitorias} → ${novasVitoriasNovo} vitórias`);
+        
+        const updateDataNovo = {
+          $inc: { vitorias: 1 },
+          $set: { atualizado_em: new Date() }
+        };
+        
+        if (patenteMudou) {
+          updateDataNovo.$set.patente = novaPatenteNovo;
+          updateDataNovo.$set.data_promocao = new Date();
+          console.log(`🎖️ ${novoVencedor.apelido} promovido: ${novoVencedor.patente} → ${novaPatenteNovo}`);
+        }
+        
+        await Jogador.findOneAndUpdate(
+          { apelido: req.body.vencedor },
+          updateDataNovo
+        );
+      }
+      
+      // 3. ATUALIZAR PARTICIPANTES (se a lista mudou)
+      if (req.body.participantes && Array.isArray(req.body.participantes)) {
+        const participantesAntigos = partidaExistente.participantes || [];
+        const participantesNovos = req.body.participantes;
+        
+        // Jogadores que saíram da partida
+        const sairam = participantesAntigos.filter(p => !participantesNovos.includes(p));
+        for (const participante of sairam) {
+          const jogador = await Jogador.findOne({ apelido: participante });
+          if (jogador) {
+            const novasPartidas = Math.max(0, (jogador.partidas || 0) - 1);
+            await Jogador.findOneAndUpdate(
+              { apelido: participante },
+              { 
+                $set: { 
+                  partidas: novasPartidas,
+                  atualizado_em: new Date()
+                }
+              }
+            );
+          }
+        }
+        
+        // Jogadores que entraram na partida (exceto o novo vencedor)
+        const entraram = participantesNovos.filter(p => 
+          !participantesAntigos.includes(p) && p !== req.body.vencedor
+        );
+        if (entraram.length > 0) {
+          await Jogador.updateMany(
+            { apelido: { $in: entraram } },
+            { 
+              $inc: { partidas: 1 },
+              $set: { atualizado_em: new Date() }
+            }
+          );
+        }
+      }
     }
     
-    // Atualizar partida
+    // ============================================
+    // ATUALIZAR PARTIDA
+    // ============================================
     const partida = await Partida.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
@@ -485,7 +685,7 @@ app.put('/api/partidas/:id', async (req, res) => {
   }
 });
 
-// DELETE excluir partida
+// DELETE excluir partida - VERSÃO ATUALIZADA COM PATENTES
 app.delete('/api/partidas/:id', async (req, res) => {
   try {
     console.log('🗑️ Excluindo partida ID:', req.params.id);
@@ -506,26 +706,68 @@ app.delete('/api/partidas/:id', async (req, res) => {
       });
     }
     
-    // IMPORTANTE: Reverter estatísticas dos jogadores
-    // Remover vitória do vencedor
-    await Jogador.findOneAndUpdate(
-      { apelido: partida.vencedor },
-      { $inc: { vitorias: -1, partidas: -1 } }
-    );
+    // ============================================
+    // REVERTER ESTATÍSTICAS DOS JOGADORES E PATENTES
+    // ============================================
     
-    // Remover partidas dos outros participantes
+    // 1. REMOVER VITÓRIA DO VENCEDOR E RECALCULAR PATENTE
+    const vencedor = await Jogador.findOne({ apelido: partida.vencedor });
+    if (vencedor) {
+      const novasVitorias = Math.max(0, (vencedor.vitorias || 0) - 1);
+      const novasPartidas = Math.max(0, (vencedor.partidas || 0) - 1);
+      const novaPatente = calcularPatente(novasVitorias);
+      const patenteMudou = vencedor.patente !== novaPatente;
+      
+      console.log(`↘️ Revertendo vitória de ${vencedor.apelido}: ${vencedor.vitorias} → ${novasVitorias} vitórias`);
+      
+      const updateDataVencedor = {
+        $set: { 
+          vitorias: novasVitorias,
+          partidas: novasPartidas,
+          atualizado_em: new Date()
+        }
+      };
+      
+      if (patenteMudou) {
+        updateDataVencedor.$set.patente = novaPatente;
+        updateDataVencedor.$set.data_rebaixamento = new Date();
+        console.log(`📉 ${vencedor.apelido} rebaixado: ${vencedor.patente} → ${novaPatente}`);
+      }
+      
+      await Jogador.findOneAndUpdate(
+        { apelido: partida.vencedor },
+        updateDataVencedor
+      );
+    }
+    
+    // 2. REMOVER PARTIDAS DOS OUTROS PARTICIPANTES
     if (partida.participantes && Array.isArray(partida.participantes)) {
       const outrosParticipantes = partida.participantes.filter(p => p !== partida.vencedor);
       
       if (outrosParticipantes.length > 0) {
-        await Jogador.updateMany(
-          { apelido: { $in: outrosParticipantes } },
-          { $inc: { partidas: -1 } }
-        );
+        console.log(`↘️ Revertendo partida de ${outrosParticipantes.length} outros participantes`);
+        
+        for (const participante of outrosParticipantes) {
+          const jogador = await Jogador.findOne({ apelido: participante });
+          if (jogador) {
+            const novasPartidas = Math.max(0, (jogador.partidas || 0) - 1);
+            await Jogador.findOneAndUpdate(
+              { apelido: participante },
+              { 
+                $set: { 
+                  partidas: novasPartidas,
+                  atualizado_em: new Date()
+                }
+              }
+            );
+          }
+        }
       }
     }
     
-    // Excluir partida
+    // ============================================
+    // EXCLUIR PARTIDA
+    // ============================================
     await Partida.findByIdAndDelete(req.params.id);
     
     console.log('✅ Partida excluída:', partida._id);
@@ -533,7 +775,7 @@ app.delete('/api/partidas/:id', async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Partida excluída com sucesso!',
-      partida 
+      partida_excluida: partida
     });
     
   } catch (error) {
@@ -544,8 +786,6 @@ app.delete('/api/partidas/:id', async (req, res) => {
     });
   }
 });
-
-// ... (código anterior mantido igual até as rotas de ranking)
 
 // ============================================
 // ROTAS DE RANKING

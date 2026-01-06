@@ -355,12 +355,21 @@
                 if (response.ok && result.success) {
                     mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
                     
-                    // Limpar formulário
-                    limparFormulario();
+                    // Verificar se houve promoção
+                    if (result.promocao && result.promocao.promovido) {
+                        // Mostrar mensagem extra de promoção
+                        const promoMsg = `🎖️ ${result.promocao.apelido} foi promovido para ${result.promocao.nova}!`;
+                        mostrarStatus(promoMsg, 'ok');
+                        
+                        // Mostrar alerta simples
+                        setTimeout(() => {
+                            alert(`🎖️ PROMOÇÃO!\n\n${result.promocao.apelido} foi promovido:\n${result.promocao.antiga} → ${result.promocao.nova}\n\nCom ${result.promocao.vitorias} vitórias!`);
+                        }, 1000);
+                    }
                     
-                    // Redirecionar após 2 segundos
+                    // Limpar formulário após 2 segundos
                     setTimeout(() => {
-                        window.location.href = 'partidas.html';
+                        limparFormulario();
                     }, 2000);
                     
                 } else {
