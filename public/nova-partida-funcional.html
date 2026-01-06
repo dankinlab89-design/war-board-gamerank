@@ -351,29 +351,37 @@
                 const result = await response.json();
                 
                 console.log('Resposta do servidor:', result);
-
-        // NO LUGAR DO CÓDIGO ATUAL DE SUCESSO:
-        if (response.ok && result.success) {
-            mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
-    
-    // Verificar se houve promoção
-    if (result.promocao && result.promocao.promovido) {
-        // Mostrar mensagem extra de promoção
-        const promoMsg = `🎖️ ${result.promocao.apelido} foi promovido para ${result.promocao.nova}!`;
-        mostrarStatus(promoMsg, 'ok'); // Pode ser uma segunda mensagem
+                
+                if (response.ok && result.success) {
+                    mostrarStatus('✅ Partida registrada com sucesso!', 'ok');
+                    
+                    // Verificar se houve promoção
+                    if (result.promocao && result.promocao.promovido) {
+                        // Mostrar mensagem extra de promoção
+                        const promoMsg = `🎖️ ${result.promocao.apelido} foi promovido para ${result.promocao.nova}!`;
+                        mostrarStatus(promoMsg, 'ok');
+                        
+                        // Mostrar alerta simples
+                        setTimeout(() => {
+                            alert(`🎖️ PROMOÇÃO!\n\n${result.promocao.apelido} foi promovido:\n${result.promocao.antiga} → ${result.promocao.nova}\n\nCom ${result.promocao.vitorias} vitórias!`);
+                        }, 1000);
+                    }
+                    
+                    // Limpar formulário após 2 segundos
+                    setTimeout(() => {
+                        limparFormulario();
+                    }, 2000);
+                    
+                } else {
+                    mostrarStatus('Erro: ' + (result.error || 'Falha no registro'), 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarStatus('Erro de conexão: ' + error.message, 'error');
+            }
+        });
         
-        // Ou mostrar alerta simples
-        setTimeout(() => {
-            alert(`🎖️ PROMOÇÃO!\n\n${result.promocao.apelido} foi promovido:\n${result.promocao.antiga} → ${result.promocao.nova}\n\nCom ${result.promocao.vitorias} vitórias!`);
-        }, 1000);
-        }
-    
-        // Limpar formulário após 2 segundos
-        setTimeout(() => {
-            limparFormulario();
-        }, 2000);
-    }
-               
         // Função para limpar formulário
         function limparFormulario() {
             // Desmarcar todos checkboxes
