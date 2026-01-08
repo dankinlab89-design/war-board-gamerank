@@ -195,6 +195,20 @@ const ordenarRankingPerformance = (a, b) => {
 };
 
 // ============================================
+// FUNÇÃO AUXILIAR PARA PEGAR MODELO VENCEDOR MENSAIS
+// ============================================
+function getVencedorMensalModel() {
+    try {
+        // Tenta pegar o modelo se já existir
+        return mongoose.model('VencedorMensal');
+    } catch (error) {
+        // Se não existir, importa e cria
+        const vencedoresMensais = require('./vencedores-mensais');
+        return vencedoresMensais.VencedorMensal;
+    }
+}
+
+// ============================================
 // FUNÇÃO DE CÁLCULO DE PATENTE (SÓ CÁLCULO)
 // ============================================
 
@@ -219,6 +233,25 @@ function calcularPatente(vitorias) {
     return 'Cabo 🪖'; // Fallback seguro
 }
 
+// ============================================
+// 5. IMPORTAR MÓDULOS EXTERNOS
+// ============================================
+// ⬇️⬇️⬇️ COLOCAR ESTAS LINHAS AQUI ⬇️⬇️⬇️
+const { 
+    registrarVencedorMensal,
+    verificarEVencerMesesPendentes,
+    obterVencedoresPorAno,
+    obterAnosDisponiveis,
+    obterStatusSistema,
+    inicializarMeses2026
+} = require('./vencedores-mensais');
+
+const { 
+    corrigirTodasEstatisticas,
+    corrigirJogadorEspecifico,
+    verificarConsistencia 
+} = require('./correcao-estatisticas');
+// ⬆️⬆️⬆️ FIM DAS IMPORTAÇÕES ⬆️⬆️⬆️
 
 // ============================================
 // ROTAS DA API - JOGADORES
@@ -1989,6 +2022,158 @@ async function atualizarParticipacoesMensais() {
 // ... (restante do código mantido igual)
 
 // ============================================
+// 10. ROTAS ADMIN - VENCEDORES MENSAIS (NOVAS!)
+// ============================================
+// ⬇️⬇️⬇️ COLOCAR ESTAS ROTAS AQUI ⬇️⬇️⬇️
+
+app.get('/api/admin/vencedores/:ano', async (req, res) => {
+    try {
+        const ano = parseInt(req.params.ano);
+        if (!ano || ano < 2025) {
+            return res.status(400).json({ success: false, error: 'Ano inválido' });
+        }
+
+        const resultado = await obterVencedoresPorAno(ano);
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro ao buscar vencedores:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/admin/vencedores-anos', async (req, res) => {
+    try {
+        const resultado = await obterAnosDisponiveis();
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro ao buscar anos:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/registrar-vencedor-mes', async (req, res) => {
+    try {
+        const { ano, mes } = req.body;
+        
+        if (!ano || !mes) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Ano e mês são obrigatórios' 
+            });
+        }
+
+        const resultado = await registrarVencedorMensal(ano, mes);
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro ao registrar vencedor:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/verificar-meses-pendentes', async (req, res) => {
+    try {
+        const resultado = await verificarEVencerMesesPendentes();
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro na verificação:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/admin/status', async (req, res) => {
+    try {
+        const VencedorMensal = getVencedorMensalModel();
+        const resultado = await VencedorMensal.countDocuments();
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro ao buscar status:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// 11. ROTAS ADMIN - CORREÇÃO DE ESTATÍSTICAS (NOVAS!)
+// ============================================
+// ⬇️⬇️⬇️ COLOCAR ESTAS ROTAS AQUI ⬇️⬇️⬇️
+
+app.post('/api/admin/corrigir-estatisticas-geral', async (req, res) => {
+    try {
+        console.log('🔧 Recebida requisição para correção geral de estatísticas');
+        
+        corrigirTodasEstatisticas()
+            .then(resultado => {
+                console.log('✅ Correção geral concluída:', resultado.message);
+            })
+            .catch(error => {
+                console.error('❌ Erro na correção geral:', error);
+            });
+        
+        res.json({
+            success: true,
+            message: 'Correção geral iniciada em segundo plano. Verifique os logs do servidor.',
+            timestamp: new Date().toISOString(),
+            aviso: 'Esta operação pode levar alguns minutos dependendo da quantidade de dados.'
+        });
+    } catch (error) {
+        console.error('❌ Erro ao iniciar correção geral:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/corrigir-jogador', async (req, res) => {
+    try {
+        const { apelido } = req.body;
+        
+        if (!apelido) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Apelido é obrigatório' 
+            });
+        }
+        
+        const resultado = await corrigirJogadorEspecifico(apelido);
+        res.json(resultado);
+    } catch (error) {
+        console.error('❌ Erro ao corrigir jogador:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/admin/verificar-consistencia', async (req, res) => {
+    try {
+        const resultado = await verificarConsistencia();
+        res.json(resultado);
+    } catch (error) {
+        console.error('❌ Erro na verificação de consistência:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/admin/status-correcao', async (req, res) => {
+    try {
+        const totalJogadores = await Jogador.countDocuments({ ativo: true });
+        const totalPartidas = await Partida.countDocuments();
+        
+        res.json({
+            success: true,
+            sistema: {
+                total_jogadores: totalJogadores,
+                total_partidas: totalPartidas,
+                data_consulta: new Date().toISOString(),
+                status: 'operacional'
+            },
+            correcao: {
+                disponivel: true,
+                descricao: 'Sistema de correção de estatísticas disponível'
+            }
+        });
+    } catch (error) {
+        console.error('❌ Erro ao buscar status:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
 // ROTAS DE TESTE E HEALTH
 // ============================================
 
@@ -2165,6 +2350,15 @@ app.listen(PORT, () => {
   console.log(`🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? 'Conectado' : 'Aguardando...'}`);
   console.log(`🌍 CORS permitindo: ${allowedOrigins.join(', ')}`);
   console.log(`🔗 API Endpoints disponíveis:`);
+  console.log(`\n🔧 Módulos carregados:`);
+  console.log(`   ✅ Jogadores e Partidas`);
+  console.log(`   ✅ Ranking e Estatísticas`);
+  console.log(`   ✅ Vencedores Mensais (2026+)`);
+  console.log(`   ✅ Correção de Estatísticas`);
+  console.log(`\n📊 Rotas disponíveis:`);
+  console.log(`   • /api/admin/* - Painel administrativo`);
+  console.log(`   • /admin-painel.html - Interface admin`);
+  console.log(`   • /api/ranking/* - Rankings`);
   console.log(`   GET  /api/health`);
   console.log(`   GET  /api/jogadores`);
   console.log(`   POST /api/jogadores`);
