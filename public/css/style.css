@@ -403,13 +403,16 @@ h1, h2, h3, h4 {
     background: linear-gradient(135deg, #0a1929 0%, #1a1a2e 100%);
 }
 
+/* CONTAINER REAL ONDE O JS INJETA O PÓDIO */
 .podium {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 40px;
-    margin-top: 60px;
-    flex-wrap: wrap;
+    min-height: 300px;
+    margin-top: 30px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .podium-item {
@@ -757,11 +760,9 @@ h1, h2, h3, h4 {
 }
 
 .podium-item {
-    text-align: center;
-    padding: 20px;
-    border-radius: 10px;
-    min-width: 150px;
-    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .podium-item:hover {
@@ -1554,9 +1555,8 @@ h1, h2, h3, h4 {
 
 /* Cada pódio individual com espaçamento */
 .rankings-section .container {
-    margin-bottom: 50px !important;
-    padding-bottom: 40px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 80px;
+    overflow: visible;
 }
 
 .rankings-section .container:last-child {
@@ -1625,7 +1625,7 @@ h1, h2, h3, h4 {
 }
 
 /* Responsividade */
-@media (max-width: 768px) {
+/*@media (max-width: 768px) {
     .quick-stats,
     .rankings-section,
     .charts-section,
@@ -1633,8 +1633,20 @@ h1, h2, h3, h4 {
     .partidas-section {
         margin: 40px 0 !important;
         padding: 30px 0 !important;
+    } */
+
+@media (max-width: 768px) {
+    .podium {
+        flex-direction: column;
+        align-items: center;
     }
-    
+
+    .podium-item {
+        width: 100%;
+        max-width: 320px;
+    }
+}
+
     .rankings-section .container {
         margin-bottom: 40px !important;
         padding-bottom: 30px !important;
