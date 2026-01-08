@@ -608,7 +608,11 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 768px) {
-    .nav-menu {
+   .nav-container {
+        position: relative;
+    }
+   
+   .nav-menu {
         display: none;
         position: absolute;
         top: 100%;
@@ -618,6 +622,7 @@ h1, h2, h3, h4 {
         flex-direction: column;
         padding: 20px;
         box-shadow: var(--shadow-lg);
+        z-index: 1000; /* ADICIONE PARA FICAR ACIMA DE TUDO */
     }
     
     .nav-menu.active {
@@ -1739,3 +1744,4 @@ h1, h2, h3, h4 {
 
 /* =============================================
    CORREÇÕES DE LAYOUT E ESPAÇAMENTO
+
