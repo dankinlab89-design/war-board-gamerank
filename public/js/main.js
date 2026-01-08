@@ -229,20 +229,20 @@ init() {
     }
 
     async loadStats() {
-        try {
-            const response = await fetch(`${this.apiBase}/estatisticas`);
-            const stats = await response.json();
-            
-            if (document.getElementById('total-jogadores')) {
-                document.getElementById('total-jogadores').textContent = stats.total_jogadores || 0;
-                document.getElementById('total-partidas').textContent = stats.total_partidas || 0;
-                document.getElementById('record-vitorias').textContent = stats.record_vitorias || 0;
-            }
-        } catch (error) {
-            console.error('Erro ao carregar estatísticas:', error);
+    try {
+        const response = await fetch(`${this.apiBase}/estatisticas`);
+        const stats = await response.json();
+        
+        if (document.getElementById('total-jogadores')) {
+            document.getElementById('total-jogadores').textContent = stats.total_jogadores || 0;
+            document.getElementById('total-partidas').textContent = stats.total_partidas || 0;
+            // CORREÇÃO AQUI: Acessa o objeto 'record' e depois o campo 'vitorias'
+            document.getElementById('record-vitorias').textContent = stats.record?.vitorias || 0;
         }
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
     }
-
+}
     async loadPodium() {
         try {
             const response = await fetch(`${this.apiBase}/ranking/global`);

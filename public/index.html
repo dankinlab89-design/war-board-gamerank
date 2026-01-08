@@ -69,7 +69,7 @@
     <!-- Seção Ranking Rápido -->
     <section class="quick-ranking">
         <div class="container">
-            <h2 class="section-title">PÓDIO ATUAL</h2>
+            <h2 class="section-title">PÓDIO GLOBAL</h2>
             <div class="podium">
                 <div class="podium-item silver">
                     <div class="podium-rank">🥈</div>
@@ -210,7 +210,7 @@
                 
                 document.getElementById('total-jogadores').textContent = stats.total_jogadores || 0;
                 document.getElementById('total-partidas').textContent = stats.total_partidas || 0;
-                document.getElementById('record-vitorias').textContent = stats.record_vitorias || 0;
+                document.getElementById('record-vitorias').textContent = stats.record?.vitorias || 0;
                 
                 // Ranking global para pódio
                 const rankingResponse = await fetch('/api/ranking/global');
@@ -240,4 +240,6 @@
 </body>
 
 </html>
+
+
 
