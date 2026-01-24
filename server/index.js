@@ -6,21 +6,37 @@ require('dotenv').config();
 
 const app = express();
 
-// Configuração CORS
+// Configuração CORS - ADICIONE 'http://localhost' para desenvolvimento
 const allowedOrigins = process.env.NODE_ENV === 'production' 
   ? ['https://war-board-gamerank.onrender.com']
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost', 'http://127.0.0.1:5500', 'http://127.0.0.1'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permite requisições sem origem (como arquivos locais)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // Para desenvolvimento, aceita qualquer origem
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`⚠️  Aceitando origem não configurada em dev: ${origin}`);
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Lidar com pré-flight requests
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
