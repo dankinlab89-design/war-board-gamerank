@@ -2178,6 +2178,416 @@ const vencedoresMensais = require('./vencedores-mensais');
 const correcaoEstatisticas = require('./correcao-estatisticas');
 
 // ============================================
+// SISTEMA AUTOMÁTICO DE VENCEDORES MENSAIS
+// ============================================
+
+// Função para calcular e registrar vencedor do mês AUTOMATICAMENTE
+async function calcularEVencerMes(ano, mes) {
+    try {
+        console.log(`🎯 Calculando vencedor para ${mes}/${ano}...`);
+        
+        // 1. Definir período do mês
+        const inicioMes = new Date(ano, mes - 1, 1);
+        const fimMes = new Date(ano, mes, 0, 23, 59, 59);
+        
+        // 2. Buscar todas as partidas do mês
+        const partidasDoMes = await Partida.find({
+            data: { $gte: inicioMes, $lte: fimMes }
+        }).lean();
+        
+        if (partidasDoMes.length === 0) {
+            console.log(`📭 Nenhuma partida encontrada para ${mes}/${ano}`);
+            return {
+                success: true,
+                message: `Nenhuma partida no mês ${mes}/${ano}`,
+                mes: mes,
+                ano: ano,
+                vencedor: null
+            };
+        }
+        
+        // 3. Calcular estatísticas de cada jogador no mês
+        const estatisticas = {};
+        
+        partidasDoMes.forEach(partida => {
+            const { vencedor, participantes } = partida;
+            
+            // Inicializar jogador se não existir
+            if (!estatisticas[vencedor]) {
+                estatisticas[vencedor] = { vitorias: 0, partidas: 0, apelido: vencedor };
+            }
+            
+            // Contar vitória
+            estatisticas[vencedor].vitorias += 1;
+            estatisticas[vencedor].partidas += 1;
+            
+            // Contar participação dos outros jogadores
+            participantes.forEach(participante => {
+                if (participante !== vencedor) {
+                    if (!estatisticas[participante]) {
+                        estatisticas[participante] = { vitorias: 0, partidas: 0, apelido: participante };
+                    }
+                    estatisticas[participante].partidas += 1;
+                }
+            });
+        });
+        
+        // 4. Converter para array e ordenar
+        const rankingArray = Object.values(estatisticas);
+        
+        // Critério: Mais vitórias -> Mais partidas (desempate)
+        rankingArray.sort((a, b) => {
+            if (b.vitorias !== a.vitorias) {
+                return b.vitorias - a.vitorias;
+            }
+            return b.partidas - a.partidas;
+        });
+        
+        // 5. Pegar o vencedor (primeiro do ranking)
+        const vencedorDoMes = rankingArray[0];
+        
+        // 6. Buscar informações do jogador
+        const jogadorInfo = await Jogador.findOne({ 
+            apelido: vencedorDoMes.apelido 
+        }).select('patente').lean();
+        
+        // 7. Criar ou atualizar registro no banco
+        const existeRegistro = await VencedorMensal.findOne({ ano, mes });
+        
+        if (existeRegistro) {
+            // Atualizar existente
+            existeRegistro.jogador_apelido = vencedorDoMes.apelido;
+            existeRegistro.vitorias = vencedorDoMes.vitorias;
+            existeRegistro.partidas = vencedorDoMes.partidas;
+            existeRegistro.patente = jogadorInfo?.patente || 'Cabo 🪖';
+            existeRegistro.data_registro = new Date();
+            
+            await existeRegistro.save();
+            
+            console.log(`🔄 Vencedor atualizado: ${vencedorDoMes.apelido} para ${mes}/${ano}`);
+            
+            return {
+                success: true,
+                action: 'updated',
+                mes: mes,
+                ano: ano,
+                vencedor: existeRegistro,
+                estatisticas: {
+                    total_partidas: partidasDoMes.length,
+                    total_jogadores: rankingArray.length,
+                    ranking: rankingArray.slice(0, 5) // Top 5
+                }
+            };
+        } else {
+            // Criar novo
+            const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            
+            const novoVencedor = new VencedorMensal({
+                ano: ano,
+                mes: mes,
+                jogador_apelido: vencedorDoMes.apelido,
+                vitorias: vencedorDoMes.vitorias,
+                partidas: vencedorDoMes.partidas,
+                patente: jogadorInfo?.patente || 'Cabo 🪖',
+                mes_nome: nomesMeses[mes - 1],
+                observacoes: `Calculado automaticamente em ${new Date().toLocaleString('pt-BR')}`,
+                calculado_automaticamente: true
+            });
+            
+            await novoVencedor.save();
+            
+            console.log(`✅ Vencedor registrado: ${vencedorDoMes.apelido} para ${mes}/${ano}`);
+            
+            return {
+                success: true,
+                action: 'created',
+                mes: mes,
+                ano: ano,
+                vencedor: novoVencedor,
+                estatisticas: {
+                    total_partidas: partidasDoMes.length,
+                    total_jogadores: rankingArray.length,
+                    ranking: rankingArray.slice(0, 5)
+                }
+            };
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular vencedor:', error);
+        return {
+            success: false,
+            error: error.message,
+            mes: mes,
+            ano: ano
+        };
+    }
+}
+
+// ============================================
+// ROTAS DO SISTEMA AUTOMÁTICO
+// ============================================
+
+// ROTA 1: Calcular vencedor para um mês específico
+app.post('/api/vencedores/calcular-mes', async (req, res) => {
+    try {
+        const { ano, mes } = req.body;
+        
+        if (!ano || !mes) {
+            return res.status(400).json({
+                success: false,
+                error: 'Ano e mês são obrigatórios'
+            });
+        }
+        
+        const resultado = await calcularEVencerMes(parseInt(ano), parseInt(mes));
+        res.json(resultado);
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 2: Calcular vencedor do mês anterior (execução automática)
+app.post('/api/vencedores/calcular-mes-anterior', async (req, res) => {
+    try {
+        const hoje = new Date();
+        const mesAnterior = hoje.getMonth(); // Janeiro = 0
+        const ano = hoje.getFullYear();
+        
+        const mesReferencia = mesAnterior === 0 ? 12 : mesAnterior;
+        const anoReferencia = mesAnterior === 0 ? ano - 1 : ano;
+        
+        console.log(`🔄 Calculando vencedor do mês anterior: ${mesReferencia}/${anoReferencia}`);
+        
+        const resultado = await calcularEVencerMes(anoReferencia, mesReferencia);
+        res.json(resultado);
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 3: Inicializar meses de 2026 com cálculo automático
+app.post('/api/vencedores/inicializar-2026', async (req, res) => {
+    try {
+        console.log('🚀 Inicializando 2026 com cálculo automático...');
+        
+        const resultados = [];
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        
+        // Só permite inicializar anos futuros ou 2026
+        if (anoAtual > 2026) {
+            return res.json({
+                success: true,
+                message: '2026 já passou, inicialização não necessária',
+                resultados: []
+            });
+        }
+        
+        // Para cada mês de 2026, verificar se já passou
+        for (let mes = 1; mes <= 12; mes++) {
+            // Se o mês já passou (em relação a hoje), pode calcular
+            // Se ainda não chegou, cria registro pendente
+            
+            const dataReferencia = new Date(2026, mes - 1, 15); // Meio do mês
+            
+            if (dataReferencia < hoje) {
+                // Mês já passou - calcular automaticamente
+                console.log(`📅 Calculando mês ${mes}/2026...`);
+                const resultado = await calcularEVencerMes(2026, mes);
+                resultados.push({ mes, status: resultado.success ? 'calculado' : 'erro', resultado });
+            } else {
+                // Mês futuro - criar pendente
+                const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                
+                const existe = await VencedorMensal.findOne({ ano: 2026, mes });
+                
+                if (!existe) {
+                    const registroPendente = new VencedorMensal({
+                        ano: 2026,
+                        mes: mes,
+                        jogador_apelido: 'PENDENTE',
+                        vitorias: 0,
+                        partidas: 0,
+                        patente: '-',
+                        mes_nome: nomesMeses[mes - 1],
+                        observacoes: `Aguardando término do mês ${mes}/2026`,
+                        status: 'pendente',
+                        calculado_automaticamente: false
+                    });
+                    
+                    await registroPendente.save();
+                    resultados.push({ mes, status: 'criado_pendente' });
+                } else {
+                    resultados.push({ mes, status: 'ja_existe' });
+                }
+            }
+        }
+        
+        res.json({
+            success: true,
+            message: '2026 inicializado com cálculo automático',
+            resultados: resultados
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 4: Listar todos os vencedores (com opção de recalcular)
+app.get('/api/vencedores/todos', async (req, res) => {
+    try {
+        const { recalc } = req.query;
+        
+        if (recalc === 'true') {
+            // Recalcular todos os meses com partidas
+            console.log('🔄 Recalculando todos os vencedores...');
+            const mesesComPartidas = await Partida.aggregate([
+                {
+                    $group: {
+                        _id: {
+                            ano: { $year: "$data" },
+                            mes: { $month: "$data" }
+                        },
+                        total_partidas: { $sum: 1 }
+                    }
+                },
+                { $sort: { "_id.ano": -1, "_id.mes": -1 } }
+            ]);
+            
+            const resultados = [];
+            for (const mes of mesesComPartidas) {
+                const resultado = await calcularEVencerMes(mes._id.ano, mes._id.mes);
+                resultados.push(resultado);
+            }
+            
+            return res.json({
+                success: true,
+                action: 'recalculated',
+                total_meses: mesesComPartidas.length,
+                resultados: resultados
+            });
+        }
+        
+        // Listar normalmente
+        const vencedores = await VencedorMensal.find()
+            .sort({ ano: -1, mes: -1 })
+            .lean();
+        
+        res.json({
+            success: true,
+            total: vencedores.length,
+            vencedores: vencedores
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 5: Dashboard de vencedores (para exibição no frontend)
+app.get('/api/dashboard/vencedores', async (req, res) => {
+    try {
+        // Últimos 12 meses
+        const vencedores = await VencedorMensal.find()
+            .sort({ ano: -1, mes: -1 })
+            .limit(12)
+            .lean();
+        
+        // Estatísticas gerais
+        const estatisticas = {
+            total_registrados: await VencedorMensal.countDocuments(),
+            calculados_automaticamente: await VencedorMensal.countDocuments({ calculado_automaticamente: true }),
+            pendentes: await VencedorMensal.countDocuments({ status: 'pendente' }),
+            ano_atual: new Date().getFullYear()
+        };
+        
+        res.json({
+            success: true,
+            estatisticas: estatisticas,
+            vencedores: vencedores,
+            atualizado_em: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 6: Verificar meses pendentes de cálculo
+app.get('/api/vencedores/meses-pendentes', async (req, res) => {
+    try {
+        // Encontrar meses que têm partidas mas não têm vencedor registrado
+        const mesesComPartidas = await Partida.aggregate([
+            {
+                $group: {
+                    _id: {
+                        ano: { $year: "$data" },
+                        mes: { $month: "$data" }
+                    },
+                    total_partidas: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.ano": 1, "_id.mes": 1 } }
+        ]);
+        
+        const pendentes = [];
+        
+        for (const mes of mesesComPartidas) {
+            const existeVencedor = await VencedorMensal.findOne({
+                ano: mes._id.ano,
+                mes: mes._id.mes
+            });
+            
+            if (!existeVencedor) {
+                pendentes.push({
+                    ano: mes._id.ano,
+                    mes: mes._id.mes,
+                    partidas: mes.total_partidas,
+                    status: 'pendente'
+                });
+            }
+        }
+        
+        res.json({
+            success: true,
+            total_pendentes: pendentes.length,
+            meses_pendentes: pendentes
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ROTA 7: Status do sistema de vencedores
+app.get('/api/vencedores/status', async (req, res) => {
+    try {
+        const totalVencedores = await VencedorMensal.countDocuments();
+        const pendentes = await VencedorMensal.countDocuments({ status: 'pendente' });
+        const calculados = await VencedorMensal.countDocuments({ calculado_automaticamente: true });
+        
+        res.json({
+            success: true,
+            sistema: 'ativo',
+            total_registros: totalVencedores,
+            pendentes: pendentes,
+            calculados_automaticamente: calculados,
+            porcentagem_calculados: totalVencedores > 0 ? 
+                Math.round((calculados / totalVencedores) * 100) : 0,
+            atualizado_em: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
 // ROTAS DO PAINEL ADMINISTRATIVO
 // ============================================
 
