@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema 2026 - War Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body.dark-theme {
+            background: #0a0e17;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sistema-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-2026 {
+            background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #4dabf7;
+            text-align: center;
+        }
+        
+        .titulo-2026 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #4dabf7, #63b3ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .meses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .mes-card {
+            background: rgba(26, 54, 93, 0.7);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mes-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        
+        .mes-calculado { border-color: #38a169; }
+        .mes-calculado::before { background: #38a169; }
+        
+        .mes-pendente { border-color: #ed8936; }
+        .mes-pendente::before { background: #ed8936; }
+        
+        .mes-em-andamento { border-color: #4dabf7; }
+        .mes-em-andamento::before { background: #4dabf7; }
+        
+        .mes-sem-partidas { border-color: #a0aec0; }
+        .mes-sem-partidas::before { background: #a0aec0; }
+        
+        .mes-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mes-nome {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e2e8f0;
+        }
+        
+        .mes-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+        
+        .status-calculado { background: rgba(56, 161, 105, 0.2); color: #38a169; }
+        .status-pendente { background: rgba(237, 137, 54, 0.2); color: #ed8936; }
+        .status-andamento { background: rgba(77, 171, 247, 0.2); color: #4dabf7; }
+        
+        .vencedor-nome {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fbd38d;
+            margin: 10px 0;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-valor {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #4dabf7;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            text-transform: uppercase;
+        }
+        
+        .controles {
+            background: rgba(45, 55, 72, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn-2026 {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .btn-2026-primary {
+            background: linear-gradient(135deg, #4dabf7, #3182ce);
+            color: white;
+        }
+        
+        .btn-2026-success {
+            background: linear-gradient(135deg, #38a169, #276749);
+            color: white;
+        }
+        
+        .btn-2026-warning {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            color: white;
+        }
+        
+        .btn-2026:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .feedback-area {
+            min-height: 100px;
+            margin: 20px 0;
+        }
+        
+        .alert-2026 {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .alert-success { border-left-color: #38a169; }
+        .alert-warning { border-left-color: #ed8936; }
+        .alert-info { border-left-color: #4dabf7; }
+        .alert-error { border-left-color: #f56565; }
+        
+        @media (max-width: 768px) {
+            .meses-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controles {
+                flex-direction: column;
+            }
+            
+            .btn-2026 {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="sistema-container">
+        <!-- Cabeçalho -->
+        <div class="header-2026">
+            <h1 class="titulo-2026">
+                <i class="fas fa-calendar-star"></i> SISTEMA 2026
+            </h1>
+            <p class="lead">Sistema automático de vencedores mensais - War Board GameRank</p>
+            <div id="statusGeral" class="mt-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <span class="ms-2">Conectando ao sistema...</span>
+            </div>
+        </div>
+        
+        <!-- Feedback -->
+        <div id="feedback" class="feedback-area"></div>
+        
+        <!-- Controles -->
+        <div class="controles">
+            <button class="btn-2026 btn-2026-primary" onclick="inicializarSistema2026()">
+                <i class="fas fa-play-circle"></i> INICIALIZAR SISTEMA 2026
+            </button>
+            <button class="btn-2026 btn-2026-success" onclick="calcularMesesTerminados()">
+                <i class="fas fa-calculator"></i> CALCULAR MESES TERMINADOS
+            </button>
+            <button class="btn-2026 btn-2026-warning" onclick="atualizarDashboard()">
+                <i class="fas fa-sync-alt"></i> ATUALIZAR DASHBOARD
+            </button>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="row" id="estatisticas">
+            <div class="col-md-3">
+                <div class="mes-card mes-em-andamento">
+                    <div class="stat-valor" id="totalMeses">12</div>
+                    <div class="stat-label">MESES 2026</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mes-card mes-calculado">
+                    <div class="stat-valor" id="mesesCalculados">0</div>
+                    <div class="stat-label">CALCULADOS</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mes-card mes-pendente">
+                    <div class="stat-valor" id="mesesPendentes">0</div>
+                    <div class="stat-label">PENDENTES</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mes-card">
+                    <div class="stat-valor" id="mesAtual">Jan</div>
+                    <div class="stat-label">MÊS ATUAL</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grid de Meses -->
+        <h3 class="mt-5 mb-4">MESES DE 2026</h3>
+        <div class="meses-grid" id="gridMeses">
+            <!-- Os meses serão carregados aqui -->
+        </div>
+        
+        <!-- Informações do Sistema -->
+        <div class="alert-2026 alert-info mt-5">
+            <h5><i class="fas fa-info-circle"></i> COMO FUNCIONA O SISTEMA 2026</h5>
+            <p><strong>Mês atual (Janeiro):</strong> Fica como "PENDENTE" até o dia 01/02/2026</p>
+            <p><strong>Meses passados:</strong> São calculados automaticamente</p>
+            <p><strong>Todo dia 1 às 00:05:</strong> Sistema calcula o mês anterior automaticamente</p>
+            <p><strong>Dashboard:</strong> Atualiza automaticamente a cada 30 segundos</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAÇÃO
+        // ============================================
+        const API_BASE_URL = window.location.origin;
+        
+        // ============================================
+        // FUNÇÕES UTILITÁRIAS
+        // ============================================
+        function mostrarFeedback(mensagem, tipo = 'info') {
+            const feedback = document.getElementById('feedback');
+            const cores = {
+                'success': '#38a169',
+                'error': '#f56565',
+                'warning': '#ed8936',
+                'info': '#4dabf7'
+            };
+            
+            const alert = document.createElement('div');
+            alert.className = `alert-2026 alert-${tipo}`;
+            alert.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                        ${mensagem}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: none; border: none; color: ${cores[tipo]}; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            feedback.appendChild(alert);
+            
+            // Auto-remover após 5 segundos
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+        
+        async function chamarAPI(endpoint, metodo = 'GET', dados = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const opcoes = {
+                method: metodo,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            if (dados) {
+                opcoes.body = JSON.stringify(dados);
+            }
+            
+            try {
+                const resposta = await fetch(url, opcoes);
+                
+                if (!resposta.ok) {
+                    throw new Error(`HTTP ${resposta.status}`);
+                }
+                
+                return await resposta.json();
+            } catch (erro) {
+                console.error('Erro na API:', erro);
+                mostrarFeedback(`Erro: ${erro.message}`, 'error');
+                throw erro;
+            }
+        }
+        
+        // ============================================
+        // FUNÇÕES PRINCIPAIS
+        // ============================================
+        async function carregarDashboard() {
+            try {
+                const dados = await chamarAPI('/api/sistema-2026/dashboard');
+                
+                if (dados.success) {
+                    // Atualizar estatísticas
+                    document.getElementById('totalMeses').textContent = dados.estatisticas_gerais.total_vencedores;
+                    document.getElementById('mesesCalculados').textContent = dados.estatisticas_gerais.meses_processados;
+                    document.getElementById('mesesPendentes').textContent = dados.estatisticas_gerais.meses_pendentes;
+                    document.getElementById('mesAtual').textContent = dados.mes_atual;
+                    
+                    // Atualizar status geral
+                    document.getElementById('statusGeral').innerHTML = `
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle"></i> SISTEMA ONLINE
+                        </span>
+                        <span class="ms-3">Última atualização: ${new Date().toLocaleTimeString('pt-BR')}</span>
+                    `;
+                    
+                    // Renderizar grid de meses
+                    renderizarMeses(dados.vencedores);
+                }
+            } catch (erro) {
+                document.getElementById('statusGeral').innerHTML = `
+                    <span class="badge bg-danger">
+                        <i class="fas fa-exclamation-circle"></i> SISTEMA OFFLINE
+                    </span>
+                `;
+            }
+        }
+        
+        function renderizarMeses(vencedores) {
+            const grid = document.getElementById('gridMeses');
+            const hoje = new Date();
+            const mesAtual = hoje.getMonth() + 1;
+            
+            let html = '';
+            
+            for (let mes = 1; mes <= 12; mes++) {
+                const registro = vencedores.find(v => v.mes === mes);
+                const emAndamento = mes === mesAtual && hoje.getFullYear() === 2026;
+                
+                let classe = 'mes-pendente';
+                let status = 'PENDENTE';
+                let vencedorNome = 'Aguardando...';
+                let vitorias = 0;
+                let partidas = 0;
+                
+                if (registro) {
+                    if (registro.status === 'calculado') {
+                        classe = 'mes-calculado';
+                        status = 'CALCULADO';
+                        vencedorNome = registro.vencedor;
+                        vitorias = registro.vitorias;
+                        partidas = registro.partidas;
+                    } else if (registro.status === 'pendente') {
+                        classe = emAndamento ? 'mes-em-andamento' : 'mes-pendente';
+                        status = emAndamento ? 'EM ANDAMENTO' : 'PENDENTE';
+                        vencedorNome = registro.vencedor;
+                    } else if (registro.status === 'sem_partidas') {
+                        classe = 'mes-sem-partidas';
+                        status = 'SEM PARTIDAS';
+                        vencedorNome = 'Nenhuma';
+                    }
+                }
+                
+                const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                
+                html += `
+                    <div class="mes-card ${classe}">
+                        <div class="mes-nome">${nomesMeses[mes - 1]}</div>
+                        <div class="mes-status status-${registro?.status || 'pendente'}">${status}</div>
+                        
+                        <div class="vencedor-nome">${vencedorNome}</div>
+                        
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <div class="stat-valor">${vitorias}</div>
+                                <div class="stat-label">Vitórias</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-valor">${partidas}</div>
+                                <div class="stat-label">Partidas</div>
+                            </div>
+                        </div>
+                        
+                        ${emAndamento ? `
+                            <div class="mt-3 text-center">
+                                <small><i class="fas fa-clock"></i> Termina em 31/${mes.toString().padStart(2, '0')}/2026</small>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            grid.innerHTML = html;
+        }
+        
+        async function inicializarSistema2026() {
+            if (!confirm('INICIALIZAR SISTEMA 2026?\n\nIsso criará registros para todos os meses de 2026.\nMeses passados serão calculados, mês atual ficará pendente.')) {
+                return;
+            }
+            
+            try {
+                mostrarFeedback('Inicializando sistema 2026...', 'info');
+                
+                const resultado = await chamarAPI('/api/sistema-2026/inicializar', 'POST');
+                
+                if (resultado.success) {
+                    mostrarFeedback(`Sistema 2026 inicializado! ${resultado.total_meses} meses processados`, 'success');
+                    setTimeout(carregarDashboard, 1000);
+                }
+            } catch (erro) {
+                console.error('Erro ao inicializar:', erro);
+            }
+        }
+        
+        async function calcularMesesTerminados() {
+            try {
+                mostrarFeedback('Calculando meses que já terminaram...', 'info');
+                
+                const resultado = await chamarAPI('/api/sistema-2026/calcular-terminados', 'POST');
+                
+                if (resultado.success) {
+                    mostrarFeedback(`${resultado.total} meses calculados com sucesso!`, 'success');
+                    setTimeout(carregarDashboard, 1000);
+                }
+            } catch (erro) {
+                console.error('Erro ao calcular:', erro);
+            }
+        }
+        
+        function atualizarDashboard() {
+            mostrarFeedback('Atualizando dashboard...', 'info');
+            carregarDashboard();
+        }
+        
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Sistema 2026 inicializando...');
+            
+            // Carregar dashboard imediatamente
+            carregarDashboard();
+            
+            // Atualizar automaticamente a cada 30 segundos
+            setInterval(carregarDashboard, 30000);
+            
+            // Adicionar listener para calcular mês específico
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('calcular-mes')) {
+                    const mes = e.target.dataset.mes;
+                    calcularMesEspecifico(mes);
+                }
+            });
+        });
+        
+        async function calcularMesEspecifico(mes) {
+            try {
+                const resultado = await chamarAPI('/api/sistema-2026/calcular-mes', 'POST', { mes: parseInt(mes) });
+                
+                if (resultado.success) {
+                    mostrarFeedback(`Mês ${mes}/2026 calculado: ${resultado.vencedor?.jogador_apelido}`, 'success');
+                    carregarDashboard();
+                }
+            } catch (erro) {
+                console.error('Erro ao calcular mês:', erro);
+            }
+        }
+    </script>
+</body>
+</html>
