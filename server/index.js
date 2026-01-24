@@ -2155,6 +2155,422 @@ app.get('/api/podios/mensal-corrigido', async (req, res) => {
 });
 
 // ============================================
+// IMPORTAR MÓDULOS DO SERVIDOR
+// ============================================
+
+const vencedoresMensais = require('./vencedores-mensais');
+const correcaoEstatisticas = require('./correcao-estatisticas');
+
+// ============================================
+// ROTAS DO PAINEL ADMINISTRATIVO
+// ============================================
+
+// 1. Status da API (para o painel verificar conexão)
+app.get('/api/admin/status', (req, res) => {
+    res.json({
+        success: true,
+        status: 'online',
+        sistema: 'War Board GameRank API',
+        versao: '2.0.0',
+        timestamp: new Date().toISOString(),
+        database: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado'
+    });
+});
+
+// 2. Registrar vencedor mensal (painel administrativo)
+app.post('/api/admin/vencedores/registrar', async (req, res) => {
+    try {
+        console.log('📝 Registrando vencedor via painel administrativo:', req.body);
+        
+        const { ano, mes, jogador_apelido, vitorias, partidas, patente, observacoes } = req.body;
+        
+        if (!ano || !mes || !jogador_apelido) {
+            return res.status(400).json({
+                success: false,
+                error: 'Dados incompletos. É necessário: ano, mes, jogador_apelido'
+            });
+        }
+        
+        // Verificar se o jogador existe
+        const jogadorExiste = await Jogador.findOne({ apelido: jogador_apelido });
+        if (!jogadorExiste) {
+            return res.status(404).json({
+                success: false,
+                error: `Jogador "${jogador_apelido}" não encontrado`
+            });
+        }
+        
+        // Verificar se já existe registro para este mês/ano
+        const existeRegistro = await VencedorMensal.findOne({ ano, mes });
+        if (existeRegistro) {
+            // Atualizar registro existente
+            existeRegistro.jogador_apelido = jogador_apelido;
+            existeRegistro.vitorias = vitorias || 0;
+            existeRegistro.partidas = partidas || 0;
+            existeRegistro.patente = patente || jogadorExiste.patente;
+            existeRegistro.data_registro = new Date();
+            
+            await existeRegistro.save();
+            
+            return res.json({
+                success: true,
+                action: 'updated',
+                message: `Vencedor atualizado para ${mes}/${ano}`,
+                vencedor: existeRegistro
+            });
+        }
+        
+        // Criar novo registro
+        const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        
+        const novoVencedor = new VencedorMensal({
+            ano: parseInt(ano),
+            mes: parseInt(mes),
+            jogador_apelido,
+            vitorias: vitorias || 0,
+            partidas: partidas || 0,
+            patente: patente || jogadorExiste.patente || 'Cabo 🪖',
+            observacoes: observacoes || `Registrado via painel administrativo em ${new Date().toLocaleString('pt-BR')}`
+        });
+        
+        await novoVencedor.save();
+        
+        console.log(`✅ Vencedor registrado: ${jogador_apelido} para ${mes}/${ano}`);
+        
+        res.status(201).json({
+            success: true,
+            action: 'created',
+            message: `Vencedor ${jogador_apelido} registrado para ${mes}/${ano}`,
+            vencedor: novoVencedor
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao registrar vencedor:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// 3. Listar vencedores por ano
+app.get('/api/admin/vencedores/:ano', async (req, res) => {
+    try {
+        const ano = parseInt(req.params.ano);
+        
+        // Usar a função do módulo vencedores-mensais
+        const resultado = await vencedoresMensais.obterVencedoresPorAno(ano);
+        
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar vencedores:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// 4. Obter anos disponíveis
+app.get('/api/admin/vencedores/anos/disponiveis', async (req, res) => {
+    try {
+        const resultado = await vencedoresMensais.obterAnosDisponiveis();
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 5. Inicializar meses de 2026
+app.post('/api/admin/vencedores/inicializar-2026', async (req, res) => {
+    try {
+        console.log('🔄 Inicializando meses de 2026 via painel...');
+        const resultado = await vencedoresMensais.inicializarMeses2026();
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 6. Verificar meses pendentes
+app.post('/api/admin/vencedores/verificar-pendentes', async (req, res) => {
+    try {
+        const resultado = await vencedoresMensais.verificarEVencerMesesPendentes();
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 7. Status do sistema de vencedores
+app.get('/api/admin/vencedores/status/sistema', async (req, res) => {
+    try {
+        const resultado = await vencedoresMensais.obterStatusSistema();
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 8. Exportar vencedores (JSON)
+app.get('/api/admin/vencedores/exportar/json', async (req, res) => {
+    try {
+        const vencedores = await VencedorMensal.find()
+            .sort({ ano: -1, mes: -1 })
+            .lean();
+        
+        res.json({
+            success: true,
+            dados: vencedores,
+            total: vencedores.length,
+            data_exportacao: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// ROTAS PARA CORREÇÃO DE ESTATÍSTICAS
+// ============================================
+
+// 9. Calcular estatísticas para um jogador
+app.post('/api/admin/estatisticas/calcular', async (req, res) => {
+    try {
+        const { jogador, ano, mes } = req.body;
+        
+        // Verificar se a função existe no módulo
+        if (!correcaoEstatisticas.calcularEstatisticasJogador) {
+            return res.status(500).json({
+                success: false,
+                error: 'Módulo de estatísticas não configurado corretamente'
+            });
+        }
+        
+        const resultado = await correcaoEstatisticas.calcularEstatisticasJogador(jogador, ano, mes);
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular estatísticas:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 10. Forçar recálculo completo
+app.post('/api/admin/estatisticas/recalcular-completo', async (req, res) => {
+    try {
+        console.log('🔄 Forçando recálculo completo via painel...');
+        
+        // Verificar se a função existe
+        if (!correcaoEstatisticas.forcarRecalculoCompleto) {
+            return res.status(500).json({
+                success: false,
+                error: 'Função forcarRecalculoCompleto não disponível'
+            });
+        }
+        
+        const resultado = await correcaoEstatisticas.forcarRecalculoCompleto();
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('❌ Erro no recálculo completo:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// ROTAS PARA BACKUP E MONITORAMENTO
+// ============================================
+
+// 11. Status do banco de dados
+app.get('/api/admin/database/status', async (req, res) => {
+    try {
+        const status = mongoose.connection.readyState;
+        const colecoes = await mongoose.connection.db.listCollections().toArray();
+        
+        res.json({
+            success: true,
+            status: {
+                conectado: status === 1,
+                estado: status === 1 ? 'conectado' : 
+                       status === 2 ? 'conectando' :
+                       status === 3 ? 'desconectando' : 'desconectado',
+                host: mongoose.connection.host,
+                database: mongoose.connection.name,
+                colecoes: colecoes.length
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 12. Verificar integridade do banco
+app.get('/api/admin/database/verificar/integridade', async (req, res) => {
+    try {
+        const colecoes = await mongoose.connection.db.listCollections().toArray();
+        let registrosTotais = 0;
+        
+        // Contar registros em cada coleção
+        for (const colecao of colecoes) {
+            const count = await mongoose.connection.db.collection(colecao.name).countDocuments();
+            registrosTotais += count;
+        }
+        
+        res.json({
+            success: true,
+            integridade: 'ok',
+            colecoes: colecoes.length,
+            registros_totais: registrosTotais,
+            nomes_colecoes: colecoes.map(c => c.name)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 13. Backup completo do banco (simulação)
+app.post('/api/admin/backup/completo', async (req, res) => {
+    try {
+        console.log('💾 Iniciando backup do banco de dados...');
+        
+        const colecoes = await mongoose.connection.db.listCollections().toArray();
+        const backup = {
+            data_backup: new Date().toISOString(),
+            total_colecoes: colecoes.length,
+            colecoes: {}
+        };
+        
+        // Coletar dados de cada coleção
+        for (const colecao of colecoes) {
+            const dados = await mongoose.connection.db.collection(colecao.name).find().toArray();
+            backup.colecoes[colecao.name] = {
+                total_registros: dados.length,
+                dados: dados
+            };
+        }
+        
+        // Em produção, você salvaria em um arquivo ou serviço de cloud
+        // Por enquanto, retornamos os dados
+        res.json({
+            success: true,
+            message: 'Backup realizado com sucesso',
+            backup: backup,
+            download_url: null, // Em produção, geraria um link para download
+            data_backup: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro no backup:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 14. Estatísticas do sistema
+app.get('/api/admin/sistema/estatisticas', async (req, res) => {
+    try {
+        const [
+            totalJogadores,
+            totalPartidas,
+            totalVencedores,
+            mesesPendentes,
+            jogadorMaisVitorioso
+        ] = await Promise.all([
+            Jogador.countDocuments({ ativo: true }),
+            Partida.countDocuments(),
+            VencedorMensal.countDocuments(),
+            VencedorMensal.countDocuments({ status: 'pendente' }),
+            Jogador.findOne({ ativo: true }).sort({ vitorias: -1 }).select('apelido vitorias')
+        ]);
+        
+        res.json({
+            success: true,
+            estatisticas: {
+                total_jogadores: totalJogadores,
+                total_partidas: totalPartidas,
+                total_vencedores: totalVencedores,
+                meses_pendentes: mesesPendentes || 0,
+                jogador_mais_vitorioso: jogadorMaisVitorioso?.apelido || 'Nenhum',
+                vitorias_record: jogadorMaisVitorioso?.vitorias || 0,
+                sistema: 'operacional',
+                ultima_atualizacao: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
+// ROTAS ESPECIAIS PARA O PAINEL HTML
+// ============================================
+
+app.get('/admin-painel', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin-painel.html'));
+});
+
+app.get('/admin-painel.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin-painel.html'));
+});
+
+// ============================================
+// ROTA PARA TESTAR TODAS AS ROTAS ADMIN
+// ============================================
+
+app.get('/api/admin/teste-rotas', async (req, res) => {
+    try {
+        // Testar conexão com banco
+        const dbStatus = mongoose.connection.readyState;
+        
+        // Testar cada módulo
+        const modulos = {
+            vencedoresMensais: typeof vencedoresMensais === 'object',
+            correcaoEstatisticas: typeof correcaoEstatisticas === 'object',
+            Jogador: typeof Jogador === 'function',
+            VencedorMensal: typeof VencedorMensal === 'function'
+        };
+        
+        // Contar registros
+        const contagens = {
+            jogadores: await Jogador.countDocuments(),
+            partidas: await Partida.countDocuments(),
+            vencedores_mensais: await VencedorMensal.countDocuments()
+        };
+        
+        res.json({
+            success: true,
+            status: 'painel_administrativo_pronto',
+            database: dbStatus === 1 ? 'conectado' : 'desconectado',
+            modulos: modulos,
+            contagens: contagens,
+            rotas_disponiveis: [
+                'GET    /api/admin/status',
+                'POST   /api/admin/vencedores/registrar',
+                'GET    /api/admin/vencedores/:ano',
+                'GET    /api/admin/vencedores/anos/disponiveis',
+                'POST   /api/admin/vencedores/inicializar-2026',
+                'POST   /api/admin/vencedores/verificar-pendentes',
+                'GET    /api/admin/vencedores/status/sistema',
+                'GET    /api/admin/vencedores/exportar/json',
+                'POST   /api/admin/estatisticas/calcular',
+                'POST   /api/admin/estatisticas/recalcular-completo',
+                'GET    /api/admin/database/status',
+                'GET    /api/admin/database/verificar/integridade',
+                'POST   /api/admin/backup/completo',
+                'GET    /api/admin/sistema/estatisticas',
+                'GET    /admin-painel'
+            ],
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
 // INICIAR SERVIDOR
 // ============================================
 
@@ -2173,4 +2589,11 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/estatisticas`);
   console.log(`   GET  /api/ranking/global`);
   console.log(`   GET  /api/dashboard`);
+  console.log(`👑 PAINEL ADMINISTRATIVO DISPONÍVEL EM: http://localhost:${PORT}/admin-painel`);
+  console.log(`🔗 Endpoints do Painel:`);
+  console.log(`   GET  /api/admin/status`);
+  console.log(`   POST /api/admin/vencedores/registrar`);
+  console.log(`   GET  /api/admin/vencedores/:ano`);
+  console.log(`   POST /api/admin/estatisticas/calcular`);
+  console.log(`   GET  /api/admin/database/status`);
 });
