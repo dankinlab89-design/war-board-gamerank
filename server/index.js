@@ -45,6 +45,552 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ============================================
+// SISTEMA AUTOMÁTICO DE VENCEDORES MENSAIS
+// ============================================
+
+// 1. Status do sistema (para o painel verificar)
+app.get('/api/vencedores/status', async (req, res) => {
+    try {
+        const totalVencedores = await VencedorMensal.countDocuments();
+        const pendentes = await VencedorMensal.countDocuments({ jogador_apelido: 'PENDENTE' });
+        
+        res.json({
+            success: true,
+            sistema: 'ativo',
+            total_registros: totalVencedores,
+            pendentes: pendentes,
+            calculados_automaticamente: totalVencedores - pendentes,
+            porcentagem_calculados: totalVencedores > 0 ? 
+                Math.round(((totalVencedores - pendentes) / totalVencedores) * 100) : 0,
+            atualizado_em: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Dashboard de vencedores (para exibição)
+app.get('/api/dashboard/vencedores', async (req, res) => {
+    try {
+        // Últimos 12 meses
+        const vencedores = await VencedorMensal.find()
+            .sort({ ano: -1, mes: -1 })
+            .limit(12)
+            .lean();
+        
+        // Formatar para exibição
+        const vencedoresFormatados = vencedores.map(v => ({
+            ano: v.ano,
+            mes: v.mes,
+            mes_nome: v.mes_nome || `Mês ${v.mes}`,
+            jogador_apelido: v.jogador_apelido,
+            vitorias: v.vitorias || 0,
+            partidas: v.partidas || 0,
+            patente: v.patente || 'Cabo 🪖',
+            status: v.jogador_apelido === 'PENDENTE' ? 'pendente' : 'calculado'
+        }));
+        
+        res.json({
+            success: true,
+            estatisticas: {
+                total_registrados: await VencedorMensal.countDocuments(),
+                calculados_automaticamente: await VencedorMensal.countDocuments({ jogador_apelido: { $ne: 'PENDENTE' } }),
+                pendentes: await VencedorMensal.countDocuments({ jogador_apelido: 'PENDENTE' })
+            },
+            vencedores: vencedoresFormatados,
+            atualizado_em: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3. Calcular vencedor do mês anterior (automático)
+app.post('/api/vencedores/calcular-mes-anterior', async (req, res) => {
+    try {
+        const hoje = new Date();
+        const mesAnterior = hoje.getMonth(); // Janeiro = 0
+        const ano = hoje.getFullYear();
+        
+        const mesReferencia = mesAnterior === 0 ? 12 : mesAnterior;
+        const anoReferencia = mesAnterior === 0 ? ano - 1 : ano;
+        
+        console.log(`🎯 Calculando vencedor automático para ${mesReferencia}/${anoReferencia}...`);
+        
+        // 1. Definir período do mês anterior
+        const inicioMes = new Date(anoReferencia, mesReferencia - 1, 1);
+        const fimMes = new Date(anoReferencia, mesReferencia, 0, 23, 59, 59);
+        
+        // 2. Buscar todas as partidas do mês
+        const partidasDoMes = await Partida.find({
+            data: { $gte: inicioMes, $lte: fimMes }
+        }).lean();
+        
+        if (partidasDoMes.length === 0) {
+            console.log(`📭 Nenhuma partida encontrada para ${mesReferencia}/${anoReferencia}`);
+            return res.json({
+                success: true,
+                message: `Nenhuma partida no mês ${mesReferencia}/${anoReferencia}`,
+                mes: mesReferencia,
+                ano: anoReferencia,
+                vencedor: null,
+                total_partidas: 0
+            });
+        }
+        
+        // 3. Calcular estatísticas de cada jogador no mês
+        const estatisticas = {};
+        
+        partidasDoMes.forEach(partida => {
+            const { vencedor, participantes } = partida;
+            
+            // Inicializar jogador se não existir
+            if (!estatisticas[vencedor]) {
+                estatisticas[vencedor] = { vitorias: 0, partidas: 0, apelido: vencedor };
+            }
+            
+            // Contar vitória
+            estatisticas[vencedor].vitorias += 1;
+            estatisticas[vencedor].partidas += 1;
+            
+            // Contar participação dos outros jogadores
+            if (participantes && Array.isArray(participantes)) {
+                participantes.forEach(participante => {
+                    if (participante !== vencedor) {
+                        if (!estatisticas[participante]) {
+                            estatisticas[participante] = { vitorias: 0, partidas: 0, apelido: participante };
+                        }
+                        estatisticas[participante].partidas += 1;
+                    }
+                });
+            }
+        });
+        
+        // 4. Converter para array e ordenar
+        const rankingArray = Object.values(estatisticas);
+        
+        // Critério: Mais vitórias -> Mais partidas (desempate)
+        rankingArray.sort((a, b) => {
+            if (b.vitorias !== a.vitorias) {
+                return b.vitorias - a.vitorias;
+            }
+            return b.partidas - a.partidas;
+        });
+        
+        // 5. Pegar o vencedor (primeiro do ranking)
+        const vencedorDoMes = rankingArray[0];
+        
+        if (!vencedorDoMes) {
+            return res.json({
+                success: true,
+                message: 'Nenhum vencedor encontrado',
+                mes: mesReferencia,
+                ano: anoReferencia,
+                vencedor: null
+            });
+        }
+        
+        // 6. Buscar informações do jogador
+        const jogadorInfo = await Jogador.findOne({ 
+            apelido: vencedorDoMes.apelido 
+        }).select('patente').lean();
+        
+        // 7. Nomes dos meses
+        const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        
+        // 8. Verificar se já existe registro
+        const existeRegistro = await VencedorMensal.findOne({ 
+            ano: anoReferencia, 
+            mes: mesReferencia 
+        });
+        
+        let vencedorSalvo;
+        
+        if (existeRegistro) {
+            // Atualizar existente
+            existeRegistro.jogador_apelido = vencedorDoMes.apelido;
+            existeRegistro.vitorias = vencedorDoMes.vitorias;
+            existeRegistro.partidas = vencedorDoMes.partidas;
+            existeRegistro.patente = jogadorInfo?.patente || 'Cabo 🪖';
+            existeRegistro.mes_nome = nomesMeses[mesReferencia - 1];
+            existeRegistro.data_registro = new Date();
+            existeRegistro.status = 'calculado';
+            
+            await existeRegistro.save();
+            vencedorSalvo = existeRegistro;
+        } else {
+            // Criar novo registro
+            const novoVencedor = new VencedorMensal({
+                ano: anoReferencia,
+                mes: mesReferencia,
+                jogador_apelido: vencedorDoMes.apelido,
+                vitorias: vencedorDoMes.vitorias,
+                partidas: vencedorDoMes.partidas,
+                patente: jogadorInfo?.patente || 'Cabo 🪖',
+                mes_nome: nomesMeses[mesReferencia - 1],
+                observacoes: `Calculado automaticamente em ${new Date().toLocaleString('pt-BR')} com base em ${partidasDoMes.length} partidas`,
+                status: 'calculado',
+                data_registro: new Date()
+            });
+            
+            await novoVencedor.save();
+            vencedorSalvo = novoVencedor;
+        }
+        
+        console.log(`✅ Vencedor calculado: ${vencedorDoMes.apelido} para ${mesReferencia}/${anoReferencia}`);
+        
+        res.json({
+            success: true,
+            action: existeRegistro ? 'updated' : 'created',
+            message: `Vencedor ${vencedorDoMes.apelido} calculado para ${mesReferencia}/${anoReferencia}`,
+            mes: mesReferencia,
+            ano: anoReferencia,
+            vencedor: vencedorSalvo,
+            estatisticas: {
+                total_partidas: partidasDoMes.length,
+                total_jogadores: rankingArray.length,
+                ranking: rankingArray.slice(0, 3) // Top 3
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular vencedor:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// 4. Inicializar 2026 com sistema automático
+app.post('/api/vencedores/inicializar-2026', async (req, res) => {
+    try {
+        console.log('🚀 Inicializando sistema automático para 2026...');
+        
+        const resultados = [];
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = hoje.getMonth() + 1; // Janeiro = 1
+        
+        // Só permite inicializar 2026
+        if (anoAtual > 2026) {
+            return res.json({
+                success: true,
+                message: '2026 já passou, inicialização não necessária',
+                resultados: []
+            });
+        }
+        
+        // Nomes dos meses
+        const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        
+        // Para cada mês de 2026
+        for (let mes = 1; mes <= 12; mes++) {
+            // Verificar se o mês já passou (para calcular automaticamente)
+            const mesJaPassou = (anoAtual < 2026) || (anoAtual === 2026 && mes < mesAtual);
+            
+            if (mesJaPassou) {
+                // Mês já passou - tentar calcular automaticamente
+                try {
+                    // Verificar se há partidas neste mês
+                    const inicioMes = new Date(2026, mes - 1, 1);
+                    const fimMes = new Date(2026, mes, 0, 23, 59, 59);
+                    
+                    const partidasDoMes = await Partida.countDocuments({
+                        data: { $gte: inicioMes, $lte: fimMes }
+                    });
+                    
+                    if (partidasDoMes > 0) {
+                        // Calcular vencedor automaticamente
+                        const resultado = await calcularVencedorMes(2026, mes);
+                        resultados.push({ 
+                            mes, 
+                            status: resultado.success ? 'calculado' : 'sem_partidas',
+                            vencedor: resultado.vencedor?.jogador_apelido || 'Nenhum'
+                        });
+                    } else {
+                        // Sem partidas - marcar como sem dados
+                        await criarRegistroPendente(2026, mes, 'sem_partidas');
+                        resultados.push({ mes, status: 'sem_partidas' });
+                    }
+                } catch (error) {
+                    resultados.push({ mes, status: 'erro', error: error.message });
+                }
+            } else {
+                // Mês futuro ou atual - criar pendente
+                await criarRegistroPendente(2026, mes, 'pendente');
+                resultados.push({ mes, status: 'pendente' });
+            }
+        }
+        
+        res.json({
+            success: true,
+            message: '2026 inicializado com sistema automático',
+            ano_base: 2026,
+            resultados: resultados,
+            total_meses: 12,
+            meses_calculados: resultados.filter(r => r.status === 'calculado').length,
+            meses_pendentes: resultados.filter(r => r.status === 'pendente').length
+        });
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar 2026:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// Função auxiliar: calcular vencedor de um mês específico
+async function calcularVencedorMes(ano, mes) {
+    const inicioMes = new Date(ano, mes - 1, 1);
+    const fimMes = new Date(ano, mes, 0, 23, 59, 59);
+    
+    const partidasDoMes = await Partida.find({
+        data: { $gte: inicioMes, $lte: fimMes }
+    }).lean();
+    
+    if (partidasDoMes.length === 0) {
+        return { success: false, message: 'Sem partidas' };
+    }
+    
+    // Calcular estatísticas
+    const estatisticas = {};
+    
+    partidasDoMes.forEach(partida => {
+        const { vencedor, participantes } = partida;
+        
+        if (!estatisticas[vencedor]) {
+            estatisticas[vencedor] = { vitorias: 0, partidas: 0, apelido: vencedor };
+        }
+        estatisticas[vencedor].vitorias += 1;
+        estatisticas[vencedor].partidas += 1;
+        
+        if (participantes && Array.isArray(participantes)) {
+            participantes.forEach(participante => {
+                if (participante !== vencedor) {
+                    if (!estatisticas[participante]) {
+                        estatisticas[participante] = { vitorias: 0, partidas: 0, apelido: participante };
+                    }
+                    estatisticas[participante].partidas += 1;
+                }
+            });
+        }
+    });
+    
+    // Ordenar
+    const rankingArray = Object.values(estatisticas);
+    rankingArray.sort((a, b) => {
+        if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
+        return b.partidas - a.partidas;
+    });
+    
+    const vencedorDoMes = rankingArray[0];
+    const jogadorInfo = await Jogador.findOne({ apelido: vencedorDoMes.apelido }).select('patente').lean();
+    
+    // Nomes dos meses
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    // Criar/atualizar registro
+    const existeRegistro = await VencedorMensal.findOne({ ano, mes });
+    
+    if (existeRegistro) {
+        existeRegistro.jogador_apelido = vencedorDoMes.apelido;
+        existeRegistro.vitorias = vencedorDoMes.vitorias;
+        existeRegistro.partidas = vencedorDoMes.partidas;
+        existeRegistro.patente = jogadorInfo?.patente || 'Cabo 🪖';
+        existeRegistro.mes_nome = nomesMeses[mes - 1];
+        existeRegistro.data_registro = new Date();
+        existeRegistro.status = 'calculado';
+        await existeRegistro.save();
+        
+        return { 
+            success: true, 
+            vencedor: existeRegistro,
+            total_partidas: partidasDoMes.length
+        };
+    } else {
+        const novoVencedor = new VencedorMensal({
+            ano: ano,
+            mes: mes,
+            jogador_apelido: vencedorDoMes.apelido,
+            vitorias: vencedorDoMes.vitorias,
+            partidas: vencedorDoMes.partidas,
+            patente: jogadorInfo?.patente || 'Cabo 🪖',
+            mes_nome: nomesMeses[mes - 1],
+            observacoes: `Calculado automaticamente`,
+            status: 'calculado',
+            data_registro: new Date()
+        });
+        
+        await novoVencedor.save();
+        
+        return { 
+            success: true, 
+            vencedor: novoVencedor,
+            total_partidas: partidasDoMes.length
+        };
+    }
+}
+
+// Função auxiliar: criar registro pendente
+async function criarRegistroPendente(ano, mes, status = 'pendente') {
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const existe = await VencedorMensal.findOne({ ano, mes });
+    
+    if (!existe) {
+        const registro = new VencedorMensal({
+            ano: ano,
+            mes: mes,
+            jogador_apelido: 'PENDENTE',
+            vitorias: 0,
+            partidas: 0,
+            patente: '-',
+            mes_nome: nomesMeses[mes - 1],
+            observacoes: status === 'pendente' 
+                ? `Aguardando término do mês ${mes}/${ano}` 
+                : `Nenhuma partida registrada no mês ${mes}/${ano}`,
+            status: status,
+            data_registro: new Date()
+        });
+        
+        await registro.save();
+    }
+}
+
+// 5. Verificar meses pendentes
+app.get('/api/vencedores/meses-pendentes', async (req, res) => {
+    try {
+        // Encontrar meses que têm partidas mas não têm vencedor calculado
+        const mesesComPartidas = await Partida.aggregate([
+            {
+                $group: {
+                    _id: {
+                        ano: { $year: "$data" },
+                        mes: { $month: "$data" }
+                    },
+                    total_partidas: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.ano": 1, "_id.mes": 1 } }
+        ]);
+        
+        const pendentes = [];
+        
+        for (const mes of mesesComPartidas) {
+            const existeVencedor = await VencedorMensal.findOne({
+                ano: mes._id.ano,
+                mes: mes._id.mes,
+                jogador_apelido: { $ne: 'PENDENTE' }
+            });
+            
+            if (!existeVencedor) {
+                pendentes.push({
+                    ano: mes._id.ano,
+                    mes: mes._id.mes,
+                    partidas: mes.total_partidas,
+                    status: 'pendente_calculo'
+                });
+            }
+        }
+        
+        res.json({
+            success: true,
+            total_pendentes: pendentes.length,
+            meses_pendentes: pendentes
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 6. Recalcular tudo
+app.post('/api/vencedores/recalcular-tudo', async (req, res) => {
+    try {
+        console.log('🔄 Recalculando TODOS os vencedores...');
+        
+        const mesesComPartidas = await Partida.aggregate([
+            {
+                $group: {
+                    _id: {
+                        ano: { $year: "$data" },
+                        mes: { $month: "$data" }
+                    },
+                    total_partidas: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.ano": 1, "_id.mes": 1 } }
+        ]);
+        
+        const resultados = [];
+        
+        for (const mes of mesesComPartidas) {
+            try {
+                const resultado = await calcularVencedorMes(mes._id.ano, mes._id.mes);
+                resultados.push({
+                    ano: mes._id.ano,
+                    mes: mes._id.mes,
+                    status: resultado.success ? 'calculado' : 'erro',
+                    vencedor: resultado.vencedor?.jogador_apelido,
+                    partidas: resultado.total_partidas
+                });
+            } catch (error) {
+                resultados.push({
+                    ano: mes._id.ano,
+                    mes: mes._id.mes,
+                    status: 'erro',
+                    error: error.message
+                });
+            }
+        }
+        
+        res.json({
+            success: true,
+            action: 'recalculated',
+            total_meses: mesesComPartidas.length,
+            resultados: resultados
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 7. Agendador automático (executa todo dia 1 às 00:01)
+async function agendadorVencedoresMensais() {
+    const hoje = new Date();
+    
+    // Executar no dia 1 de cada mês às 00:01
+    if (hoje.getDate() === 1 && hoje.getHours() === 0 && hoje.getMinutes() === 1) {
+        console.log('⏰ Agendador: Calculando vencedor do mês anterior...');
+        
+        try {
+            const resultado = await calcularVencedorMes(
+                hoje.getMonth() === 0 ? hoje.getFullYear() - 1 : hoje.getFullYear(),
+                hoje.getMonth() === 0 ? 12 : hoje.getMonth()
+            );
+            
+            if (resultado.success) {
+                console.log(`✅ Agendador: Vencedor ${resultado.vencedor.jogador_apelido} calculado`);
+            } else {
+                console.log('ℹ️ Agendador: Nenhuma partida no mês anterior');
+            }
+        } catch (error) {
+            console.error('❌ Agendador: Erro ao calcular vencedor:', error);
+        }
+    }
+}
+
+// Iniciar agendador (verifica a cada hora)
+setInterval(agendadorVencedoresMensais, 60 * 60 * 1000); // 1 hora
+agendadorVencedoresMensais(); // Executar imediatamente ao iniciar
+
+// ============================================
 // CONEXÃO MONGODB
 // ============================================
 
@@ -106,16 +652,24 @@ const Partida = mongoose.model('Partida', partidaSchema);
 // NOVOS MODELOS MONGODB PARA AS FUNCIONALIDADES
 // ============================================
 
-// Schema para Vencedores Mensais (funcionalidade 3)
+// Schema para Vencedores Mensais (sistema automático)
 const vencedorMensalSchema = new mongoose.Schema({
-  ano: { type: Number, required: true },
-  mes: { type: Number, required: true }, // 1-12
-  jogador_apelido: { type: String, required: true },
-  vitorias: { type: Number, required: true },
-  partidas: { type: Number, required: true },
-  patente: { type: String, default: 'Cabo 🪖' },
-  data_registro: { type: Date, default: Date.now }
+    ano: { type: Number, required: true },
+    mes: { type: Number, required: true, min: 1, max: 12 },
+    mes_nome: String,
+    jogador_apelido: { type: String, required: true },
+    vitorias: { type: Number, default: 0 },
+    partidas: { type: Number, default: 0 },
+    patente: { type: String, default: 'Cabo 🪖' },
+    status: { type: String, default: 'calculado', enum: ['calculado', 'pendente', 'sem_partidas'] },
+    observacoes: String,
+    data_registro: { type: Date, default: Date.now },
+    calculado_automaticamente: { type: Boolean, default: true }
 });
+
+// Criar índice para busca rápida
+vencedorMensalSchema.index({ ano: -1, mes: -1 });
+vencedorMensalSchema.index({ jogador_apelido: 1 });
 
 // Schema para Estatísticas Avançadas (funcionalidades 1 e 4)
 const estatisticaSchema = new mongoose.Schema({
