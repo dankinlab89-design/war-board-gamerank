@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Automático - War Board</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .status-online { color: #38a169; }
+        .status-offline { color: #e53e3e; }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1a365d, #2d3748);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            text-align: center;
+            border: 1px solid #4a5568;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4dabf7;
+            margin: 5px 0;
+        }
+        
+        .vencedor-item {
+            background: rgba(45, 55, 72, 0.5);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid;
+        }
+        
+        .vencedor-calculado { border-left-color: #38a169; }
+        .vencedor-pendente { border-left-color: #ed8936; }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="admin-container">
+        <h1><i class="fas fa-robot"></i> Sistema Automático de Vencedores</h1>
+        <p>Sistema que calcula automaticamente o vencedor de cada mês</p>
+        
+        <div id="status" class="stat-card">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Conectando ao sistema...</p>
+        </div>
+        
+        <div id="feedback"></div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalVencedores">0</div>
+                    <div>Vencedores</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="pendentes">0</div>
+                    <div>Pendentes</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="calculados">0</div>
+                    <div>Calculados</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button class="btn btn-primary" onclick="calcularMesAnterior()">
+                <i class="fas fa-calculator"></i> Calcular Mês Anterior
+            </button>
+            <button class="btn btn-success" onclick="inicializar2026()">
+                <i class="fas fa-calendar-alt"></i> Inicializar 2026
+            </button>
+            <button class="btn btn-warning" onclick="verificarPendentes()">
+                <i class="fas fa-search"></i> Verificar Pendentes
+            </button>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Vencedores Calculados</h3>
+            <div id="listaVencedores">
+                <p>Carregando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin;
+        
+        function mostrarMensagem(texto, tipo = 'info') {
+            const feedback = document.getElementById('feedback');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${texto}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            feedback.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+        
+        async function carregarStatus() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/vencedores/status`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('totalVencedores').textContent = data.total_registros;
+                    document.getElementById('pendentes').textContent = data.pendentes;
+                    document.getElementById('calculados').textContent = data.calculados_automaticamente;
+                    
+                    document.getElementById('status').innerHTML = `
+                        <p><i class="fas fa-check-circle status-online"></i> Sistema: ONLINE</p>
+                        <p>Atualizado: ${new Date(data.atualizado_em).toLocaleString('pt-BR')}</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `
+                    <p><i class="fas fa-times-circle status-offline"></i> Sistema: OFFLINE</p>
+                    <p>Erro ao conectar</p>
+                `;
+            }
+        }
+        
+        async function carregarVencedores() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/dashboard/vencedores`);
+                const data = await res.json();
+                
+                if (data.success && data.vencedores.length > 0) {
+                    let html = '';
+                    
+                    data.vencedores.forEach(v => {
+                        const statusClass = v.status === 'pendente' ? 'vencedor-pendente' : 'vencedor-calculado';
+                        const statusIcon = v.status === 'pendente' ? 'fa-clock' : 'fa-trophy';
+                        const statusText = v.status === 'pendente' ? 'PENDENTE' : 'CALCULADO';
+                        
+                        html += `
+                            <div class="vencedor-item ${statusClass}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5>${v.jogador_apelido}</h5>
+                                        <p class="mb-0">${v.mes_nome} ${v.ano} • ${v.vitorias} vitórias • ${v.partidas} partidas</p>
+                                        <small>${v.patente}</small>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-${v.status === 'pendente' ? 'warning' : 'success'}">
+                                            <i class="fas ${statusIcon}"></i> ${statusText}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('listaVencedores').innerHTML = html;
+                } else {
+                    document.getElementById('listaVencedores').innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Nenhum vencedor registrado ainda
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('listaVencedores').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Erro ao carregar vencedores
+                    </div>
+                `;
+            }
+        }
+        
+        async function calcularMesAnterior() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/vencedores/calcular-mes-anterior`, {
+                    method: 'POST'
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (data.vencedor) {
+                        mostrarMensagem(`Vencedor calculado: ${data.vencedor.jogador_apelido}`, 'success');
+                    } else {
+                        mostrarMensagem('Nenhuma partida no mês anterior', 'info');
+                    }
+                    carregarStatus();
+                    carregarVencedores();
+                }
+            } catch (error) {
+                mostrarMensagem('Erro ao calcular mês anterior', 'danger');
+            }
+        }
+        
+        async function inicializar2026() {
+            if (!confirm('Inicializar sistema automático para 2026? Isso criará registros para todos os meses.')) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/vencedores/inicializar-2026`, {
+                    method: 'POST'
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    mostrarMensagem(`2026 inicializado! ${data.meses_calculados} meses calculados`, 'success');
+                    carregarStatus();
+                    carregarVencedores();
+                }
+            } catch (error) {
+                mostrarMensagem('Erro ao inicializar 2026', 'danger');
+            }
+        }
+        
+        async function verificarPendentes() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/vencedores/meses-pendentes`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (data.total_pendentes > 0) {
+                        mostrarMensagem(`Encontrados ${data.total_pendentes} meses pendentes`, 'warning');
+                        // Calcular automaticamente
+                        for (const mes of data.meses_pendentes) {
+                            await fetch(`${API_BASE_URL}/api/vencedores/calcular-mes`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ano: mes.ano, mes: mes.mes })
+                            });
+                        }
+                        mostrarMensagem('Meses pendentes calculados!', 'success');
+                        carregarStatus();
+                        carregarVencedores();
+                    } else {
+                        mostrarMensagem('Nenhum mês pendente encontrado', 'info');
+                    }
+                }
+            } catch (error) {
+                mostrarMensagem('Erro ao verificar pendentes', 'danger');
+            }
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarStatus();
+            carregarVencedores();
+            
+            // Atualizar a cada 30 segundos
+            setInterval(() => {
+                carregarStatus();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

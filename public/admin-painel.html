@@ -1,1143 +1,552 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚙️ Painel Admin - WAR Board GameRank</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Sistema Automático - War Board GameRank</title>
+    
+    <!-- CSS do Sistema (usando o mesmo que seu site principal) -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
     <style>
-        /* Estilos específicos para o painel admin */
+        /* Estilos específicos do painel administrativo */
         .admin-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
         
-        .admin-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 30px;
-            background: linear-gradient(135deg, #1a472a, #0d2d1c);
-            border-radius: 15px;
-            border: 3px solid #b8860b;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        .admin-header h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: #ffd700;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .admin-header p {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.1rem;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-top: 15px;
-        }
-        
-        .status-online {
-            background: rgba(40, 167, 69, 0.2);
-            border: 2px solid #28a745;
-            color: #28a745;
-        }
-        
-        .status-warning {
-            background: rgba(255, 193, 7, 0.2);
-            border: 2px solid #ffc107;
-            color: #ffc107;
-        }
-        
-        .status-offline {
-            background: rgba(220, 53, 69, 0.2);
-            border: 2px solid #dc3545;
-            color: #dc3545;
-        }
-        
-        .admin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-        
-        .admin-card {
-            background: rgba(26, 71, 42, 0.1);
-            border-radius: 12px;
-            padding: 25px;
-            border: 2px solid rgba(184, 134, 11, 0.3);
-            transition: all 0.3s ease;
-            position: relative;
+        .admin-panel {
+            background: rgba(10, 14, 23, 0.9);
+            border-radius: 10px;
+            border: 1px solid #2d3748;
+            margin-bottom: 20px;
             overflow: hidden;
         }
         
-        .admin-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #b8860b, #ffd700);
-        }
-        
-        .admin-card:hover {
-            transform: translateY(-5px);
-            border-color: #b8860b;
-            box-shadow: 0 10px 25px rgba(184, 134, 11, 0.2);
-        }
-        
-        .card-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            color: #ffd700;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.3rem;
-        }
-        
-        .card-title i {
-            font-size: 1.8rem;
-            color: #b8860b;
-        }
-        
-        .btn-admin {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
+        .admin-panel-header {
+            background: linear-gradient(90deg, #1a365d, #2d3748);
             padding: 15px 20px;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, rgba(26, 71, 42, 0.3), rgba(13, 45, 28, 0.4));
-            border: 2px solid rgba(184, 134, 11, 0.4);
-            border-radius: 8px;
+            border-bottom: 2px solid #4dabf7;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
             color: white;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-        
-        .btn-admin:hover {
-            background: linear-gradient(135deg, rgba(184, 134, 11, 0.3), rgba(255, 215, 0, 0.2));
-            border-color: #ffd700;
-            transform: translateX(5px);
-        }
-        
-        .btn-admin i:first-child {
-            font-size: 1.2rem;
-            margin-right: 10px;
-            color: #ffd700;
-        }
-        
-        .btn-admin i:last-child {
-            color: rgba(255,255,255,0.5);
-        }
-        
-        .btn-admin.danger {
-            border-color: rgba(220, 53, 69, 0.4);
-            background: linear-gradient(135deg, rgba(139, 0, 0, 0.2), rgba(88, 0, 0, 0.3));
-        }
-        
-        .btn-admin.danger:hover {
-            border-color: #dc3545;
-            background: linear-gradient(135deg, rgba(220, 53, 69, 0.3), rgba(139, 0, 0, 0.2));
-        }
-        
-        .admin-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffd700;
-            font-family: 'Orbitron', sans-serif;
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
-            margin-top: 5px;
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 1000;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, #1a472a, #0d2d1c);
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 15px;
-            border: 3px solid #b8860b;
-            position: relative;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(184, 134, 11, 0.3);
-        }
-        
-        .modal-title {
-            font-family: 'Orbitron', sans-serif;
-            color: #ffd700;
-            font-size: 1.5rem;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.7);
-            font-size: 2rem;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .close-modal:hover {
-            color: #ffd700;
-        }
-        
-        /* Formulários nos modais */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: #ffd700;
-            font-weight: 600;
-        }
-        
-        .form-select, .form-input {
-            width: 100%;
-            padding: 12px 15px;
-            background: rgba(255,255,255,0.08);
-            border: 2px solid rgba(184, 134, 11, 0.3);
-            border-radius: 6px;
-            color: white;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 1rem;
-        }
-        
-        .form-select:focus, .form-input:focus {
-            outline: none;
-            border-color: #ffd700;
-            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid rgba(255,255,255,0.1);
-        }
-        
-        .btn-modal {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 10px;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #b8860b, #ffd700);
-            color: #1a472a;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #ffd700, #b8860b);
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.5);
-        }
-        
-        /* Resultados */
-        .result-container {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
+        .admin-panel-body {
             padding: 20px;
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
         }
         
-        .result-success {
-            border-left: 4px solid #28a745;
-            padding-left: 15px;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         
-        .result-error {
-            border-left: 4px solid #dc3545;
-            padding-left: 15px;
-        }
-        
-        /* Loader */
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #ffd700;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .admin-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .admin-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .modal-content {
-                margin: 20px auto;
-                padding: 20px;
-            }
-        }
-        
-        /* Mensagens */
-        .message {
-            padding: 15px;
+        .stat-card {
+            background: linear-gradient(135deg, #1a365d, #2d3748);
             border-radius: 8px;
-            margin: 15px 0;
-            font-weight: 500;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #4a5568;
+            transition: transform 0.2s;
         }
         
-        .message-success {
-            background: rgba(40, 167, 69, 0.2);
-            border: 1px solid #28a745;
-            color: #28a745;
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: #4dabf7;
         }
         
-        .message-error {
-            background: rgba(220, 53, 69, 0.2);
-            border: 1px solid #dc3545;
-            color: #dc3545;
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4dabf7;
+            font-family: 'Orbitron', monospace;
+            margin-bottom: 5px;
         }
         
-        .message-warning {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid #ffc107;
-            color: #ffc107;
-        }
-        
-        /* Logs */
-        .log-container {
-            font-family: 'Courier New', monospace;
+        .stat-label {
+            color: #a0aec0;
             font-size: 0.9rem;
-            background: rgba(0,0,0,0.5);
-            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-admin {
+            background: linear-gradient(90deg, #2b6cb0, #4dabf7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .btn-admin:hover {
+            background: linear-gradient(90deg, #4dabf7, #63b3ed);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(77, 171, 247, 0.3);
+        }
+        
+        .btn-admin-danger {
+            background: linear-gradient(90deg, #c53030, #fc8181);
+        }
+        
+        .btn-admin-success {
+            background: linear-gradient(90deg, #276749, #38a169);
+        }
+        
+        .vencedor-item {
+            background: rgba(45, 55, 72, 0.5);
+            border-radius: 6px;
             padding: 15px;
-            margin-top: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            margin-bottom: 10px;
+            border-left: 4px solid #4dabf7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .vencedor-info h5 {
+            margin: 0;
+            color: white;
+        }
+        
+        .vencedor-meta {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-success {
+            background: rgba(56, 161, 105, 0.2);
+            color: #38a169;
+            border: 1px solid #38a169;
+        }
+        
+        .status-pending {
+            background: rgba(237, 137, 54, 0.2);
+            color: #ed8936;
+            border: 1px solid #ed8936;
+        }
+        
+        .status-error {
+            background: rgba(245, 101, 101, 0.2);
+            color: #f56565;
+            border: 1px solid #f56565;
         }
         
         .log-entry {
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(45, 55, 72, 0.3);
+            border-radius: 4px;
+            border-left: 3px solid #4dabf7;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
         }
         
-        .log-time {
-            color: #b8860b;
-            margin-right: 10px;
-        }
-        
-        .log-info { color: #28a745; }
-        .log-warning { color: #ffc107; }
-        .log-error { color: #dc3545; }
+        .log-success { border-left-color: #38a169; }
+        .log-error { border-left-color: #f56565; }
+        .log-warning { border-left-color: #ed8936; }
     </style>
 </head>
-<body>
-    <!-- Navegação -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <div class="nav-logo">⚙️</div>
-                <h1>PAINEL ADMIN <span class="nav-subtitle">WAR Board</span></h1>
-            </div>
-            <div class="nav-menu">
-                <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Quartel</a>
-                <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
-                <a href="jogadores.html" class="nav-link"><i class="fas fa-users"></i> Tropas</a>
-                <a href="partidas.html" class="nav-link"><i class="fas fa-flag"></i> Batalhas</a>
-                <a href="ranking.html" class="nav-link"><i class="fas fa-trophy"></i> Ranking</a>
-                <a href="admin-painel.html" class="nav-link active"><i class="fas fa-cogs"></i> Admin</a>
-            </div>
-            <button class="nav-toggle"><i class="fas fa-bars"></i></button>
-        </div>
-    </nav>
-
-    <!-- Painel Admin -->
-    <main class="admin-container">
+<body class="dark-theme">
+    <div class="admin-container">
         <!-- Cabeçalho -->
-        <div class="admin-header">
-            <h1><i class="fas fa-user-shield"></i> COMANDO ADMINISTRATIVO</h1>
-            <p>Sistema de gerenciamento e manutenção do WAR Board GameRank</p>
-            <div class="status-badge status-online" id="system-status">
-                <i class="fas fa-circle"></i> Sistema Online
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4dabf7; font-family: 'Orbitron', monospace;">
+                <i class="bi bi-cpu"></i> SISTEMA AUTOMÁTICO
+            </h1>
+            <p style="color: #a0aec0;">War Board GameRank - Vencedores Mensais Automáticos</p>
+            <div id="apiStatus" class="status-badge status-pending" style="display: inline-block;">
+                <i class="bi bi-wifi"></i> CONECTANDO...
             </div>
         </div>
-
-        <!-- Status do Sistema -->
-        <div class="admin-card">
-            <h2 class="card-title"><i class="fas fa-heartbeat"></i> STATUS DO SISTEMA</h2>
-            <div class="admin-stats" id="system-stats">
-                <!-- Carregado via JavaScript -->
+        
+        <!-- Mensagens -->
+        <div id="feedback"></div>
+        
+        <!-- Painel de Controle -->
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <i class="bi bi-sliders"></i> CONTROLE DO SISTEMA
             </div>
-            <button class="btn-admin" onclick="atualizarStatus()">
-                <span><i class="fas fa-sync-alt"></i> Atualizar Status</span>
-                <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-
-        <!-- Grid de Funcionalidades -->
-        <div class="admin-grid">
-            <!-- Jogador -->
-            <div class="admin-card">
-                <h2 class="card-title"><i class="fas fa-user"></i> JOGADOR</h2>
-                <button class="btn-admin" onclick="abrirModal('modal-jogador-cadastro')">
-                    <span><i class="fas fa-user-plus"></i> Cadastrar Novo Jogador</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin" onclick="abrirModal('modal-jogador-correcao')">
-                    <span><i class="fas fa-user-cog"></i> Corrigir Estatísticas</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin" onclick="window.open('jogadores.html', '_blank')">
-                    <span><i class="fas fa-list"></i> Gerenciar Jogadores</span>
-                    <i class="fas fa-external-link-alt"></i>
-                </button>
-            </div>
-
-            <!-- Partida -->
-            <div class="admin-card">
-                <h2 class="card-title"><i class="fas fa-flag"></i> PARTIDA</h2>
-                <button class="btn-admin" onclick="window.open('nova-partida-funcional.html', '_blank')">
-                    <span><i class="fas fa-plus-circle"></i> Registrar Nova Partida</span>
-                    <i class="fas fa-external-link-alt"></i>
-                </button>
-                <button class="btn-admin" onclick="window.open('partidas.html', '_blank')">
-                    <span><i class="fas fa-history"></i> Histórico de Partidas</span>
-                    <i class="fas fa-external-link-alt"></i>
-                </button>
-                <button class="btn-admin" onclick="abrirModal('modal-partida-correcao')">
-                    <span><i class="fas fa-tools"></i> Verificar Partidas</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-
-            <!-- Dashboard -->
-            <div class="admin-card">
-                <h2 class="card-title"><i class="fas fa-chart-bar"></i> DASHBOARD</h2>
-                <button class="btn-admin" onclick="window.open('dashboard.html', '_blank')">
-                    <span><i class="fas fa-tachometer-alt"></i> Acessar Dashboard</span>
-                    <i class="fas fa-external-link-alt"></i>
-                </button>
-                <button class="btn-admin" onclick="registrarVencedorMes()">
-                    <span><i class="fas fa-trophy"></i> Registrar Vencedor do Mês</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin" onclick="verificarMesesPendentes()">
-                    <span><i class="fas fa-calendar-check"></i> Verificar Meses Pendentes</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-
-            <!-- Estatísticas -->
-            <div class="admin-card">
-                <h2 class="card-title"><i class="fas fa-chart-line"></i> ESTATÍSTICAS</h2>
-                <button class="btn-admin" onclick="window.open('estatisticas.html', '_blank')">
-                    <span><i class="fas fa-chart-pie"></i> Estatísticas Detalhadas</span>
-                    <i class="fas fa-external-link-alt"></i>
-                </button>
-                <button class="btn-admin" onclick="atualizarEstatisticas()">
-                    <span><i class="fas fa-sync"></i> Atualizar Estatísticas</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin danger" onclick="corrigirEstatisticasGeral()">
-                    <span><i class="fas fa-redo"></i> Corrigir Todas Estatísticas</span>
-                    <i class="fas fa-exclamation-triangle"></i>
-                </button>
-            </div>
-
-            <!-- Sistema -->
-            <div class="admin-card">
-                <h2 class="card-title"><i class="fas fa-server"></i> SISTEMA</h2>
-                <button class="btn-admin" onclick="abrirModal('modal-backup')">
-                    <span><i class="fas fa-database"></i> Backup do Sistema</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin" onclick="abrirModal('modal-logs')">
-                    <span><i class="fas fa-clipboard-list"></i> Ver Logs</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <button class="btn-admin danger" onclick="abrirModal('modal-manutencao')">
-                    <span><i class="fas fa-tools"></i> Manutenção</span>
-                    <i class="fas fa-wrench"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Logs em Tempo Real -->
-        <div class="admin-card">
-            <h2 class="card-title"><i class="fas fa-stream"></i> LOGS EM TEMPO REAL</h2>
-            <div class="log-container" id="realtime-logs">
-                <div class="log-entry">
-                    <span class="log-time">[00:00:00]</span>
-                    <span class="log-info">Sistema iniciado. Aguardando comandos...</span>
+            <div class="admin-panel-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">VENCEDORES</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statPendentes">0</div>
+                        <div class="stat-label">PENDENTES</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statCalculados">0</div>
+                        <div class="stat-label">AUTOMÁTICOS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statPartidas">0</div>
+                        <div class="stat-label">PARTIDAS</div>
+                    </div>
                 </div>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button class="btn-admin" onclick="limparLogs()">
-                    <span><i class="fas fa-broom"></i> Limpar Logs</span>
-                </button>
-                <button class="btn-admin" onclick="alternarAutoLogs()">
-                    <span><i class="fas fa-play" id="auto-logs-icon"></i> <span id="auto-logs-text">Auto-logs: OFF</span></span>
-                </button>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modais -->
-    
-    <!-- Modal: Registrar Vencedor do Mês -->
-    <div class="modal" id="modal-vencedor-mes">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-trophy"></i> Registrar Vencedor do Mês</h3>
-                <button class="close-modal" onclick="fecharModal('modal-vencedor-mes')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Ano:</label>
-                    <select class="form-select" id="vencedor-ano">
-                        <!-- Preenchido via JS -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Mês:</label>
-                    <select class="form-select" id="vencedor-mes">
-                        <option value="1">Janeiro</option>
-                        <option value="2">Fevereiro</option>
-                        <option value="3">Março</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Maio</option>
-                        <option value="6">Junho</option>
-                        <option value="7">Julho</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Setembro</option>
-                        <option value="10">Outubro</option>
-                        <option value="11">Novembro</option>
-                        <option value="12">Dezembro</option>
-                    </select>
-                </div>
-                <div class="message message-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Esta ação registrará o vencedor do mês selecionado baseado nas partidas existentes.
-                </div>
-                <div class="result-container" id="vencedor-result" style="display: none;"></div>
-                <div class="modal-actions">
-                    <button class="btn-modal btn-secondary" onclick="fecharModal('modal-vencedor-mes')">
-                        <i class="fas fa-times"></i> Cancelar
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <button class="btn-admin" onclick="calcularMesAnterior()">
+                        <i class="bi bi-calculator"></i> CALCULAR MÊS ANTERIOR
                     </button>
-                    <button class="btn-modal btn-primary" onclick="confirmarRegistroVencedor()">
-                        <i class="fas fa-check"></i> Registrar
+                    <button class="btn-admin btn-admin-success" onclick="inicializar2026()">
+                        <i class="bi bi-calendar-plus"></i> INICIALIZAR 2026
+                    </button>
+                    <button class="btn-admin" onclick="verificarPendentes()">
+                        <i class="bi bi-search"></i> VERIFICAR PENDENTES
+                    </button>
+                    <button class="btn-admin" onclick="recalcularTudo()">
+                        <i class="bi bi-arrow-repeat"></i> RECALCULAR TUDO
                     </button>
                 </div>
             </div>
+        </div>
+        
+        <!-- Lista de Vencedores -->
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <i class="bi bi-trophy"></i> VENCEDORES REGISTRADOS
+            </div>
+            <div class="admin-panel-body">
+                <div id="listaVencedores" style="min-height: 200px;">
+                    <div style="text-align: center; padding: 40px;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p style="color: #a0aec0; margin-top: 10px;">Carregando vencedores...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logs do Sistema -->
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <i class="bi bi-terminal"></i> LOGS DO SISTEMA
+            </div>
+            <div class="admin-panel-body">
+                <div id="logsContainer" style="max-height: 300px; overflow-y: auto;">
+                    <div class="log-entry">
+                        <span style="color: #4dabf7;">[SISTEMA]</span> Painel administrativo inicializado
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instruções -->
+        <div style="text-align: center; margin-top: 30px; color: #718096; font-size: 0.9rem;">
+            <p><i class="bi bi-info-circle"></i> O sistema calcula automaticamente o vencedor com base nas partidas de cada mês</p>
+            <p>Ano base para automação: <strong>2026</strong></p>
         </div>
     </div>
 
-    <!-- Modal: Corrigir Jogador -->
-    <div class="modal" id="modal-jogador-correcao">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-user-cog"></i> Corrigir Estatísticas de Jogador</h3>
-                <button class="close-modal" onclick="fecharModal('modal-jogador-correcao')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Jogador:</label>
-                    <select class="form-select" id="jogador-correcao">
-                        <!-- Preenchido via JS -->
-                    </select>
-                </div>
-                <div class="message message-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Esta ação recalculará as estatísticas do jogador baseado nas partidas reais.
-                </div>
-                <div class="result-container" id="jogador-correcao-result" style="display: none;"></div>
-                <div class="modal-actions">
-                    <button class="btn-modal btn-secondary" onclick="fecharModal('modal-jogador-correcao')">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <button class="btn-modal btn-primary" onclick="corrigirJogadorSelecionado()">
-                        <i class="fas fa-redo"></i> Corrigir
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Backup -->
-    <div class="modal" id="modal-backup">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-database"></i> Backup do Sistema</h3>
-                <button class="close-modal" onclick="fecharModal('modal-backup')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="admin-stats">
-                    <div class="stat-item">
-                        <div class="stat-number" id="backup-total">0</div>
-                        <div class="stat-label">Backups</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="backup-ultimo">-</div>
-                        <div class="stat-label">Último</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="backup-tamanho">-</div>
-                        <div class="stat-label">Tamanho</div>
-                    </div>
-                </div>
-                <div class="result-container" id="backup-result" style="display: none;"></div>
-                <div class="modal-actions">
-                    <button class="btn-modal btn-secondary" onclick="fecharModal('modal-backup')">
-                        <i class="fas fa-times"></i> Fechar
-                    </button>
-                    <button class="btn-modal btn-primary" onclick="criarBackup()">
-                        <i class="fas fa-save"></i> Criar Backup
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2025 WAR Board GameRank - Painel Administrativo</p>
-                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">
-                    <i class="fas fa-shield-alt"></i> Acesso restrito a administradores autorizados
-                </p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- JavaScript -->
     <script>
-        // Variáveis globais
-        let autoLogsInterval = null;
+        // ============================================
+        // CONFIGURAÇÃO
+        // ============================================
+        const API_BASE_URL = window.location.origin;
         let logs = [];
         
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            // Menu mobile
-            document.querySelector('.nav-toggle').addEventListener('click', function() {
-                document.querySelector('.nav-menu').classList.toggle('active');
-            });
-            
-            // Carregar dados iniciais
-            atualizarStatus();
-            carregarJogadoresParaCorrecao();
-            carregarAnosParaRegistro();
-            
-            // Iniciar logs automáticos (desligado por padrão)
-            alternarAutoLogs();
-            
-            adicionarLog('Sistema administrativo carregado', 'info');
-        });
-        
-        // ========== FUNÇÕES DO PAINEL ==========
-        
-        // Status do sistema
-        async function atualizarStatus() {
-            try {
-                adicionarLog('Atualizando status do sistema...', 'info');
-                
-                const response = await fetch('/api/admin/status');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const statsDiv = document.getElementById('system-stats');
-                    statsDiv.innerHTML = `
-                        <div class="stat-item">
-                            <div class="stat-number">${data.sistema.ano_atual}</div>
-                            <div class="stat-label">Ano</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${data.sistema.mes_atual}</div>
-                            <div class="stat-label">Mês Atual</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${data.registros.total_vencedores}</div>
-                            <div class="stat-label">Vencedores Registrados</div>
-                        </div>
-                    `;
-                    
-                    const statusBadge = document.getElementById('system-status');
-                    if (data.status === 'ATUALIZADO') {
-                        statusBadge.className = 'status-badge status-online';
-                        statusBadge.innerHTML = '<i class="fas fa-circle"></i> Sistema Atualizado';
-                    } else {
-                        statusBadge.className = 'status-badge status-warning';
-                        statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Atualizações Pendentes';
-                    }
-                    
-                    adicionarLog('Status atualizado com sucesso', 'info');
-                }
-            } catch (error) {
-                adicionarLog(`Erro ao atualizar status: ${error.message}`, 'error');
-            }
-        }
-        
-        // Registrar vencedor do mês
-        async function registrarVencedorMes() {
-            abrirModal('modal-vencedor-mes');
-        }
-        
-        async function confirmarRegistroVencedor() {
-            const ano = document.getElementById('vencedor-ano').value;
-            const mes = document.getElementById('vencedor-mes').value;
-            
-            if (!ano || !mes) {
-                mostrarMensagem('vencedor-result', 'Selecione ano e mês', 'error');
-                return;
-            }
-            
-            adicionarLog(`Registrando vencedor do mês ${mes}/${ano}...`, 'info');
-            
-            try {
-                const response = await fetch('/api/admin/registrar-vencedor-mes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ano: parseInt(ano), mes: parseInt(mes) })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    mostrarMensagem('vencedor-result', 
-                        `✅ ${data.message}<br>Vencedor: ${data.data.apelido_vencedor}`, 
-                        'success'
-                    );
-                    adicionarLog(`Vencedor registrado: ${data.data.apelido_vencedor}`, 'info');
-                } else {
-                    mostrarMensagem('vencedor-result', `❌ ${data.error}`, 'error');
-                    adicionarLog(`Erro ao registrar: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarMensagem('vencedor-result', `❌ Erro: ${error.message}`, 'error');
-                adicionarLog(`Erro: ${error.message}`, 'error');
-            }
-        }
-        
-        // Verificar meses pendentes
-        async function verificarMesesPendentes() {
-            adicionarLog('Verificando meses pendentes...', 'info');
-            
-            try {
-                const response = await fetch('/api/admin/verificar-meses-pendentes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    let mensagem = `✅ ${data.message}<br>`;
-                    mensagem += `Meses processados: ${data.mesesProcessados}<br><br>`;
-                    
-                    data.resultados.forEach(result => {
-                        const status = result.success ? '✅' : '⚠️';
-                        mensagem += `${status} ${result.mes}/${result.ano}: ${result.message}<br>`;
-                    });
-                    
-                    mostrarMensagemGlobal(mensagem, 'success');
-                    adicionarLog(`Meses pendentes verificados: ${data.mesesProcessados} processados`, 'info');
-                } else {
-                    mostrarMensagemGlobal(`❌ ${data.error}`, 'error');
-                    adicionarLog(`Erro: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarMensagemGlobal(`❌ Erro: ${error.message}`, 'error');
-                adicionarLog(`Erro: ${error.message}`, 'error');
-            }
-        }
-        
-        // Atualizar estatísticas
-        async function atualizarEstatisticas() {
-            adicionarLog('Atualizando estatísticas do sistema...', 'info');
-            
-            try {
-                const response = await fetch('/api/admin/atualizar-estatisticas', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    mostrarMensagemGlobal(`✅ ${data.message}`, 'success');
-                    adicionarLog('Estatísticas atualizadas com sucesso', 'info');
-                } else {
-                    mostrarMensagemGlobal(`❌ ${data.error}`, 'error');
-                    adicionarLog(`Erro: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarMensagemGlobal(`❌ Erro: ${error.message}`, 'error');
-                adicionarLog(`Erro: ${error.message}`, 'error');
-            }
-        }
-        
-        // Corrigir estatísticas geral
-        async function corrigirEstatisticasGeral() {
-            const confirmacao = confirm('⚠️ ATENÇÃO!\n\nEsta ação vai recalcular TODAS as estatísticas do sistema.\nIsso pode demorar alguns minutos.\n\nDeseja continuar?');
-            
-            if (!confirmacao) {
-                adicionarLog('Correção geral cancelada pelo usuário', 'warning');
-                return;
-            }
-            
-            adicionarLog('Iniciando correção geral de estatísticas...', 'warning');
-            
-            try {
-                const response = await fetch('/api/admin/corrigir-estatisticas-geral', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    mostrarMensagemGlobal(
-                        `✅ ${data.message}<br><br>` +
-                        `A correção está sendo executada em segundo plano.<br>` +
-                        `Verifique os logs do servidor para acompanhar o progresso.`,
-                        'success'
-                    );
-                    adicionarLog('Correção geral iniciada em segundo plano', 'info');
-                } else {
-                    mostrarMensagemGlobal(`❌ ${data.error}`, 'error');
-                    adicionarLog(`Erro: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarMensagemGlobal(`❌ Erro: ${error.message}`, 'error');
-                adicionarLog(`Erro: ${error.message}`, 'error');
-            }
-        }
-        
-        // Corrigir jogador específico
-        async function corrigirJogadorSelecionado() {
-            const apelido = document.getElementById('jogador-correcao').value;
-            
-            if (!apelido) {
-                mostrarMensagem('jogador-correcao-result', 'Selecione um jogador', 'error');
-                return;
-            }
-            
-            adicionarLog(`Corrigindo estatísticas de ${apelido}...`, 'info');
-            
-            try {
-                const response = await fetch('/api/admin/corrigir-jogador', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apelido })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    let mensagem = `✅ ${data.message}<br><br>`;
-                    mensagem += `<strong>ANTES:</strong><br>`;
-                    mensagem += `Vitórias: ${data.antes.vitorias}<br>`;
-                    mensagem += `Partidas: ${data.antes.partidas}<br>`;
-                    mensagem += `Patente: ${data.antes.patente}<br><br>`;
-                    mensagem += `<strong>DEPOIS:</strong><br>`;
-                    mensagem += `Vitórias: ${data.depois.vitorias}<br>`;
-                    mensagem += `Partidas: ${data.depois.partidas}<br>`;
-                    mensagem += `Patente: ${data.depois.patente}<br><br>`;
-                    mensagem += `<strong>ANÁLISE:</strong><br>`;
-                    mensagem += `Vitórias encontradas: ${data.partidas_analisadas.vitorias_encontradas}<br>`;
-                    mensagem += `Participações: ${data.partidas_analisadas.participacoes_encontradas}`;
-                    
-                    mostrarMensagem('jogador-correcao-result', mensagem, 'success');
-                    adicionarLog(`Jogador corrigido: ${apelido}`, 'info');
-                } else {
-                    mostrarMensagem('jogador-correcao-result', `❌ ${data.error}`, 'error');
-                    adicionarLog(`Erro: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarMensagem('jogador-correcao-result', `❌ Erro: ${error.message}`, 'error');
-                adicionarLog(`Erro: ${error.message}`, 'error');
-            }
-        }
-        
-        // ========== FUNÇÕES AUXILIARES ==========
-        
-        // Carregar jogadores para correção
-        async function carregarJogadoresParaCorrecao() {
-            try {
-                const response = await fetch('/api/jogadores');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const select = document.getElementById('jogador-correcao');
-                    select.innerHTML = '<option value="">Selecione um jogador</option>';
-                    
-                    data.jogadores.forEach(jogador => {
-                        const option = document.createElement('option');
-                        option.value = jogador.apelido;
-                        option.textContent = `${jogador.apelido} (${jogador.vitorias}🏆)`;
-                        select.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Erro ao carregar jogadores:', error);
-            }
-        }
-        
-        // Carregar anos para registro
-        async function carregarAnosParaRegistro() {
-            try {
-                const hoje = new Date();
-                const anoAtual = hoje.getFullYear();
-                const select = document.getElementById('vencedor-ano');
-                
-                // De 2025 até ano atual
-                for (let ano = 2025; ano <= anoAtual; ano++) {
-                    const option = document.createElement('option');
-                    option.value = ano;
-                    option.textContent = ano;
-                    if (ano === anoAtual) option.selected = true;
-                    select.appendChild(option);
-                }
-            } catch (error) {
-                console.error('Erro ao carregar anos:', error);
-            }
-        }
-        
-        // Funções de modal
-        function abrirModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-        
-        function fecharModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        // Mensagens
-        function mostrarMensagem(elementId, mensagem, tipo) {
-            const element = document.getElementById(elementId);
-            element.innerHTML = `<div class="message message-${tipo}">${mensagem}</div>`;
-            element.style.display = 'block';
-        }
-        
-        function mostrarMensagemGlobal(mensagem, tipo) {
-            const div = document.createElement('div');
-            div.className = `message message-${tipo}`;
-            div.innerHTML = mensagem;
-            div.style.cssText = `
-                position: fixed;
-                top: 100px;
-                right: 20px;
-                z-index: 1001;
-                max-width: 400px;
-                animation: slideIn 0.3s ease-out;
-            `;
-            
-            document.body.appendChild(div);
-            
-            setTimeout(() => {
-                div.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => div.remove(), 300);
-            }, 5000);
-        }
-        
-        // Logs
+        // ============================================
+        // FUNÇÕES UTILITÁRIAS
+        // ============================================
         function adicionarLog(mensagem, tipo = 'info') {
-            const now = new Date();
-            const time = now.toLocaleTimeString('pt-BR');
-            
+            const hora = new Date().toLocaleTimeString('pt-BR');
             const logEntry = {
-                time,
-                message,
-                type
+                time: hora,
+                message: mensagem,
+                type: tipo
             };
             
-            logs.unshift(logEntry); // Adiciona no início
-            if (logs.length > 50) logs.pop(); // Mantém apenas 50 entradas
+            logs.unshift(logEntry);
             
-            // Atualizar interface
-            const logContainer = document.getElementById('realtime-logs');
-            const logDiv = document.createElement('div');
-            logDiv.className = 'log-entry';
-            logDiv.innerHTML = `
-                <span class="log-time">[${time}]</span>
-                <span class="log-${tipo}">${mensagem}</span>
-            `;
+            const container = document.getElementById('logsContainer');
+            const cores = {
+                'info': '#4dabf7',
+                'success': '#38a169',
+                'error': '#f56565',
+                'warning': '#ed8936'
+            };
             
-            logContainer.insertBefore(logDiv, logContainer.firstChild);
+            const div = document.createElement('div');
+            div.className = `log-entry log-${tipo}`;
+            div.innerHTML = `<span style="color: ${cores[tipo]}">[${hora}]</span> ${mensagem}`;
             
-            // Limitar a 20 logs visíveis
-            while (logContainer.children.length > 20) {
-                logContainer.removeChild(logContainer.lastChild);
+            container.insertBefore(div, container.firstChild);
+            
+            // Manter máximo 20 logs
+            while (container.children.length > 20) {
+                container.removeChild(container.lastChild);
             }
         }
         
-        function limparLogs() {
-            logs = [];
-            document.getElementById('realtime-logs').innerHTML = `
-                <div class="log-entry">
-                    <span class="log-time">[${new Date().toLocaleTimeString('pt-BR')}]</span>
-                    <span class="log-info">Logs limpos</span>
-                </div>
+        function mostrarFeedback(mensagem, tipo = 'info') {
+            const feedback = document.getElementById('feedback');
+            const cores = {
+                'success': 'linear-gradient(90deg, #276749, #38a169)',
+                'error': 'linear-gradient(90deg, #c53030, #f56565)',
+                'info': 'linear-gradient(90deg, #2b6cb0, #4dabf7)',
+                'warning': 'linear-gradient(90deg, #dd6b20, #ed8936)'
+            };
+            
+            const div = document.createElement('div');
+            div.style.cssText = `
+                background: ${cores[tipo] || cores.info};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 5px;
+                margin-bottom: 15px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             `;
-            adicionarLog('Logs limpos pelo administrador', 'info');
-        }
-        
-        function alternarAutoLogs() {
-            const icon = document.getElementById('auto-logs-icon');
-            const text = document.getElementById('auto-logs-text');
             
-            if (autoLogsInterval) {
-                clearInterval(autoLogsInterval);
-                autoLogsInterval = null;
-                icon.className = 'fas fa-play';
-                text.textContent = 'Auto-logs: OFF';
-                adicionarLog('Logs automáticos desativados', 'warning');
-            } else {
-                autoLogsInterval = setInterval(async () => {
-                    try {
-                        // Simular alguma verificação automática
-                        const response = await fetch('/api/admin/status');
-                        if (response.ok) {
-                            adicionarLog('Verificação automática: Sistema online', 'info');
-                        }
-                    } catch (error) {
-                        adicionarLog(`Verificação automática: ${error.message}`, 'error');
-                    }
-                }, 30000); // A cada 30 segundos
-                
-                icon.className = 'fas fa-pause';
-                text.textContent = 'Auto-logs: ON';
-                adicionarLog('Logs automáticos ativados', 'info');
-            }
-        }
-        
-        // Backup (simulação)
-        async function criarBackup() {
-            adicionarLog('Criando backup do sistema...', 'info');
+            div.innerHTML = `
+                <span><i class="bi bi-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${mensagem}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
             
-            // Simulação de backup
+            feedback.appendChild(div);
+            
             setTimeout(() => {
-                adicionarLog('Backup criado com sucesso', 'info');
-                mostrarMensagem('backup-result', 
-                    '✅ Backup criado com sucesso!<br>' +
-                    'Arquivo: backup_2025_12_31.json<br>' +
-                    'Tamanho: 1.2 MB<br>' +
-                    'Local: /backups/war_board_backup.json',
-                    'success'
-                );
-                
-                // Atualizar estatísticas do backup
-                document.getElementById('backup-total').textContent = '5';
-                document.getElementById('backup-ultimo').textContent = 'Agora';
-                document.getElementById('backup-tamanho').textContent = '1.2 MB';
-            }, 2000);
+                if (div.parentNode) div.remove();
+            }, 5000);
+            
+            adicionarLog(mensagem, tipo);
         }
         
-        // Fechar modais ao clicar fora
-        window.addEventListener('click', function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
             }
-        });
+            
+            try {
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Erro na API:', error);
+                mostrarFeedback(`Erro na comunicação: ${error.message}`, 'error');
+                throw error;
+            }
+        }
         
-        // Animações CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
+        // ============================================
+        // FUNÇÕES PRINCIPAIS
+        // ============================================
+        async function carregarEstatisticas() {
+            try {
+                // Carregar status do sistema
+                const status = await apiRequest('/api/vencedores/status');
+                if (status.success) {
+                    document.getElementById('statTotal').textContent = status.total_registros;
+                    document.getElementById('statPendentes').textContent = status.pendentes;
+                    document.getElementById('statCalculados').textContent = status.calculados_automaticamente;
+                }
+                
+                // Carregar partidas
+                const partidas = await apiRequest('/api/partidas');
+                if (partidas.success) {
+                    document.getElementById('statPartidas').textContent = partidas.partidas?.length || 0;
+                }
+                
+                // Atualizar status da API
+                document.getElementById('apiStatus').className = 'status-badge status-success';
+                document.getElementById('apiStatus').innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+                
+            } catch (error) {
+                console.log('Erro ao carregar estatísticas:', error);
             }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        async function carregarVencedores() {
+            const container = document.getElementById('listaVencedores');
+            
+            try {
+                const resultado = await apiRequest('/api/dashboard/vencedores');
+                
+                if (resultado.success && resultado.vencedores.length > 0) {
+                    let html = '';
+                    
+                    resultado.vencedores.forEach(v => {
+                        const statusClass = v.status === 'pendente' ? 'status-pending' : 
+                                          v.calculado_automaticamente ? 'status-success' : 'status-info';
+                        
+                        const statusText = v.status === 'pendente' ? 'PENDENTE' : 
+                                         v.calculado_automaticamente ? 'AUTOMÁTICO' : 'MANUAL';
+                        
+                        html += `
+                            <div class="vencedor-item">
+                                <div class="vencedor-info">
+                                    <h5>${v.jogador_apelido}</h5>
+                                    <div class="vencedor-meta">
+                                        ${v.mes_nome || `Mês ${v.mes}`} ${v.ano} • 
+                                        ${v.vitorias || 0} vitórias • ${v.partidas || 0} partidas
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #a0aec0;">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p style="margin-top: 10px;">Nenhum vencedor registrado</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #f56565;">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                        <p style="margin-top: 10px;">Erro ao carregar vencedores</p>
+                    </div>
+                `;
             }
-        `;
-        document.head.appendChild(style);
+        }
+        
+        async function calcularMesAnterior() {
+            try {
+                const resultado = await apiRequest('/api/vencedores/calcular-mes-anterior', 'POST');
+                
+                if (resultado.success) {
+                    if (resultado.vencedor) {
+                        mostrarFeedback(`Vencedor calculado: ${resultado.vencedor.jogador_apelido}`, 'success');
+                    } else {
+                        mostrarFeedback('Nenhuma partida no mês anterior', 'info');
+                    }
+                    carregarEstatisticas();
+                    carregarVencedores();
+                }
+            } catch (error) {
+                console.error('Erro ao calcular mês anterior:', error);
+            }
+        }
+        
+        async function inicializar2026() {
+            if (!confirm('Inicializar todos os meses de 2026? Isso calculará automaticamente os meses que já passaram.')) {
+                return;
+            }
+            
+            try {
+                const resultado = await apiRequest('/api/vencedores/inicializar-2026', 'POST');
+                
+                if (resultado.success) {
+                    mostrarFeedback('2026 inicializado com sucesso!', 'success');
+                    carregarEstatisticas();
+                    carregarVencedores();
+                }
+            } catch (error) {
+                console.error('Erro ao inicializar 2026:', error);
+            }
+        }
+        
+        async function verificarPendentes() {
+            try {
+                const resultado = await apiRequest('/api/vencedores/meses-pendentes');
+                
+                if (resultado.success) {
+                    if (resultado.total_pendentes > 0) {
+                        mostrarFeedback(`Encontrados ${resultado.total_pendentes} meses pendentes`, 'warning');
+                        
+                        // Calcular automaticamente os pendentes
+                        for (const mes of resultado.meses_pendentes) {
+                            await apiRequest('/api/vencedores/calcular-mes', 'POST', {
+                                ano: mes.ano,
+                                mes: mes.mes
+                            });
+                        }
+                        
+                        mostrarFeedback('Meses pendentes calculados automaticamente', 'success');
+                        carregarEstatisticas();
+                        carregarVencedores();
+                    } else {
+                        mostrarFeedback('Nenhum mês pendente encontrado', 'info');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao verificar pendentes:', error);
+            }
+        }
+        
+        async function recalcularTudo() {
+            if (!confirm('Recalcular TODOS os vencedores? Isso pode demorar.')) {
+                return;
+            }
+            
+            try {
+                const resultado = await apiRequest('/api/vencedores/todos?recalc=true');
+                
+                if (resultado.success) {
+                    mostrarFeedback(`Recalculados ${resultado.total_meses} meses`, 'success');
+                    carregarEstatisticas();
+                    carregarVencedores();
+                }
+            } catch (error) {
+                console.error('Erro ao recalcular:', error);
+            }
+        }
+        
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Sistema automático inicializando...');
+            
+            carregarEstatisticas();
+            carregarVencedores();
+            
+            // Atualizar a cada 60 segundos
+            setInterval(() => {
+                carregarEstatisticas();
+            }, 60000);
+            
+            adicionarLog('Sistema inicializado', 'success');
+            mostrarFeedback('Sistema automático de vencedores carregado', 'success');
+        });
     </script>
 </body>
 </html>
