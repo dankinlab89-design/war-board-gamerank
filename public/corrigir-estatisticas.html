@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Correção de Estatísticas - WAR Board GameRank</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a472a 0%, #0d2d1c 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .correction-card {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .correction-header {
+            background: linear-gradient(135deg, #b8860b, #8b6508);
+            padding: 25px;
+            text-align: center;
+            border-bottom: 3px solid #ffd700;
+        }
+        
+        .correction-header h1 {
+            color: white;
+            font-size: 2rem;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .correction-header p {
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+        
+        .correction-body {
+            padding: 30px;
+        }
+        
+        .btn-correction {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin: 5px;
+            color: white;
+        }
+        
+        .btn-correction:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-warning-custom {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #000;
+        }
+        
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        
+        .btn-info-custom {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+        }
+        
+        .result-box {
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .result-box pre {
+            color: #51cf66;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .result-box.error pre {
+            color: #ff6b6b;
+        }
+        
+        .result-box.warning pre {
+            color: #ffc107;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+        
+        .warning-box {
+            background: rgba(255, 193, 7, 0.15);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: rgba(40, 167, 69, 0.15);
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffd700;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .jogador-sugestao {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .jogador-sugestao:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+        
+        .log-console {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-line {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 0;
+        }
+        
+        .log-time {
+            color: #ffd700;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="correction-card">
+        <div class="correction-header">
+            <h1><i class="fas fa-tools"></i> Correção de Estatísticas</h1>
+            <p>Recalcula vitórias, partidas e patentes com base no histórico de batalhas</p>
+        </div>
+        
+        <div class="correction-body">
+            <!-- Status do Sistema -->
+            <div class="row mb-4" id="status-sistema">
+                <div class="col-md-3 mb-2">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-jogadores">-</div>
+                        <div class="stat-label">Jogadores</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-partidas">-</div>
+                        <div class="stat-label">Partidas</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-vitorias">-</div>
+                        <div class="stat-label">Maior Vitórias</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="stat-card">
+                        <div class="stat-number" id="status-conexao">-</div>
+                        <div class="stat-label">API Status</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aviso -->
+            <div class="warning-box">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                <strong>ATENÇÃO!</strong> Esta ferramenta irá:
+                <ul class="mt-2 mb-0">
+                    <li>Recalcular TODAS as estatísticas dos jogadores</li>
+                    <li>Atualizar patentes baseado nas vitórias reais</li>
+                    <li>Corrigir inconsistências entre partidas e estatísticas</li>
+                    <li>Criar jogadores que aparecem em partidas mas não estão cadastrados</li>
+                </ul>
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div class="text-center mb-4">
+                <button class="btn-correction" onclick="executarCorrecaoCompleta()" id="btn-corrigir">
+                    <i class="fas fa-sync-alt"></i> CORRIGIR TODAS ESTATÍSTICAS
+                </button>
+                <button class="btn-correction btn-info-custom" onclick="verificarConsistencia()" id="btn-verificar">
+                    <i class="fas fa-search"></i> VERIFICAR CONSISTÊNCIA
+                </button>
+                <button class="btn-correction btn-warning-custom" onclick="carregarStatusSistema()">
+                    <i class="fas fa-chart-line"></i> ATUALIZAR STATUS
+                </button>
+            </div>
+            
+            <!-- Formulário para Correção Individual -->
+            <div class="card mb-4" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,0,0.3);">
+                <div class="card-body">
+                    <h5 class="card-title text-light">
+                        <i class="fas fa-user-edit"></i> Correção Individual
+                    </h5>
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control bg-dark text-light" id="jogador-apelido" 
+                                   placeholder="Digite o apelido do jogador (ex: Daniel$80)">
+                            <div id="sugestoes" class="mt-1" style="position: relative;"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-warning w-100" onclick="corrigirJogadorIndividual()" id="btn-corrigir-individual">
+                                <i class="fas fa-user-check"></i> Corrigir Jogador
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="text-light small">Ano (opcional):</label>
+                            <input type="number" class="form-control bg-dark text-light" id="ano-correcao" 
+                                   placeholder="2026" value="2026">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-light small">Mês (opcional):</label>
+                            <input type="number" class="form-control bg-dark text-light" id="mes-correcao" 
+                                   placeholder="1-12" value="1" min="1" max="12">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botão Reset (perigoso) -->
+            <div class="text-center mb-3">
+                <button class="btn btn-sm btn-danger" onclick="resetarEstatisticas()" id="btn-resetar">
+                    <i class="fas fa-trash-alt"></i> ZERAR ESTATÍSTICAS (PERIGOSO)
+                </button>
+            </div>
+            
+            <!-- Resultados -->
+            <div id="resultado" class="result-box" style="display: none;">
+                <pre id="resultado-conteudo"></pre>
+            </div>
+            
+            <!-- Loading -->
+            <div id="loading" style="display: none; text-align: center; padding: 20px;">
+                <div class="loading-spinner" style="margin: 0 auto;"></div>
+                <p class="mt-3 text-light">Processando... Isso pode levar alguns segundos</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração
+        const API_BASE = window.location.origin;
+        let todosJogadores = [];
+        
+        // ============================================
+        // FUNÇÕES AUXILIARES
+        // ============================================
+        
+        function mostrarResultado(mensagem, tipo = 'success') {
+            const resultadoDiv = document.getElementById('resultado');
+            const conteudo = document.getElementById('resultado-conteudo');
+            
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.className = `result-box ${tipo}`;
+            
+            if (typeof mensagem === 'object') {
+                conteudo.textContent = JSON.stringify(mensagem, null, 2);
+            } else {
+                conteudo.textContent = mensagem;
+            }
+            
+            resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function mostrarLoading(mostrar) {
+            const loading = document.getElementById('loading');
+            const btnCorrigir = document.getElementById('btn-corrigir');
+            const btnVerificar = document.getElementById('btn-verificar');
+            const btnResetar = document.getElementById('btn-resetar');
+            const btnIndividual = document.getElementById('btn-corrigir-individual');
+            
+            if (mostrar) {
+                loading.style.display = 'block';
+                if (btnCorrigir) btnCorrigir.disabled = true;
+                if (btnVerificar) btnVerificar.disabled = true;
+                if (btnResetar) btnResetar.disabled = true;
+                if (btnIndividual) btnIndividual.disabled = true;
+            } else {
+                loading.style.display = 'none';
+                if (btnCorrigir) btnCorrigir.disabled = false;
+                if (btnVerificar) btnVerificar.disabled = false;
+                if (btnResetar) btnResetar.disabled = false;
+                if (btnIndividual) btnIndividual.disabled = false;
+            }
+        }
+        
+        async function carregarStatusSistema() {
+            try {
+                // Testar conexão com a API
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                
+                if (data.status === 'online') {
+                    document.getElementById('status-conexao').innerHTML = '<span class="text-success">✅ Online</span>';
+                    
+                    // Buscar estatísticas
+                    const statsResponse = await fetch(`${API_BASE}/api/estatisticas`);
+                    const stats = await statsResponse.json();
+                    
+                    if (stats.success || stats.total_jogadores !== undefined) {
+                        document.getElementById('total-jogadores').textContent = stats.total_jogadores || 0;
+                        document.getElementById('total-partidas').textContent = stats.total_partidas || 0;
+                        document.getElementById('total-vitorias').textContent = stats.record?.vitorias || 0;
+                    }
+                    
+                    // Buscar lista de jogadores
+                    const jogadoresResponse = await fetch(`${API_BASE}/api/jogadores`);
+                    const jogadoresData = await jogadoresResponse.json();
+                    
+                    if (jogadoresData.success && jogadoresData.jogadores) {
+                        todosJogadores = jogadoresData.jogadores;
+                        console.log('Jogadores carregados:', todosJogadores.length);
+                    }
+                    
+                } else {
+                    document.getElementById('status-conexao').innerHTML = '<span class="text-danger">❌ Offline</span>';
+                    mostrarResultado('⚠️ API offline. Verifique se o servidor está rodando.', 'warning');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar status:', error);
+                document.getElementById('status-conexao').innerHTML = '<span class="text-danger">❌ Offline</span>';
+                mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+            }
+        }
+        
+        // Sugestões de jogadores
+        document.getElementById('jogador-apelido').addEventListener('input', function(e) {
+            const termo = e.target.value.toLowerCase();
+            const sugestoesDiv = document.getElementById('sugestoes');
+            
+            if (termo.length < 2 || !todosJogadores.length) {
+                sugestoesDiv.innerHTML = '';
+                return;
+            }
+            
+            const sugestoes = todosJogadores
+                .filter(j => j.apelido.toLowerCase().includes(termo))
+                .slice(0, 5);
+            
+            if (sugestoes.length === 0) {
+                sugestoesDiv.innerHTML = '';
+                return;
+            }
+            
+            sugestoesDiv.innerHTML = `
+                <div class="list-group" style="position: absolute; z-index: 1000; width: 100%;">
+                    ${sugestoes.map(j => `
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-light jogador-sugestao"
+                                onclick="document.getElementById('jogador-apelido').value='${j.apelido}'; document.getElementById('sugestoes').innerHTML='';">
+                            ${j.apelido} <small class="text-warning">(${j.vitorias}🏆)</small>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        });
+        
+        // Fechar sugestões ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#jogador-apelido') && !e.target.closest('.jogador-sugestao')) {
+                document.getElementById('sugestoes').innerHTML = '';
+            }
+        });
+        
+        // ============================================
+        // FUNÇÕES PRINCIPAIS (USANDO SUAS ROTAS)
+        // ============================================
+        
+        async function executarCorrecaoCompleta() {
+            if (!confirm('⚠️ ATENÇÃO: Esta ação irá recalcular TODAS as estatísticas dos jogadores.\n\n' +
+                         'Isso inclui:\n' +
+                         '- Recalcular vitórias e partidas\n' +
+                         '- Atualizar patentes\n' +
+                         '- Criar jogadores não cadastrados\n\n' +
+                         'Tem certeza que deseja continuar?')) {
+                return;
+            }
+            
+            mostrarLoading(true);
+            mostrarResultado('🔄 Iniciando correção completa... Aguarde...', 'info');
+            
+            try {
+                // Chamando sua rota: /api/admin/estatisticas/recalcular-completo
+                const response = await fetch(`${API_BASE}/api/admin/estatisticas/recalcular-completo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    mostrarResultado({
+                        mensagem: '✅ CORREÇÃO CONCLUÍDA COM SUCESSO!',
+                        estatisticas: resultado.estatisticas,
+                        inconsistencias: resultado.inconsistencias,
+                        timestamp: new Date().toLocaleString('pt-BR')
+                    }, 'success');
+                    
+                    setTimeout(carregarStatusSistema, 1000);
+                } else {
+                    mostrarResultado({
+                        erro: resultado.error || 'Falha na correção',
+                        detalhes: resultado
+                    }, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+        
+        async function verificarConsistencia() {
+            mostrarLoading(true);
+            mostrarResultado('🔍 Verificando consistência... Aguarde...', 'info');
+            
+            try {
+                // Chamar a rota de consistência (precisa ser implementada)
+                const response = await fetch(`${API_BASE}/api/admin/database/verificar/integridade`);
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    mostrarResultado({
+                        mensagem: '✅ VERIFICAÇÃO CONCLUÍDA',
+                        integridade: resultado.integridade,
+                        colecoes: resultado.colecoes,
+                        registros_totais: resultado.registros_totais,
+                        timestamp: new Date().toLocaleString('pt-BR')
+                    }, 'success');
+                } else {
+                    mostrarResultado({
+                        erro: resultado.error || 'Falha na verificação'
+                    }, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+        
+        async function corrigirJogadorIndividual() {
+            const apelido = document.getElementById('jogador-apelido').value.trim();
+            const ano = document.getElementById('ano-correcao').value;
+            const mes = document.getElementById('mes-correcao').value;
+            
+            if (!apelido) {
+                alert('Digite o apelido do jogador');
+                return;
+            }
+            
+            mostrarLoading(true);
+            mostrarResultado(`🔄 Corrigindo jogador "${apelido}"... Aguarde...`, 'info');
+            
+            try {
+                // Chamando sua rota: /api/admin/estatisticas/calcular
+                const response = await fetch(`${API_BASE}/api/admin/estatisticas/calcular`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        jogador: apelido,
+                        ano: ano ? parseInt(ano) : undefined,
+                        mes: mes ? parseInt(mes) : undefined
+                    })
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    mostrarResultado({
+                        mensagem: `✅ Jogador "${apelido}" corrigido com sucesso!`,
+                        antes: resultado.antes,
+                        depois: resultado.depois,
+                        partidas_analisadas: resultado.partidas_analisadas,
+                        timestamp: new Date().toLocaleString('pt-BR')
+                    }, 'success');
+                    
+                    document.getElementById('jogador-apelido').value = '';
+                    setTimeout(carregarStatusSistema, 1000);
+                } else {
+                    mostrarResultado({
+                        erro: resultado.error || `Falha ao corrigir jogador "${apelido}"`,
+                        detalhes: resultado
+                    }, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+        
+        async function resetarEstatisticas() {
+            if (!confirm('⚠️⚠️⚠️ ATENÇÃO EXTREMA! ⚠️⚠️⚠️\n\n' +
+                         'Esta ação irá ZERAR TODAS as estatísticas dos jogadores!\n\n' +
+                         'Isso inclui:\n' +
+                         '- Zerar vitórias e partidas de TODOS os jogadores\n' +
+                         '- Resetar todas as patentes para "Cabo 🪖"\n' +
+                         '- Os dados das partidas NÃO serão apagados\n\n' +
+                         'APÓS O RESET, VOCÊ PRECISARÁ EXECUTAR A CORREÇÃO NOVAMENTE!\n\n' +
+                         'Tem certeza absoluta?')) {
+                return;
+            }
+            
+            if (!confirm('ÚLTIMA CONFIRMAÇÃO: Esta ação NÃO pode ser desfeita. Continuar?')) {
+                return;
+            }
+            
+            mostrarLoading(true);
+            mostrarResultado('⚠️ Resetando estatísticas... Aguarde...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/estatisticas/resetar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    mostrarResultado({
+                        mensagem: '⚠️ ESTATÍSTICAS RESETADAS COM SUCESSO!',
+                        jogadores_afetados: resultado.jogadores_afetados,
+                        aviso: 'Execute a CORREÇÃO COMPLETA para recalcular com base nas partidas.',
+                        timestamp: new Date().toLocaleString('pt-BR')
+                    }, 'warning');
+                    
+                    setTimeout(carregarStatusSistema, 1000);
+                } else {
+                    mostrarResultado({
+                        erro: resultado.error || 'Falha no reset'
+                    }, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+        
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Painel de Correção de Estatísticas carregado');
+            console.log('📡 API Base:', API_BASE);
+            
+            carregarStatusSistema();
+            
+            // Atualizar status a cada 60 segundos
+            setInterval(carregarStatusSistema, 60000);
+            
+            // Enter no campo de apelido
+            document.getElementById('jogador-apelido').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    corrigirJogadorIndividual();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

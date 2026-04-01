@@ -3494,6 +3494,25 @@ app.get('/api/admin/teste-rotas', async (req, res) => {
 });
 
 // ============================================
+// ROTA PARA RESETAR ESTATÍSTICAS
+// ============================================
+
+app.post('/api/admin/estatisticas/resetar', async (req, res) => {
+    try {
+        console.log('⚠️ Resetando estatísticas via painel...');
+        
+        const { resetarEstatisticas } = require('./correcao-estatisticas');
+        const resultado = await resetarEstatisticas();
+        
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('❌ Erro no reset:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
 // INICIAR SERVIDOR
 // ============================================
 
