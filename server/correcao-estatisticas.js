@@ -564,6 +564,60 @@ async function resetarEstatisticas() {
         };
     }
 }
+// ============================================
+// FUNÇÃO PARA CALCULAR ESTATÍSTICAS DE UM JOGADOR (PARA A ROTA)
+// ============================================
+async function calcularEstatisticasJogador(jogador, ano, mes) {
+    try {
+        console.log(`📊 Calculando estatísticas para: ${jogador}`);
+        
+        // Usar a função existente
+        const resultado = await corrigirJogadorEspecifico(jogador);
+        
+        // Se ano e mes foram fornecidos, adicionar filtro
+        if (ano && mes && resultado.success) {
+            resultado.filtro = { ano, mes };
+            resultado.mensagem += ` (apenas partidas de ${mes}/${ano})`;
+        }
+        
+        return resultado;
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular estatísticas do jogador:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA FORÇAR RECÁLCULO COMPLETO (PARA A ROTA)
+// ============================================
+async function forcarRecalculoCompleto() {
+    try {
+        console.log('🔄 Forçando recálculo completo...');
+        
+        // Usar a função existente
+        const resultado = await corrigirTodasEstatisticas();
+        
+        return resultado;
+        
+    } catch (error) {
+        console.error('❌ Erro no recálculo completo:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA RECALCULAR APENAS UM JOGADOR (ALIAS)
+// ============================================
+async function recalcularJogador(apelido) {
+    return await corrigirJogadorEspecifico(apelido);
+}
 
 // ============================================
 // EXPORTAR FUNÇÕES
@@ -573,5 +627,9 @@ module.exports = {
     corrigirJogadorEspecifico,
     verificarConsistencia,
     resetarEstatisticas,
-    calcularPatente
+    calcularPatente,
+    // NOVAS FUNÇÕES
+    calcularEstatisticasJogador,
+    forcarRecalculoCompleto,
+    recalcularJogador
 };
