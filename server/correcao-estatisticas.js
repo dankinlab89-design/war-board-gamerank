@@ -620,62 +620,75 @@ async function recalcularJogador(apelido) {
 }
 
 // ============================================
-// FUNÇÃO PARA CALCULAR RECORDE CONSECUTIVO (VERSÃO SIMPLES E CORRETA)
+// FUNÇÃO PARA CALCULAR RECORDE CONSECUTIVO (COM ORDENAÇÃO CORRETA)
 // ============================================
 async function calcularEAtualizarRecordeConsecutivo() {
     try {
         console.log('🏆 Calculando recorde de vitórias consecutivas...');
-        console.log('   Regra: Maior sequência de VITÓRIAS em partidas que o jogador PARTICIPOU');
-        console.log('   (Partidas que o jogador não jogou são ignoradas)\n');
+        console.log('   Regras:');
+        console.log('   1. Ordenar partidas por DATA e HORA (cronologicamente)');
+        console.log('   2. Considerar APENAS partidas que o jogador participou');
+        console.log('   3. Se venceu → +1 na sequência');
+        console.log('   4. Se perdeu → sequência ZERA\n');
 
         const Jogador = mongoose.models.Jogador;
         const Partida = mongoose.models.Partida;
         const Estatistica = mongoose.models.Estatistica;
 
-        // Buscar TODAS as partidas em ordem cronológica
+        // Buscar TODAS as partidas e ordenar CORRETAMENTE por data/hora
         const todasPartidas = await Partida.find({})
-            .sort({ data: 1 })  // Mais antiga primeiro
+            .sort({ data: 1 })  // Ordem cronológica crescente
             .lean();
         
-        console.log(`   📍 Total de partidas: ${todasPartidas.length}`);
+        // Exibir ordem das partidas para debug
+        console.log('   📅 ORDEM CRONOLÓGICA DAS PARTIDAS:');
+        todasPartidas.forEach((p, i) => {
+            const data = new Date(p.data).toLocaleString('pt-BR');
+            console.log(`      ${i+1}. ${data} - Vencedor: ${p.vencedor}`);
+        });
+        console.log('');
 
-        // Buscar todos os jogadores ativos
+        // Buscar todos os jogadores
         const jogadores = await Jogador.find({ ativo: true }).select('apelido');
-        console.log(`   👥 Jogadores ativos: ${jogadores.length}\n`);
-
+        
         const resultados = [];
         
         for (const jogador of jogadores) {
             let sequenciaAtual = 0;
             let maiorSequencia = 0;
+            let partidasDetalhadas = [];
             
-            // Filtrar APENAS as partidas que o jogador participou
+            // Filtrar apenas partidas que o jogador participou (mantendo ordem)
             const partidasDoJogador = todasPartidas.filter(partida => 
                 partida.participantes && partida.participantes.includes(jogador.apelido)
             );
             
-            if (partidasDoJogador.length === 0) {
-                continue; // Jogador nunca jogou, ignorar
-            }
+            if (partidasDoJogador.length === 0) continue;
             
-            console.log(`   📊 ${jogador.apelido}: ${partidasDoJogador.length} partidas jogadas`);
+            console.log(`\n📊 Analisando ${jogador.apelido}:`);
             
-            // Analisar sequência de vitórias APENAS nas partidas que ele jogou
             for (let i = 0; i < partidasDoJogador.length; i++) {
                 const partida = partidasDoJogador[i];
                 const venceu = partida.vencedor === jogador.apelido;
+                const dataStr = new Date(partida.data).toLocaleString('pt-BR');
+                
+                partidasDetalhadas.push({
+                    data: partida.data,
+                    dataStr: dataStr,
+                    venceu: venceu
+                });
                 
                 if (venceu) {
                     sequenciaAtual++;
                     if (sequenciaAtual > maiorSequencia) {
                         maiorSequencia = sequenciaAtual;
                     }
-                    console.log(`      Partida ${i+1}: ✅ VENCEU → sequência = ${sequenciaAtual}`);
+                    console.log(`      ${dataStr}: ✅ VENCEU → sequência = ${sequenciaAtual}`);
                 } else {
                     if (sequenciaAtual > 0) {
-                        console.log(`      Partida ${i+1}: ❌ PERDEU → sequência zerada (tinha ${sequenciaAtual})`);
+                        console.log(`      ${dataStr}: ❌ PERDEU → sequência zerada (tinha ${sequenciaAtual})`);
                     } else {
-                        console.log(`      Partida ${i+1}: ❌ PERDEU → sequência continua 0`);
+                        console.log(`      ${dataStr}: ❌ PERDEU → sequência continua 0`);
                     }
                     sequenciaAtual = 0;
                 }
@@ -686,22 +699,20 @@ async function calcularEAtualizarRecordeConsecutivo() {
                     apelido: jogador.apelido,
                     recorde: maiorSequencia,
                     totalPartidas: partidasDoJogador.length,
-                    totalVitorias: partidasDoJogador.filter(p => p.vencedor === jogador.apelido).length
+                    totalVitorias: partidasDoJogador.filter(p => p.vencedor === jogador.apelido).length,
+                    partidas: partidasDetalhadas
                 });
-                console.log(`      🏆 MELOR SEQUÊNCIA: ${maiorSequencia} vitórias consecutivas!\n`);
-            } else {
-                console.log(`      ❌ Nenhuma vitória consecutiva\n`);
+                console.log(`      🏆 MELOR SEQUÊNCIA: ${maiorSequencia} vitórias consecutivas!`);
             }
         }
         
         // Encontrar o maior recorde
         if (resultados.length === 0) {
-            console.log('   📭 Nenhum jogador com vitórias consecutivas');
             return {
                 success: true,
                 maxConsecutivo: 0,
                 recordHolder: '-',
-                mensagem: 'Nenhum jogador tem vitórias consecutivas ainda'
+                mensagem: 'Nenhum jogador tem vitórias consecutivas'
             };
         }
         
@@ -720,14 +731,29 @@ async function calcularEAtualizarRecordeConsecutivo() {
         if (empatados.length === 1) {
             recordHolder = empatados[0].apelido;
             dadosVencedor = empatados[0];
-            console.log(`✅ Recorde isolado: ${recordHolder}`);
         } else {
-            // Critério de desempate: quem tem MAIS VITÓRIAS TOTAIS
-            console.log('⚖️ Desempate: quem tem mais vitórias no total?');
+            // Desempate: quem tem MAIS VITÓRIAS TOTAIS
+            console.log('⚖️ Desempate: mais vitórias totais');
             empatados.sort((a, b) => b.totalVitorias - a.totalVitorias);
             recordHolder = empatados[0].apelido;
             dadosVencedor = empatados[0];
-            console.log(`✅ Vencedor: ${recordHolder} (${dadosVencedor.totalVitorias} vitórias no total)`);
+        }
+        
+        console.log(`✅ RECORDE: ${recordHolder} com ${maiorRecorde} vitórias consecutivas`);
+        
+        // Mostrar as partidas que compõem o recorde
+        if (dadosVencedor && dadosVencedor.partidas) {
+            console.log(`\n📋 Partidas do recorde (${recordHolder}):`);
+            let seq = 0;
+            for (const p of dadosVencedor.partidas) {
+                if (p.venceu) {
+                    seq++;
+                    console.log(`   ${seq}ª vitória: ${p.dataStr}`);
+                } else {
+                    seq = 0;
+                }
+                if (seq === maiorRecorde) break;
+            }
         }
         
         // Salvar no banco
@@ -749,12 +775,6 @@ async function calcularEAtualizarRecordeConsecutivo() {
             );
         }
         
-        console.log(`\n✅ RECORDE SALVO:`);
-        console.log(`   👤 Detentor: ${recordHolder}`);
-        console.log(`   🏆 Recorde: ${maiorRecorde} vitórias consecutivas`);
-        console.log(`   📊 Partidas jogadas: ${dadosVencedor.totalPartidas}`);
-        console.log(`   🎯 Vitórias totais: ${dadosVencedor.totalVitorias}`);
-        
         return { 
             success: true,
             maxConsecutivo: maiorRecorde,
@@ -763,7 +783,11 @@ async function calcularEAtualizarRecordeConsecutivo() {
                 totalPartidasJogador: dadosVencedor.totalPartidas,
                 totalVitoriasJogador: dadosVencedor.totalVitorias
             },
-            top5: resultados.slice(0, 5),
+            todosRecordes: resultados.map(r => ({
+                apelido: r.apelido,
+                recorde: r.recorde,
+                totalVitorias: r.totalVitorias
+            })),
             data_atualizacao: new Date().toISOString()
         };
         
