@@ -263,6 +263,9 @@
                 <button class="btn-correction btn-warning-custom" onclick="carregarStatusSistema()">
                     <i class="fas fa-chart-line"></i> ATUALIZAR STATUS
                 </button>
+                <button class="btn-correction btn-info-custom" onclick="atualizarRecorde()" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                    <i class="fas fa-trophy"></i> ATUALIZAR RECORDE CONSECUTIVO
+                </button>
             </div>
             
             <!-- Formulário para Correção Individual -->
@@ -625,7 +628,44 @@
                 mostrarLoading(false);
             }
         }
+
+async function atualizarRecorde() {
+    mostrarLoading(true);
+    mostrarResultado('🏆 Calculando recorde de vitórias consecutivas...', 'info');
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/admin/recorde/atualizar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
         
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            mostrarResultado({
+                mensagem: '✅ RECORDE ATUALIZADO COM SUCESSO!',
+                recorde: resultado.maxConsecutivo,
+                detentor: resultado.recordHolder,
+                total_candidatos: resultado.totalCandidatos,
+                data_atualizacao: resultado.data_atualizacao
+            }, 'success');
+            
+            // Atualizar os números na tela
+            setTimeout(carregarStatusSistema, 1000);
+        } else {
+            mostrarResultado({
+                erro: resultado.error || 'Falha ao atualizar recorde'
+            }, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        mostrarResultado(`❌ Erro de conexão: ${error.message}`, 'error');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+      
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
