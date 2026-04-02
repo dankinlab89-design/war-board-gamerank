@@ -620,6 +620,135 @@ async function recalcularJogador(apelido) {
 }
 
 // ============================================
+// FUNÇÃO PARA CALCULAR E ATUALIZAR RECORDE CONSECUTIVO
+// ============================================
+async function calcularEAtualizarRecordeConsecutivo() {
+    try {
+        console.log('🏆 Calculando recorde de vitórias consecutivas...');
+        
+        const Jogador = mongoose.models.Jogador;
+        const Partida = mongoose.models.Partida;
+        const Estatistica = mongoose.models.Estatistica;
+        
+        // Buscar TODOS os jogadores ativos
+        const jogadores = await Jogador.find({ ativo: true }).select('apelido vitorias partidas');
+        
+        let maxConsecutivo = 0;
+        let recordHolder = '-';
+        let dadosVencedor = null;
+        const candidatos = [];
+        
+        for (const jogador of jogadores) {
+            // Buscar partidas do jogador ordenadas por data
+            const partidasJogador = await Partida.find({
+                participantes: jogador.apelido
+            }).sort({ data: 1 });
+            
+            // Calcular maior sequência de vitórias
+            let consecutivoAtual = 0;
+            let maxConsecutivoJogador = 0;
+            
+            for (const partida of partidasJogador) {
+                if (partida.vencedor === jogador.apelido) {
+                    consecutivoAtual++;
+                    if (consecutivoAtual > maxConsecutivoJogador) {
+                        maxConsecutivoJogador = consecutivoAtual;
+                    }
+                } else {
+                    consecutivoAtual = 0;
+                }
+            }
+            
+            if (maxConsecutivoJogador > 0) {
+                candidatos.push({
+                    apelido: jogador.apelido,
+                    maxConsecutivo: maxConsecutivoJogador,
+                    totalPartidas: jogador.partidas || 0,
+                    totalVitorias: jogador.vitorias || 0
+                });
+                
+                console.log(`   📊 ${jogador.apelido}: ${maxConsecutivoJogador} vitórias seguidas`);
+            }
+        }
+        
+        // Encontrar o vencedor
+        if (candidatos.length > 0) {
+            candidatos.sort((a, b) => b.maxConsecutivo - a.maxConsecutivo);
+            
+            const maiorSequencia = candidatos[0].maxConsecutivo;
+            const empatados = candidatos.filter(j => j.maxConsecutivo === maiorSequencia);
+            
+            console.log(`🏆 Maior sequência: ${maiorSequencia} vitórias`);
+            
+            if (empatados.length === 1) {
+                recordHolder = empatados[0].apelido;
+                maxConsecutivo = maiorSequencia;
+                dadosVencedor = empatados[0];
+            } else {
+                // Desempate: mais partidas
+                empatados.sort((a, b) => b.totalPartidas - a.totalPartidas);
+                recordHolder = empatados[0].apelido;
+                maxConsecutivo = maiorSequencia;
+                dadosVencedor = empatados[0];
+                console.log(`   ⚖️ Desempate: ${recordHolder} (${dadosVencedor.totalPartidas} partidas)`);
+            }
+        }
+        
+        // Salvar no banco
+        if (Estatistica) {
+            await Estatistica.findOneAndUpdate(
+                { tipo: 'record_consecutivo' },
+                { 
+                    valor: { 
+                        max_consecutivo: maxConsecutivo,
+                        jogador_apelido: recordHolder,
+                        total_partidas: dadosVencedor?.totalPartidas || 0,
+                        total_vitorias: dadosVencedor?.totalVitorias || 0,
+                        data_calculo: new Date().toISOString()
+                    },
+                    jogador_associado: recordHolder,
+                    data_atualizacao: new Date()
+                },
+                { upsert: true, new: true }
+            );
+        }
+        
+        console.log(`✅ Recorde salvo: ${recordHolder} com ${maxConsecutivo} vitórias seguidas`);
+        
+        return { 
+            success: true,
+            maxConsecutivo, 
+            recordHolder,
+            totalCandidatos: candidatos.length,
+            data_atualizacao: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular recorde:', error);
+        return { 
+            success: false, 
+            error: error.message,
+            maxConsecutivo: 0, 
+            recordHolder: '-'
+        };
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA FORÇAR ATUALIZAÇÃO MANUAL DO RECORDE
+// ============================================
+async function forcarAtualizacaoRecorde() {
+    try {
+        console.log('🔄 Forçando atualização manual do recorde...');
+        const resultado = await calcularEAtualizarRecordeConsecutivo();
+        return resultado;
+    } catch (error) {
+        console.error('❌ Erro:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// ============================================
 // EXPORTAR FUNÇÕES
 // ============================================
 module.exports = {
@@ -629,7 +758,6 @@ module.exports = {
     resetarEstatisticas,
     calcularPatente,
     // NOVAS FUNÇÕES
-    calcularEstatisticasJogador,
-    forcarRecalculoCompleto,
-    recalcularJogador
+    calcularEAtualizarRecordeConsecutivo,
+    forcarAtualizacaoRecorde
 };
