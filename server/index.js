@@ -3513,6 +3513,25 @@ app.post('/api/admin/estatisticas/resetar', async (req, res) => {
 });
 
 // ============================================
+// ROTA MANUAL PARA ATUALIZAR RECORDE CONSECUTIVO
+// ============================================
+
+app.post('/api/admin/recorde/atualizar', async (req, res) => {
+    try {
+        console.log('🏆 Atualizando recorde de vitórias consecutivas (manual)...');
+        
+        const { forcarAtualizacaoRecorde } = require('./correcao-estatisticas');
+        const resultado = await forcarAtualizacaoRecorde();
+        
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error('❌ Erro:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================
 // INICIAR SERVIDOR
 // ============================================
 
