@@ -620,47 +620,45 @@ async function recalcularJogador(apelido) {
 }
 
 // ============================================
-// FUNÇÃO SIMPLIFICADA - USA ORDEM DO _id
+// FUNÇÃO SIMPLIFICADA - USA ORDEM DO _id / data / ganhou + perdeu ou não jogou ZERA
 // ============================================
+
 async function calcularEAtualizarRecordeConsecutivo() {
     try {
         console.log('🏆 Calculando recorde de vitórias consecutivas...');
-        console.log('   Método: Ordem de inserção no banco (campo _id)\n');
-
+        console.log('Regra: Só mantém sequência se participou e VENCEU');
+        console.log('       Qualquer outra situação (perdeu ou não jogou) ZERA a sequência\n');
+        
         const Jogador = mongoose.models.Jogador;
         const Partida = mongoose.models.Partida;
         const Estatistica = mongoose.models.Estatistica;
 
-        // Buscar partidas ordenadas por _id (ordem de inserção)
+        // Buscar TODAS as partidas em ordem cronológica
         const todasPartidas = await Partida.find({})
-            .sort({ _id: 1 })  // ← ORDEM DE INSERÇÃO!
+            .sort({ data: 1 })
             .lean();
         
-        console.log(`   📍 Total de partidas: ${todasPartidas.length}`);
-
-        // Buscar jogadores ativos
         const jogadores = await Jogador.find({ ativo: true }).select('apelido');
         
         const resultados = [];
         
         for (const jogador of jogadores) {
-            // Filtrar partidas que o jogador participou (mantendo ordem do _id)
-            const partidasJogador = todasPartidas.filter(partida => 
-                partida.participantes && partida.participantes.includes(jogador.apelido)
-            );
-            
-            if (partidasJogador.length === 0) continue;
-            
             let sequenciaAtual = 0;
             let maiorSequencia = 0;
             
-            for (const partida of partidasJogador) {
-                if (partida.vencedor === jogador.apelido) {
+            // Percorrer TODAS as partidas em ordem
+            for (const partida of todasPartidas) {
+                const participou = partida.participantes && partida.participantes.includes(jogador.apelido);
+                const venceu = partida.vencedor === jogador.apelido;
+                
+                if (participou && venceu) {
+                    // Participou e VENCEU → aumenta sequência
                     sequenciaAtual++;
                     if (sequenciaAtual > maiorSequencia) {
                         maiorSequencia = sequenciaAtual;
                     }
                 } else {
+                    // Qualquer outra situação: PERDEU ou NÃO JOGOU → ZERA
                     sequenciaAtual = 0;
                 }
             }
@@ -669,19 +667,15 @@ async function calcularEAtualizarRecordeConsecutivo() {
                 resultados.push({
                     apelido: jogador.apelido,
                     recorde: maiorSequencia,
-                    totalPartidas: partidasJogador.length,
-                    totalVitorias: partidasJogador.filter(p => p.vencedor === jogador.apelido).length
+                    totalPartidas: todasPartidas.filter(p => p.participantes && p.participantes.includes(jogador.apelido)).length,
+                    totalVitorias: todasPartidas.filter(p => p.vencedor === jogador.apelido).length
                 });
                 console.log(`   📊 ${jogador.apelido}: ${maiorSequencia} vitórias consecutivas`);
             }
         }
         
         if (resultados.length === 0) {
-            return {
-                success: true,
-                maxConsecutivo: 0,
-                recordHolder: '-'
-            };
+            return { success: true, maxConsecutivo: 0, recordHolder: '-' };
         }
         
         // Ordenar por maior recorde
@@ -690,39 +684,44 @@ async function calcularEAtualizarRecordeConsecutivo() {
         const maiorRecorde = resultados[0].recorde;
         const empatados = resultados.filter(r => r.recorde === maiorRecorde);
         
-        let recordHolder = '';
+        let recordHolder = empatados[0].apelido;
         
-        if (empatados.length === 1) {
-            recordHolder = empatados[0].apelido;
-        } else {
-            // Desempate: mais vitórias totais
+        // Se houver empate, desempate por mais vitórias totais
+        if (empatados.length > 1) {
+            console.log(`\n⚖️ Empate entre ${empatados.map(e => e.apelido).join(', ')}`);
+            console.log(`   Desempatando por maior número de vitórias totais...`);
             empatados.sort((a, b) => b.totalVitorias - a.totalVitorias);
             recordHolder = empatados[0].apelido;
         }
         
         // Salvar no banco
-        if (Estatistica) {
-            await Estatistica.findOneAndUpdate(
-                { tipo: 'record_consecutivo' },
-                { 
-                    valor: { 
-                        max_consecutivo: maiorRecorde,
-                        jogador_apelido: recordHolder
-                    },
-                    jogador_associado: recordHolder,
-                    data_atualizacao: new Date()
+        await Estatistica.findOneAndUpdate(
+            { tipo: 'record_consecutivo' },
+            { 
+                valor: { 
+                    max_consecutivo: maiorRecorde,
+                    jogador_apelido: recordHolder,
+                    total_partidas_jogador: empatados[0].totalPartidas,
+                    total_vitorias_jogador: empatados[0].totalVitorias,
+                    data_calculo: new Date().toISOString(),
+                    regra: "participou_e_venceu_continua_qualquer_outro_zerou"
                 },
-                { upsert: true }
-            );
-        }
+                jogador_associado: recordHolder,
+                data_atualizacao: new Date()
+            },
+            { upsert: true }
+        );
         
-        console.log(`\n✅ RECORDE: ${recordHolder} com ${maiorRecorde} vitórias consecutivas`);
+        console.log(`\n✅ RECORDE FINAL: ${recordHolder} com ${maiorRecorde} vitórias consecutivas`);
         
         return { 
             success: true,
             maxConsecutivo: maiorRecorde,
             recordHolder: recordHolder,
-            todos: resultados
+            detalhes: {
+                totalJogadoresAnalisados: resultados.length,
+                top3: resultados.slice(0, 3)
+            }
         };
         
     } catch (error) {
